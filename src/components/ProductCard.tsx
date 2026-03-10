@@ -1,0 +1,167 @@
+/**
+ * Product Card Component
+ * 
+ * Displays a product in a grid/list format with:
+ * - Product image with hover effect
+ * - Brand and name
+ * - Price (role-aware)
+ * - Featured/Out of Stock badges
+ * - Quick add to cart
+ */
+
+import { Link } from 'react-router-dom';
+import { Card, Typography, Tag, Button, Space, message } from 'antd';
+import { ShoppingCartOutlined, EyeOutlined } from '@ant-design/icons';
+import { memo } from 'react';
+import PriceDisplay from './PriceDisplay';
+import { useCart } from '@/hooks/useCart';
+import type { Product } from '@/types';
+
+const { Text, Title } = Typography;
+
+interface ProductCardProps {
+  product: Product;
+  showQuickAdd?: boolean;
+}
+
+const ProductCard = memo(function ProductCard({ product, showQuickAdd = true }: ProductCardProps) {
+  const { addItem } = useCart();
+  const PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%23f3f3f3"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="Arial, Helvetica, sans-serif" font-size="20">No image</text></svg>';
+  
+  // Check stock status
+  const inStock = typeof product.inStock === 'boolean'
+    ? product.inStock
+    : (product.quantity ?? 0) > 0;
+
+  // Handle quick add to cart
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!inStock) {
+      message.warning('This product is out of stock');
+      return;
+    }
+    
+    addItem(product, 1);
+    message.success(`${product.name} added to cart`);
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const img = e.currentTarget;
+    img.onerror = null;
+    img.src = PLACEHOLDER;
+  };
+
+  return (
+    <Link to={`/product/${product.id}`} className="product-card" aria-label={`View ${product.name}`}>
+      <Card
+        hoverable
+        className="product-card-ant"
+        styles={{
+          body: { padding: 'var(--spacing-lg)' },
+          cover: { overflow: 'hidden' },
+        }}
+        cover={
+          <div className="product-card__image-wrapper">
+            {/* Product Image */}
+            <img
+              src={product.image || product.images?.[0] || PLACEHOLDER}
+              alt={product.name ?? 'Product image'}
+              className="product-card__image"
+              loading="lazy"
+              onError={handleImageError}
+            />
+            
+            {/* Badges */}
+            <div className="product-card__badges">
+              {product.featured && (
+                <Tag color="gold" style={{ margin: 0, fontWeight: 500 }}>
+                  Featured
+                </Tag>
+              )}
+            </div>
+            
+            {/* Out of Stock Overlay */}
+            {!inStock && (
+              <div className="product-card__overlay">
+                <Tag color="default" style={{ fontSize: 14, padding: '6px 16px' }}>
+                  Out of Stock
+                </Tag>
+              </div>
+            )}
+
+            {/* Quick Actions (on hover) */}
+            {showQuickAdd && inStock && (
+              <div className="product-card__quick-actions">
+                <Space style={{ width: '100%', justifyContent: 'center' }}>
+                  <Button 
+                    type="primary" 
+                    size="small"
+                    icon={<ShoppingCartOutlined />}
+                    onClick={handleQuickAdd}
+                    style={{ background: '#fff', color: 'var(--color-text)', borderColor: '#fff' }}
+                  >
+                    Quick Add
+                  </Button>
+                  <Button 
+                    type="primary"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    ghost
+                    style={{ borderColor: '#fff', color: '#fff' }}
+                  >
+                    View
+                  </Button>
+                </Space>
+              </div>
+            )}
+          </div>
+        }
+      >
+        {/* Brand */}
+        <Text className="product-card__brand">
+          {typeof product.brand === 'object' ? product.brand?.name : product.brand}
+        </Text>
+
+        {/* Category */}
+        {product.category && (
+          <Text className="product-card__category">
+            {typeof product.category === 'object' ? product.category?.name : product.category}
+          </Text>
+        )}
+        
+        {/* Product Name */}
+        <Title 
+          level={5} 
+          className="product-card__name"
+          ellipsis={{ rows: 2 }}
+        >
+          {product.name}
+        </Title>
+        
+        {/* Price & Add Button */}
+        <div className="product-card__footer">
+          <div>
+            <PriceDisplay product={product} />
+          </div>
+          
+          {showQuickAdd && (
+            <Button 
+              type="primary" 
+              size="small" 
+              icon={<ShoppingCartOutlined />}
+              disabled={!inStock}
+              onClick={handleQuickAdd}
+              aria-label={`Add ${product.name} to cart`}
+            >
+              Add
+            </Button>
+          )}
+        </div>
+      </Card>
+    </Link>
+  );
+});
+
+export default ProductCard;

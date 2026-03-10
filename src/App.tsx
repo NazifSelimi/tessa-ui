@@ -1,0 +1,158 @@
+import { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { ConfigProvider, App as AntApp } from 'antd';
+import { store, persistor } from './store';
+import { PersistGate } from 'redux-persist/integration/react';
+import './App.css';
+
+// Eagerly loaded components (needed immediately)
+import MainLayout from './components/MainLayout';
+import LoadingScreen from './components/LoadingScreen';
+import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './shared/components/ProtectedRoute';
+
+// Lazy loaded layouts (only loaded when visiting their route groups)
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
+
+// Lazy loaded pages (code splitting for better performance)
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ProductPage = lazy(() => import('./pages/ProductPage'));
+const CartPage = lazy(() => import('./pages/CartPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const AccountPage = lazy(() => import('./pages/account/AccountPage'));
+const OrdersPage = lazy(() => import('./pages/account/OrdersPage'));
+const OrderDetailPage = lazy(() => import('./pages/account/OrderDetailPage'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
+const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminCouponsPage = lazy(() => import('./pages/admin/AdminCouponsPage'));
+const AdminDistributorsPage = lazy(() => import('./pages/admin/AdminDistributorsPage'));
+const AdminStylistRequestsPage = lazy(() => import('./pages/admin/AdminStylistRequestsPage'));
+const DistributorPortalPage = lazy(() => import('./pages/distributor/DistributorPortalPage'));
+const DistributorProductsPage = lazy(() => import('./pages/distributor/DistributorProductsPage'));
+const DistributorCodesPage = lazy(() => import('./pages/distributor/DistributorCodesPage'));
+const StylistRequestPage = lazy(() => import('./pages/stylist/StylistRequestPage'));
+const HairSurveyPage = lazy(() => import('./pages/HairSurveyPage'));
+const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
+const StylistQuickOrderPage = lazy(() => import('./pages/stylist/StylistQuickOrderPage'));
+
+function App() {
+  return (
+    <>
+      <ErrorBoundary>
+        <Provider store={store}>
+          <PersistGate loading={<div style={{ padding: '20px' }}>Loading...</div>} persistor={persistor}>
+          <ConfigProvider>
+            <AntApp>
+            <Router
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
+              <Suspense fallback={<LoadingScreen />}>
+                <Routes>
+              {/* Main shop routes */}
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/hair-survey" element={<HairSurveyPage />} />
+                <Route path="/recommendations" element={<RecommendationsPage />} />
+              </Route>
+
+              {/* Auth routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+              {/* Account routes (auth required) */}
+              <Route path="/account" element={
+                <ProtectedRoute>
+                  <AccountPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/account/orders" element={
+                <ProtectedRoute>
+                  <OrdersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/account/orders/:id" element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Admin routes – layout + pages are lazy-loaded */}
+              <Route element={
+                <ProtectedRoute requiredRole="admin">
+                  <Suspense fallback={<LoadingScreen />}>
+                    <AdminLayout />
+                  </Suspense>
+                </ProtectedRoute>
+              }>
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="/admin/products" element={<AdminProductsPage />} />
+                <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/coupons" element={<AdminCouponsPage />} />
+                <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
+                <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
+              </Route>
+
+              {/* Distributor routes (distributor role required) */}
+              <Route path="/distributor" element={
+                <ProtectedRoute requiredRole="distributor">
+                  <DistributorPortalPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/distributor/products" element={
+                <ProtectedRoute requiredRole="distributor">
+                  <DistributorProductsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/distributor/codes" element={
+                <ProtectedRoute requiredRole="distributor">
+                  <DistributorCodesPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Stylist request – any logged-in user can apply */}
+              <Route path="/stylist/request" element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <StylistRequestPage />
+                  </Suspense>
+                </ProtectedRoute>
+              } />
+
+              {/* Stylist quick-order – stylist role required */}
+              <Route path="/stylist/quick-order" element={
+                <ProtectedRoute requiredRole="stylist">
+                  <Suspense fallback={<LoadingScreen />}>
+                    <StylistQuickOrderPage />
+                  </Suspense>
+                </ProtectedRoute>
+              } />
+
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/" replace />}  />
+            </Routes>
+            </Suspense>
+          </Router>
+        </AntApp>
+        </ConfigProvider>
+      </PersistGate>
+    </Provider>
+    </ErrorBoundary>
+    </>
+  );
+}
+
+export default App;

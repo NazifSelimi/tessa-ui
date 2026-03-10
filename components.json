@@ -1,0 +1,12 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": false,
+  "tsx": true,
+  "aliases": {
+    "components": "@/components",
+    "ui": "@/components/ui",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
