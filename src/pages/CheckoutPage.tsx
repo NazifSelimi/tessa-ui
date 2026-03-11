@@ -11,6 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import {
   Row, Col, Typography, Steps, Form, Input, Button, Card,
   Divider, Space, Image, message, Alert, Tag, Result,
@@ -175,6 +176,14 @@ export default function CheckoutPage() {
 
   return (
     <div className="checkout-page">
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
+        style={{ marginBottom: 8, padding: '4px 0' }}
+      >
+        Back
+      </Button>
       <Title level={2} style={{ marginBottom: 'var(--spacing-xl)' }}>Checkout</Title>
 
       <Steps 
@@ -182,7 +191,6 @@ export default function CheckoutPage() {
         items={steps}
         style={{ marginBottom: 'var(--spacing-2xl)' }}
         size="small"
-        responsive={false}
       />
 
       <Row gutter={[32, 24]}>
@@ -299,14 +307,14 @@ export default function CheckoutPage() {
                 showIcon
                 style={{ marginBottom: 'var(--spacing-xl)' }}
               />
-              <Space style={{ width: '100%', marginTop: 'var(--spacing-lg)' }}>
+              <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
                 <Button onClick={() => setCurrentStep(0)} size="large">
                   Back
                 </Button>
                 <Button type="primary" size="large" style={{ flex: 1 }} onClick={() => setCurrentStep(2)}>
                   Review Order
                 </Button>
-              </Space>
+              </div>
             </Card>
           )}
 
@@ -377,7 +385,7 @@ export default function CheckoutPage() {
 
               <Divider />
 
-              <Space style={{ width: '100%', marginTop: 'var(--spacing-lg)' }}>
+              <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
                 <Button onClick={() => setCurrentStep(1)} size="large">
                   Back
                 </Button>
@@ -390,7 +398,7 @@ export default function CheckoutPage() {
                 >
                   {placingOrder ? 'Processing...' : `Place Order • ${formatPrice(total)}`}
                 </Button>
-              </Space>
+              </div>
             </Card>
           )}
         </Col>

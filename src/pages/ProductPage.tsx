@@ -18,7 +18,7 @@ import {
   Alert,
 } from 'antd';
 import { 
-  ShoppingCartOutlined, HeartOutlined,
+  ShoppingCartOutlined, HeartOutlined, ArrowLeftOutlined,
   CheckCircleOutlined, TruckOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
@@ -113,6 +113,16 @@ export default function ProductPage() {
 
   return (
     <div>
+      {/* Back Button */}
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
+        style={{ marginBottom: 8, padding: '4px 0' }}
+      >
+        Back
+      </Button>
+
       {/* Breadcrumb */}
       <Breadcrumb 
         style={{ marginBottom: 'var(--spacing-xl)' }}
@@ -189,7 +199,7 @@ export default function ProductPage() {
           {/* Quantity & Add to Cart */}
           <div style={{ 
             display: 'flex', 
-            gap: 'var(--spacing-lg)', 
+            gap: 'var(--spacing-md)', 
             alignItems: 'flex-end',
             marginBottom: 'var(--spacing-xl)',
             flexWrap: 'wrap',
@@ -208,22 +218,24 @@ export default function ProductPage() {
                 aria-label="Product quantity"
               />
             </div>
-            <Button
-              type="primary"
-              size="large"
-              icon={<ShoppingCartOutlined />}
-              disabled={!inStock}
-              onClick={handleAddToCart}
-              style={{ flex: 1, minWidth: 150, height: 48 }}
-            >
-              {inStock ? 'Add to Cart' : 'Out of Stock'}
-            </Button>
-            <Button 
-              size="large" 
-              icon={<HeartOutlined />}
-              style={{ height: 48 }}
-              aria-label="Add to wishlist"
-            />
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flex: 1, minWidth: 0 }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<ShoppingCartOutlined />}
+                disabled={!inStock}
+                onClick={handleAddToCart}
+                style={{ flex: 1, minWidth: 0, height: 48 }}
+              >
+                {inStock ? 'Add to Cart' : 'Out of Stock'}
+              </Button>
+              <Button 
+                size="large" 
+                icon={<HeartOutlined />}
+                style={{ height: 48, flexShrink: 0 }}
+                aria-label="Add to wishlist"
+              />
+            </div>
           </div>
 
           {/* Stock Warning */}

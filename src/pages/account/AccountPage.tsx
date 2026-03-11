@@ -7,14 +7,15 @@
  * Connected to API for profile updates.
  */
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 
 const { Title, Text } = Typography;
 
 export default function AccountPage() {
+  const navigate = useNavigate();
   const { user, currentRole, updateProfile, isLoading } = useAuth();
   const [form] = Form.useForm();
 
@@ -37,6 +38,14 @@ export default function AccountPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <Button
+        type="text"
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
+        style={{ marginBottom: 8, padding: '4px 0' }}
+      >
+        Back
+      </Button>
       <Title level={2}>My Account</Title>
       <Text type="secondary">
         Manage your account settings and preferences

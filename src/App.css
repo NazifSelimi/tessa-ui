@@ -355,7 +355,8 @@ button {
   position: relative;
   background: var(--color-background-alt);
   overflow: hidden;
-  height: 220px;
+  aspect-ratio: 3/4;
+  height: auto;
 }
 
 .product-card__image {
@@ -372,6 +373,7 @@ button {
 
 @media (min-width: 768px) {
   .product-card__image-wrapper {
+    aspect-ratio: auto;
     height: 260px;
   }
 }
@@ -412,6 +414,21 @@ button {
   opacity: 1;
 }
 
+/* Touch devices: hide hover-only quick actions overlay entirely */
+@media (hover: none) and (pointer: coarse) {
+  .product-card__quick-actions {
+    display: none;
+  }
+  
+  .product-card:hover {
+    transform: none;
+  }
+  
+  .product-card:active {
+    transform: scale(0.98);
+  }
+}
+
 .product-card__content {
   padding: var(--spacing-lg);
 }
@@ -450,6 +467,29 @@ button {
   justify-content: space-between;
   align-items: flex-end;
   margin-top: auto;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 575px) {
+  .product-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  
+  .product-card__footer .ant-btn {
+    width: 100%;
+  }
+  
+  .product-card__name {
+    font-size: var(--font-size-sm) !important;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+  
+  .product-card .ant-card-body {
+    padding: var(--spacing-md) !important;
+  }
 }
 
 /* Mobile filter button visibility */
@@ -1374,6 +1414,30 @@ button {
   flex-wrap: wrap;
 }
 
+@media (max-width: 575px) {
+  .cart-item {
+    gap: var(--spacing-md);
+  }
+  
+  .cart-item .ant-image {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  
+  .cart-item .ant-image img {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  
+  .cart-item__actions {
+    gap: var(--spacing-sm);
+  }
+  
+  .cart-item__total {
+    min-width: 60px;
+  }
+}
+
 .cart-item__total {
   min-width: 70px;
   text-align: right;
@@ -1587,4 +1651,330 @@ button {
 .category-card__count {
   color: rgba(255, 255, 255, 0.8);
   font-size: var(--font-size-sm);
+}
+
+/* =============================================================================
+   SAFE AREA INSETS (iPhone notch / home indicator)
+   ============================================================================= */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .site-footer {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  
+  /* Quick order sticky bar */
+  .quick-order-row--flash td {
+    background: #f6ffed !important;
+  }
+}
+
+/* =============================================================================
+   MOBILE RESPONSIVE ENHANCEMENTS
+   ============================================================================= */
+@media (max-width: 575px) {
+  /* Tighter padding on very small screens */
+  .main-content {
+    padding: var(--spacing-md) !important;
+  }
+  
+  /* Checkout page compact */
+  .checkout-page {
+    max-width: 100%;
+  }
+  
+  /* Better touch targets for all buttons */
+  .ant-btn-sm {
+    min-height: 32px;
+    min-width: 32px;
+  }
+  
+  .ant-btn:not(.ant-btn-sm):not(.ant-btn-icon-only) {
+    min-height: 40px;
+  }
+  
+  /* Compact pagination on mobile */
+  .ant-pagination {
+    gap: 2px;
+  }
+  
+  .ant-pagination-item {
+    min-width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+  }
+  
+  /* Product detail */
+  .product-detail__main-image {
+    max-height: 350px;
+  }
+  
+  .product-detail__main-image img {
+    max-height: 350px;
+  }
+  
+  .product-detail__title {
+    font-size: var(--font-size-2xl) !important;
+  }
+  
+  /* Breadcrumb truncation */
+  .ant-breadcrumb {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Ensure drawer doesn't overflow */
+  .ant-drawer-content-wrapper {
+    max-width: 85vw !important;
+  }
+  
+  /* Steps vertical on mobile */
+  .ant-steps-horizontal:not(.ant-steps-label-vertical) .ant-steps-item {
+    padding-inline-start: 4px;
+  }
+  
+  /* Hide pagination total text on mobile */
+  .ant-pagination-total-text {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   MOBILE BOTTOM NAVIGATION
+   ============================================================================= */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  background: #fff;
+  border-top: 1px solid var(--color-border, #e8e8e8);
+  display: none; /* Hidden on desktop */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 767px) {
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 56px;
+  }
+}
+
+.mobile-bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 3px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-secondary, #999);
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.mobile-bottom-nav__item--active {
+  color: var(--color-primary, #722ed1);
+}
+
+.mobile-bottom-nav__item--active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-primary, #722ed1);
+}
+
+.mobile-bottom-nav__icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* Fix Badge inside bottom nav so icon inherits color */
+.mobile-bottom-nav__item .ant-badge {
+  color: inherit;
+}
+.mobile-bottom-nav__item .ant-badge .mobile-bottom-nav__icon {
+  color: inherit;
+}
+
+.mobile-bottom-nav__label {
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* =============================================================================
+   FILTER FAB (Floating Action Button)
+   ============================================================================= */
+.filter-fab {
+  display: none; /* Hidden on desktop */
+  position: fixed;
+  bottom: 80px; /* Above bottom nav */
+  right: 16px;
+  z-index: 999;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary, #722ed1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(114, 46, 209, 0.4);
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (max-width: 767px) {
+  .filter-fab {
+    display: flex;
+  }
+}
+
+.filter-fab:active {
+  transform: scale(0.92);
+}
+
+.filter-fab__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  line-height: 1;
+}
+
+/* =============================================================================
+   MOBILE SEARCH BAR (toggle from bottom nav)
+   ============================================================================= */
+.mobile-search-bar {
+  display: none; /* Hidden on desktop */
+  position: fixed;
+  top: var(--header-height, 64px);
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: searchSlideDown 0.2s ease-out;
+}
+
+@keyframes searchSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-search-bar {
+    display: block;
+  }
+}
+
+.mobile-search-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+}
+
+.mobile-search-bar__inner .ant-input-affix-wrapper {
+  flex: 1;
+  border-radius: 8px;
+}
+
+.mobile-search-bar__close {
+  flex-shrink: 0;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  color: var(--color-text-secondary, #666) !important;
+  font-size: 16px;
+}
+
+/* =============================================================================
+   MOBILE FILTER DRAWER FOOTER
+   ============================================================================= */
+.mobile-filter-drawer__footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid var(--color-border, #e8e8e8);
+  z-index: 10;
+}
+
+.mobile-filter-drawer__footer .ant-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--radius-md, 8px);
+}
+
+/* =============================================================================
+   MOBILE ACTIVE FILTER TAGS
+   ============================================================================= */
+.mobile-filter-tags {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-filter-tags {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 8px 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .mobile-filter-tags::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .mobile-filter-tags .ant-tag {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
 }

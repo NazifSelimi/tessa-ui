@@ -138,8 +138,8 @@ const CartPage: React.FC = () => {
                           max={item.product.quantity || 1}
                           value={item.quantity}
                           onChange={(val) => handleQuantityChange(item.productId, val)}
-                          size="small"
-                          style={{ width: 70 }}
+                          size="middle"
+                          style={{ width: 80 }}
                           aria-label={`Quantity for ${item.product.name}`}
                         />
                         <Text strong className="cart-item__total">

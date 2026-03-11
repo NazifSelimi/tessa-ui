@@ -15,10 +15,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@ant-design/icons": "^5.2.6",
+    "@ant-design/icons": "^6.1.0",
     "@hookform/resolvers": "^3.9.1",
     "@reduxjs/toolkit": "^2.11.2",
-    "antd": "^5.14.0",
+    "antd": "^6.3.2",
     "axios": "^1.13.5",
     "clsx": "2.1.1",
     "date-fns": "^3.0.0",

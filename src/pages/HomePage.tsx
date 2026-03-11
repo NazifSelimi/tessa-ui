@@ -8,19 +8,20 @@
  * - Backend-driven pagination and filtering
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Row, Col, Input, Select, Checkbox, Card, Typography, 
   Space, Button, Spin, Empty, Drawer, Pagination,
-  Badge, Tag, Alert, InputNumber,
+  Badge, Tag, Alert, InputNumber, Grid,
 } from 'antd';
-import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const sortOptions = [
   { value: 'featured', label: 'Featured' },
@@ -35,6 +36,10 @@ const ITEMS_PER_PAGE = 12;
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const searchInputRef = useRef<any>(null);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   // Filter states from URL
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -56,6 +61,34 @@ export default function HomePage() {
 
   // Only search if 2+ characters (prevent spam)
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
+
+  // Listen for bottom nav search toggle
+  useEffect(() => {
+    const handleToggleSearch = () => {
+      setMobileSearchOpen((prev) => {
+        const next = !prev;
+        if (next) {
+          // Focus the search input after it opens
+          setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+        return next;
+      });
+    };
+    window.addEventListener('toggle-mobile-search', handleToggleSearch);
+    return () => window.removeEventListener('toggle-mobile-search', handleToggleSearch);
+  }, []);
+
+  // Close mobile search when switching to desktop
+  useEffect(() => {
+    if (!isMobile) setMobileSearchOpen(false);
+  }, [isMobile]);
+
+  // Scroll to top when search results change
+  useEffect(() => {
+    if (debouncedSearch && debouncedSearch.length >= 2) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [debouncedSearch]);
 
   // Memoize query parameters to prevent unnecessary re-fetches
   const queryParams = useMemo(() => ({
@@ -227,7 +260,7 @@ const handlePageChange = (page: number) => {
       {/* Price Range */}
       <div>
         <Text strong>Price Range (MKD)</Text>
-        <Space style={{ width: '100%', marginTop: 8 }} size={8}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
           <InputNumber
             placeholder="Min"
             min={0}
@@ -237,9 +270,9 @@ const handlePageChange = (page: number) => {
               setPriceRange([newMin, priceRange[1]]);
             }}
             onBlur={() => updateUrlParam('min_price', priceRange[0] || null)}
-            style={{ width: '100%' }}
+            style={{ flex: 1, minWidth: 0 }}
           />
-          <span>–</span>
+          <span style={{ flexShrink: 0 }}>–</span>
           <InputNumber
             placeholder="Max"
             min={0}
@@ -249,9 +282,9 @@ const handlePageChange = (page: number) => {
               setPriceRange([priceRange[0], newMax]);
             }}
             onBlur={() => updateUrlParam('max_price', priceRange[1] < 1000000000 ? priceRange[1] : null)}
-            style={{ width: '100%' }}
+            style={{ flex: 1, minWidth: 0 }}
           />
-        </Space>
+        </div>
       </div>
 
       {/* In Stock */}
@@ -280,7 +313,40 @@ const handlePageChange = (page: number) => {
   );
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 200px)', padding: '24px' }}>
+    <div style={{ minHeight: 'calc(100vh - 200px)' }}>
+      {/* Mobile Slide-Down Search Bar */}
+      {mobileSearchOpen && (
+        <div className="mobile-search-bar mobile-search-bar--open">
+          <div className="mobile-search-bar__inner">
+            <Input
+              ref={searchInputRef}
+              placeholder="Search products..."
+              prefix={<SearchOutlined style={{ color: '#999' }} />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onBlur={() => {
+                if (searchQuery) {
+                  updateUrlParam('search', searchQuery);
+                } else {
+                  updateUrlParam('search', null);
+                }
+              }}
+              allowClear
+              size="large"
+              style={{ fontSize: 16 }}
+            />
+            <Button
+              type="text"
+              shape="circle"
+              icon={<CloseOutlined />}
+              onClick={() => { setMobileSearchOpen(false); }}
+              className="mobile-search-bar__close"
+              aria-label="Close search"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Error Alert */}
       {productsError && (
         <Alert
@@ -308,26 +374,29 @@ const handlePageChange = (page: number) => {
 
         {/* Main Content */}
         <Col xs={24} sm={24} md={18} lg={19} xl={20}>
-          {/* Mobile Filter Button */}
-          <div className="mobile-filter-btn" style={{ marginBottom: 16 }}>
-            <Button 
-              icon={<FilterOutlined />}
-              onClick={() => setMobileFiltersOpen(true)}
-              block
-              size="large"
-              style={{ height: 48 }}
-            >
-              Filters {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}
-            </Button>
-          </div>
+          {/* Active filter tags (mobile) - show when filters are applied */}
+          {isMobile && activeFiltersCount > 0 && (
+            <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              {category && <Tag closable onClose={() => { setCategory(''); updateUrlParam('category', null); }} color="green">{selectedCategoryName}</Tag>}
+              {brand && <Tag closable onClose={() => { setBrand(''); updateUrlParam('brand', null); }} color="blue">{selectedBrandName}</Tag>}
+              {search && <Tag closable onClose={() => { setSearch(''); updateUrlParam('search', null); }} color="purple">{search}</Tag>}
+              {inStockOnly && <Tag closable onClose={() => { setInStockOnly(false); updateUrlParam('in_stock', null); }} color="cyan">In Stock</Tag>}
+              <Button type="link" size="small" danger onClick={clearAllFilters} style={{ padding: 0, height: 'auto' }}>
+                Clear all
+              </Button>
+            </div>
+          )}
 
           {/* Results Header */}
-          <div style={{ marginBottom: 24 }}>
-            <Title level={3}>
-              {category && <Tag color="green">{selectedCategoryName}</Tag>}
-              {brand && <Tag color="blue">{selectedBrandName}</Tag>}
-              {search && <Tag color="purple">{search}</Tag>}
-            </Title>
+          <div style={{ marginBottom: 16 }}>
+            {/* Desktop: show filter tags inline */}
+            {!isMobile && (
+              <Title level={4} style={{ marginBottom: 4 }}>
+                {category && <Tag color="green">{selectedCategoryName}</Tag>}
+                {brand && <Tag color="blue">{selectedBrandName}</Tag>}
+                {search && <Tag color="purple">{search}</Tag>}
+              </Title>
+            )}
             <Text type="secondary">
               Showing {products.length} of {totalProducts} products
             </Text>
@@ -338,9 +407,9 @@ const handlePageChange = (page: number) => {
             <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />
           ) : products.length > 0 ? (
             <>
-              <Row gutter={[16, 16]}>
+              <Row gutter={[12, 12]}>
                 {products.map((product) => (
-                  <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
+                  <Col key={product.id} xs={12} sm={12} md={8} lg={6}>
                     <ProductCard product={product} />
                   </Col>
                 ))}
@@ -348,14 +417,15 @@ const handlePageChange = (page: number) => {
 
               {/* Pagination */}
               {totalProducts > ITEMS_PER_PAGE && (
-                <div style={{ marginTop: 32, textAlign: 'center' }}>
+                <div style={{ marginTop: 24, textAlign: 'center', paddingBottom: isMobile ? 80 : 0 }}>
                     <Pagination
                       current={backendCurrentPage}
                       total={totalProducts}
                       pageSize={ITEMS_PER_PAGE}
                       onChange={handlePageChange}
                       showSizeChanger={false}
-                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} products`}
+                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
+                      size="small"
                     />
                 </div>
               )}
@@ -375,6 +445,20 @@ const handlePageChange = (page: number) => {
         </Col>
       </Row>
 
+      {/* Mobile Floating Filter FAB */}
+      {isMobile && (
+        <button
+          className="filter-fab"
+          onClick={() => setMobileFiltersOpen(true)}
+          aria-label="Open filters"
+        >
+          <FilterOutlined style={{ fontSize: 20 }} />
+          {activeFiltersCount > 0 && (
+            <span className="filter-fab__badge">{activeFiltersCount}</span>
+          )}
+        </button>
+      )}
+
       {/* Mobile Filters Drawer */}
       <Drawer
         title={
@@ -382,11 +466,30 @@ const handlePageChange = (page: number) => {
             <span>Filters {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}</span>
           </div>
         }
-        placement="left"
+        placement="bottom"
         onClose={() => setMobileFiltersOpen(false)}
         open={mobileFiltersOpen}
+        height="85vh"
+        styles={{
+          header: { borderBottom: '1px solid #f0f0f0' },
+          body: { paddingBottom: 80 },
+        }}
+        className="mobile-filter-drawer"
       >
         {filterContent}
+        
+        {/* Sticky apply button at bottom of drawer */}
+        <div className="mobile-filter-drawer__footer">
+          <Button
+            type="primary"
+            block
+            size="large"
+            onClick={() => setMobileFiltersOpen(false)}
+            style={{ height: 48 }}
+          >
+            Show {totalProducts} Products
+          </Button>
+        </div>
       </Drawer>
     </div>
   );

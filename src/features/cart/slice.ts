@@ -61,8 +61,6 @@ const cartSlice = createSlice({
           rolePrice,
         });
       }
-
-      state.isDrawerOpen = true;
     },
 
     removeItem: (

@@ -449,7 +449,7 @@ export default function StylistQuickOrderPage() {
               pageSize={meta.per_page}
               onChange={(p) => setPage(p)}
               showSizeChanger={false}
-              size="default"
+              size="small"
             />
           </div>
         )}

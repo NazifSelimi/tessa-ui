@@ -10,7 +10,7 @@
 import { useState, useMemo } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { 
-  Layout, Menu, Badge, Button, Dropdown, Space, Typography, Drawer,
+  Menu, Badge, Button, Dropdown, Space, Typography, Drawer,
 } from 'antd';
 import { 
   ShoppingCartOutlined, 
@@ -29,9 +29,9 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import CartDrawer from './CartDrawer';
+import MobileBottomNav from './MobileBottomNav';
 import Logo from './Logo';
 
-const { Header, Content, Footer } = Layout;
 const { Text } = Typography;
 
 export default function MainLayout() {
@@ -79,28 +79,6 @@ export default function MainLayout() {
     const items: any[] = [
       { key: 'shop', label: <Link to="/" onClick={closeMobile}>Shop</Link> },
       { key: 'hair-survey', label: <Link to="/hair-survey" onClick={closeMobile}>Hair Quiz</Link> },
-      { 
-        key: 'categories', 
-        label: 'Categories', 
-        children: [
-          { key: 'shampoo', label: <Link to="/?category=shampoo" onClick={closeMobile}>Shampoo</Link> },
-          { key: 'conditioner', label: <Link to="/?category=conditioner" onClick={closeMobile}>Conditioner</Link> },
-          { key: 'mask', label: <Link to="/?category=mask" onClick={closeMobile}>Masks</Link> },
-          { key: 'hair-color', label: <Link to="/?category=hair-color" onClick={closeMobile}>Hair Color</Link> },
-          { key: 'styling', label: <Link to="/?category=styling" onClick={closeMobile}>Styling</Link> },
-          { key: 'bleach-decolor', label: <Link to="/?category=bleach-decolor" onClick={closeMobile}>Bleach & De Color</Link> },
-        ]
-      },
-      { 
-        key: 'brands', 
-        label: 'Brands', 
-        children: [
-          { key: 'fanola', label: <Link to="/?brand=fanola" onClick={closeMobile}>Fanola</Link> },
-          { key: 'oro-therapy', label: <Link to="/?brand=oro-therapy" onClick={closeMobile}>Oro Therapy</Link> },
-          { key: 'rr-line', label: <Link to="/?brand=rr-line" onClick={closeMobile}>Rr Line</Link> },
-          { key: 'no-yellow-color', label: <Link to="/?brand=no-yellow-color" onClick={closeMobile}>No Yellow Color</Link> },
-        ]
-      },
     ];
 
     // Role-specific items
@@ -134,14 +112,9 @@ export default function MainLayout() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: 'var(--color-surface)' }}>
-      {/* Header */}
-      <Header className="site-header" style={{ 
-        background: 'var(--color-surface)', 
-        padding: 0, 
-        height: 'var(--header-height)',
-        lineHeight: 'var(--header-height)',
-      }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--color-surface)' }}>
+      {/* Header — plain <header> so position:fixed works without Ant Layout interference */}
+      <header className="site-header">
         <div className="site-header__inner">
           {/* Logo */}
           <Link to="/" className="site-header__logo" style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
@@ -171,16 +144,18 @@ export default function MainLayout() {
               </span>
             )}
             
-            {/* Cart Button */}
-            <Badge count={itemCount} size="small" offset={[-2, 2]}>
-              <Button 
-                type="text" 
-                icon={<ShoppingCartOutlined style={{ fontSize: 20 }} />}
-                onClick={openDrawer}
-                aria-label="Shopping cart"
-                style={{ width: 40, height: 40 }}
-              />
-            </Badge>
+            {/* Cart Button - Desktop Only (bottom nav has cart on mobile) */}
+            <div className="hidden-mobile">
+              <Badge count={itemCount} size="small" offset={[-2, 2]}>
+                <Button 
+                  type="text" 
+                  icon={<ShoppingCartOutlined style={{ fontSize: 20 }} />}
+                  onClick={openDrawer}
+                  aria-label="Shopping cart"
+                  style={{ width: 40, height: 40 }}
+                />
+              </Badge>
+            </div>
 
             {/* User Menu - Desktop */}
             <Dropdown 
@@ -215,7 +190,7 @@ export default function MainLayout() {
             />
           </div>
         </div>
-      </Header>
+      </header>
 
       {/* Mobile Menu Drawer */}
       <Drawer
@@ -302,31 +277,32 @@ export default function MainLayout() {
       </Drawer>
 
       {/* Main Content */}
-      <Content className="main-content">
+      <main className="main-content" style={{ flex: 1 }}>
         <Outlet />
-      </Content>
+      </main>
 
       {/* Footer */}
-      <Footer className="site-footer" style={{ background: '#1a1a1a', padding: '48px 24px 24px' }}>
+      <footer className="site-footer" style={{ background: '#1a1a1a', padding: '48px 24px 24px' }}>
         <div className="site-footer__inner" style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Logo & About — centered with flex */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <Logo variant="light" height={36} />
+            </div>
+            <Text style={{ display: 'block', color: '#aaa', fontSize: 14, lineHeight: '1.6', maxWidth: 380 }}>
+              Premium professional hair care products for stylists and beauty professionals.
+            </Text>
+          </div>
+
           <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-            gap: '32px',
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
             marginBottom: '32px'
           }}>
-            {/* Logo & About */}
-            <div>
-              <div style={{ marginBottom: '16px' }}>
-                <Logo variant="light" height={36} />
-              </div>
-              <Text style={{ display: 'block', color: '#aaa', fontSize: 14, lineHeight: '1.6' }}>
-                Premium professional hair care products for stylists and beauty professionals.
-              </Text>
-            </div>
-
             {/* Contact */}
-            <div>
+            <div style={{ textAlign: 'center' }}>
               <Text strong style={{ display: 'block', color: '#fff', marginBottom: '16px', fontSize: 15 }}>
                 Contact Us
               </Text>
@@ -343,14 +319,14 @@ export default function MainLayout() {
 
               {/* Social Media */}
               <div style={{ marginTop: '16px' }}>
-                <Space size={12}>
-                  <a href="#" style={{ color: '#aaa', fontSize: 18 }} aria-label="Facebook">
+                <Space size={4}>
+                  <a href="#" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Facebook">
                     <FacebookOutlined />
                   </a>
-                  <a href="#" style={{ color: '#aaa', fontSize: 18 }} aria-label="Instagram">
+                  <a href="#" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Instagram">
                     <InstagramOutlined />
                   </a>
-                  <a href="#" style={{ color: '#aaa', fontSize: 18 }} aria-label="Twitter">
+                  <a href="#" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Twitter">
                     <TwitterOutlined />
                   </a>
                 </Space>
@@ -363,7 +339,7 @@ export default function MainLayout() {
             borderTop: '1px solid #333', 
             paddingTop: '24px', 
             display: 'flex', 
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             flexWrap: 'wrap',
             gap: '16px'
           }}>
@@ -376,10 +352,13 @@ export default function MainLayout() {
             </Space>
           </div>
         </div>
-      </Footer>
+      </footer>
 
       {/* Cart Drawer */}
       <CartDrawer />
+
+      {/* Mobile Bottom Navigation — outside Layout, plain element */}
+      <MobileBottomNav />
 
       {/* Mobile-specific styles */}
       <style>{`
@@ -393,6 +372,9 @@ export default function MainLayout() {
           .hidden-mobile {
             display: none !important;
           }
+          .main-content {
+            padding-bottom: calc(var(--spacing-lg) + 64px) !important;
+          }
         }
         @media (min-width: 768px) {
           .site-header__nav {
@@ -403,6 +385,6 @@ export default function MainLayout() {
           }
         }
       `}</style>
-    </Layout>
+    </div>
   );
 }

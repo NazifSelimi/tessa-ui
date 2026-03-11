@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ConfigProvider, App as AntApp } from 'antd';
 import { store, persistor } from './store';
@@ -41,6 +41,14 @@ const HairSurveyPage = lazy(() => import('./pages/HairSurveyPage'));
 const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
 const StylistQuickOrderPage = lazy(() => import('./pages/stylist/StylistQuickOrderPage'));
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function App() {
   return (
     <>
@@ -55,6 +63,7 @@ function App() {
                 v7_relativeSplatPath: true,
               }}
             >
+              <ScrollToTop />
               <Suspense fallback={<LoadingScreen />}>
                 <Routes>
               {/* Main shop routes (all wrapped in MainLayout for nav + footer) */}

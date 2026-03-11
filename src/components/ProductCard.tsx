@@ -10,8 +10,8 @@
  */
 
 import { Link } from 'react-router-dom';
-import { Card, Typography, Tag, Button, Space, message } from 'antd';
-import { ShoppingCartOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Typography, Tag, Button, message } from 'antd';
+import { ShoppingCartOutlined } from '@ant-design/icons';
 import { memo } from 'react';
 import PriceDisplay from './PriceDisplay';
 import { useCart } from '@/hooks/useCart';
@@ -91,31 +91,7 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true }: 
               </div>
             )}
 
-            {/* Quick Actions (on hover) */}
-            {showQuickAdd && inStock && (
-              <div className="product-card__quick-actions">
-                <Space style={{ width: '100%', justifyContent: 'center' }}>
-                  <Button 
-                    type="primary" 
-                    size="small"
-                    icon={<ShoppingCartOutlined />}
-                    onClick={handleQuickAdd}
-                    style={{ background: '#fff', color: 'var(--color-text)', borderColor: '#fff' }}
-                  >
-                    Quick Add
-                  </Button>
-                  <Button 
-                    type="primary"
-                    size="small"
-                    icon={<EyeOutlined />}
-                    ghost
-                    style={{ borderColor: '#fff', color: '#fff' }}
-                  >
-                    View
-                  </Button>
-                </Space>
-              </div>
-            )}
+
           </div>
         }
       >
@@ -149,11 +125,12 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true }: 
           {showQuickAdd && (
             <Button 
               type="primary" 
-              size="small" 
+              size="middle" 
               icon={<ShoppingCartOutlined />}
               disabled={!inStock}
               onClick={handleQuickAdd}
               aria-label={`Add ${product.name} to cart`}
+              style={{ minHeight: 36 }}
             >
               Add
             </Button>
