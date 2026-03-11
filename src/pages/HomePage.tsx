@@ -404,7 +404,9 @@ const handlePageChange = (page: number) => {
 
           {/* Products Grid */}
           {isLoading ? (
-            <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />
+            <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Spin size="large" />
+            </div>
           ) : products.length > 0 ? (
             <>
               <Row gutter={[12, 12]}>

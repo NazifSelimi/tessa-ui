@@ -16,7 +16,8 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-redux': ['@reduxjs/toolkit', 'react-redux', 'redux-persist'],
-          'vendor-antd': ['antd', '@ant-design/icons'],
+          // antd intentionally excluded: lets Rollup tree-shake unused
+          // components & icons instead of bundling the entire library
         },
       },
     },

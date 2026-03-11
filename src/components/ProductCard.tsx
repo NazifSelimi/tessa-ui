@@ -75,6 +75,7 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, pr
               fetchPriority={priority ? 'high' : undefined}
               width={300}
               height={400}
+              sizes="(max-width: 576px) 46vw, (max-width: 768px) 46vw, (max-width: 992px) 30vw, 23vw"
               onError={handleImageError}
             />
             

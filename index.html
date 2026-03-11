@@ -37,6 +37,12 @@
         <a href="/register">Create Account</a>
       </nav>
     </noscript>
+    <script>
+    // Early-fetch: start the default products API call in parallel with JS download/parse.
+    // RTK Query will still make its own request, but the browser may reuse the TCP connection.
+    (function(){var u='/api/v1/products?page=1&perPage=12&sort=featured&min_price=0&max_price=1000000000';
+    window.__PREFETCH=fetch(u,{headers:{'Accept':'application/json'}}).then(function(r){return r.json()}).catch(function(){return null})})();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
