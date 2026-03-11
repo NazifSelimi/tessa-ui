@@ -34,7 +34,7 @@ interface AdminOrdersQueryParams {
 interface AdminStylistRequestsQueryParams {
   page?: number;
   per_page?: number;
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: string;
   search?: string;
 }
 
@@ -104,6 +104,8 @@ export const adminApi = baseApi.injectEndpoints({
       query: () => '/v1/admin/dashboard',
       transformResponse: (response: any) => {
         const data = response.data;
+        // Map integer status from dashboard endpoint to string
+        const statusMap: Record<number, string> = { 0: 'pending', 1: 'confirmed', 2: 'shipped', 3: 'cancelled' };
         return {
           totalRevenue: parseFloat(String(data.totalRevenue ?? 0).replace(/,/g, '')) || 0,
           totalOrders: data.totalOrders ?? 0,
@@ -114,18 +116,15 @@ export const adminApi = baseApi.injectEndpoints({
           recentOrders: (data.recentOrders || []).map((o: any) => ({
             id: o.id,
             total: o.total,
-            status: o.status,
+            status: typeof o.status === 'number' ? (statusMap[o.status] ?? 'pending') : o.status,
             shippingAddress: { fullName: o.userName || 'Unknown' },
             createdAt: o.createdAt,
           })),
           ordersByStatus: {
             pending: 0,
             confirmed: 0,
-            processing: 0,
             shipped: 0,
-            delivered: 0,
             cancelled: 0,
-            refunded: 0,
           },
           revenueByMonth: [],
           topProducts: [],
@@ -226,13 +225,12 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.StylistRequests, API_TAGS.Dashboard],
     }),
 
-    rejectStylistRequest: builder.mutation<StylistRequest, { id: string; reason: string }>({
+    rejectStylistRequest: builder.mutation<void, { id: string; reason?: string }>({
       query: ({ id, reason }) => ({
         url: `/v1/admin/stylist-requests/${id}/reject`,
         method: 'POST',
-        body: { reason },
+        body: reason ? { reason } : {},
       }),
-      transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.StylistRequests, API_TAGS.Dashboard],
     }),
 
@@ -243,22 +241,25 @@ export const adminApi = baseApi.injectEndpoints({
         url: '/v1/admin/products',
         method: 'POST',
         body: formData,
+        formData: true,
       }),
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Products],
     }),
 
     updateProduct: builder.mutation<any, { id: string; data: FormData }>({
-      query: ({ id, data }) => ({
-        url: `/v1/admin/products/${id}`,
-        method: 'PUT',
-        body: data,
-      }),
+      query: ({ id, data }) => {
+        // Laravel does not parse multipart/form-data on PUT — use POST with _method override
+        data.append('_method', 'PUT');
+        return {
+          url: `/v1/admin/products/${id}`,
+          method: 'POST',
+          body: data,
+          formData: true,
+        };
+      },
       transformResponse: (response: any) => response.data,
-      invalidatesTags: (result, error, { id }) => [
-        { type: API_TAGS.Product, id },
-        API_TAGS.Products,
-      ],
+      invalidatesTags: [API_TAGS.Products],
     }),
 
     deleteProduct: builder.mutation<void, string>({
@@ -361,17 +362,22 @@ export const adminApi = baseApi.injectEndpoints({
         url: '/v1/admin/categories',
         method: 'POST',
         body: formData,
+        formData: true,
       }),
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Categories],
     }),
 
     updateCategory: builder.mutation<any, { id: string; data: FormData }>({
-      query: ({ id, data }) => ({
-        url: `/v1/admin/categories/${id}`,
-        method: 'PUT',
-        body: data,
-      }),
+      query: ({ id, data }) => {
+        data.append('_method', 'PUT');
+        return {
+          url: `/v1/admin/categories/${id}`,
+          method: 'POST',
+          body: data,
+          formData: true,
+        };
+      },
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Categories],
     }),
@@ -389,17 +395,22 @@ export const adminApi = baseApi.injectEndpoints({
         url: '/v1/admin/brands',
         method: 'POST',
         body: formData,
+        formData: true,
       }),
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Brands],
     }),
 
     updateBrand: builder.mutation<any, { id: string; data: FormData }>({
-      query: ({ id, data }) => ({
-        url: `/v1/admin/brands/${id}`,
-        method: 'PUT',
-        body: data,
-      }),
+      query: ({ id, data }) => {
+        data.append('_method', 'PUT');
+        return {
+          url: `/v1/admin/brands/${id}`,
+          method: 'POST',
+          body: data,
+          formData: true,
+        };
+      },
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Brands],
     }),
@@ -410,6 +421,26 @@ export const adminApi = baseApi.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: [API_TAGS.Brands],
+    }),
+
+    // ==================== DISTRIBUTOR CODE MANAGEMENT ====================
+
+    getDistributorCodes: builder.query<PaginatedResponse<any>, { page?: number; per_page?: number; search?: string; used?: boolean } | void>({
+      query: (params) => ({
+        url: '/v1/admin/distributor-codes',
+        params: params || {},
+      }),
+      transformResponse: (response: any) => ({
+        data: response.data?.data || response.data || [],
+        meta: response.data?.meta || response.meta || { current_page: 1, per_page: 20, total: 0, last_page: 1, from: 0, to: 0 },
+      }),
+      providesTags: [API_TAGS.DistributorCodes],
+    }),
+
+    getDistributorCodeStats: builder.query<{ totalCodes: number; usedCodes: number; activeCodes: number }, void>({
+      query: () => '/v1/admin/distributor-codes/stats',
+      transformResponse: (response: any) => response.data,
+      providesTags: [API_TAGS.DistributorCodes],
     }),
   }),
 });
@@ -444,4 +475,6 @@ export const {
   useCreateBrandMutation,
   useUpdateBrandMutation,
   useDeleteBrandMutation,
+  useGetDistributorCodesQuery,
+  useGetDistributorCodeStatsQuery,
 } = adminApi;

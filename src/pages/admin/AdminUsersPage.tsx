@@ -137,6 +137,7 @@ export default function AdminUsersPage() {
         <Select
           value={role}
           onChange={(val) => handleRoleChange(record.id, val)}
+          onClick={(e) => e.stopPropagation()}
           style={{ width: 120 }}
           size="small"
         >
@@ -158,7 +159,7 @@ export default function AdminUsersPage() {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, record: User) => (
-        <Space>
+        <Space onClick={(e) => e.stopPropagation()}>
           <Button 
             type="text" 
             icon={<EyeOutlined />}
@@ -226,6 +227,10 @@ export default function AdminUsersPage() {
           columns={columns}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => handleView(record),
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: page,
             pageSize: perPage,

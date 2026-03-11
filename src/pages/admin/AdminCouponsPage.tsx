@@ -155,7 +155,7 @@ export default function AdminCouponsPage() {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, record: Coupon) => (
-        <Space>
+        <Space onClick={(e) => e.stopPropagation()}>
           <Button 
             type="text" 
             icon={<EditOutlined />} 
@@ -220,6 +220,10 @@ export default function AdminCouponsPage() {
           columns={columns}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => handleEdit(record),
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: page,
             pageSize: perPage,

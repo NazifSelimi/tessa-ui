@@ -28,7 +28,6 @@ import {
   FileTextOutlined,
   TeamOutlined,
   ShoppingCartOutlined,
-  EyeOutlined,
 } from '@ant-design/icons';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import type { Order } from '@/types';
@@ -100,35 +99,19 @@ const AdminDashboardPage: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: any) => {
-        const normalizeStatus = (s: any): string => {
-          if (typeof s === 'string') return s;
-          const map: Record<number, string> = { 0: 'pending', 1: 'processing', 2: 'completed', 3: 'cancelled' };
-          return map[s] ?? 'unknown';
-        };
-        const normalized = normalizeStatus(status);
+        const s = String(status || 'pending');
         const colors: Record<string, string> = {
-          delivered: 'green',
-          shipped: 'blue',
-          processing: 'cyan',
-          confirmed: 'geekblue',
           pending: 'orange',
+          confirmed: 'blue',
+          shipped: 'purple',
           cancelled: 'red',
         };
         return (
-          <Tag color={colors[normalized] || 'default'}>
-            {normalized.toUpperCase()}
+          <Tag color={colors[s] || 'default'}>
+            {s.toUpperCase()}
           </Tag>
         );
       },
-    },
-    {
-      title: '',
-      key: 'actions',
-      render: (_: unknown, record: Order) => (
-        <Link to={`/admin/orders/${record.id}`}>
-          <Button type="text" size="small" icon={<EyeOutlined />} aria-label="View order" />
-        </Link>
-      ),
     },
   ];
 

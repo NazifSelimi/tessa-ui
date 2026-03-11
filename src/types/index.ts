@@ -112,11 +112,8 @@ export interface OrderItem {
 export type OrderStatus = 
   | 'pending' 
   | 'confirmed' 
-  | 'processing' 
   | 'shipped' 
-  | 'delivered' 
-  | 'cancelled'
-  | 'refunded';
+  | 'cancelled';
 
 export type PaymentMethod = 'cod' | 'online' | 'bank_transfer';
 
@@ -155,24 +152,22 @@ export interface Order {
 
 // ==================== STYLIST REQUESTS ====================
 
-export type StylistRequestStatus = 'pending' | 'approved' | 'rejected';
+export type StylistRequestStatus = 'pending' | 'approved';
 
 export interface StylistRequest {
   id: string;
   userId: string;
   userName: string;
   userEmail: string;
-  salonName?: string;
-  salonAddress?: string;
-  experience?: string;
-  licenseNumber?: string;
-  referralCode?: string;
-  documents?: string[];
+  saloonName?: string;
+  saloonAddress?: string;
+  saloonCity?: string;
+  saloonPhone?: string;
+  message?: string;
+  isApproved?: boolean;
   status: StylistRequestStatus;
-  rejectionReason?: string;
   createdAt: string;
-  reviewedAt?: string;
-  reviewedBy?: string;
+  updatedAt?: string;
 }
 
 // ==================== DISTRIBUTOR ====================
@@ -342,11 +337,10 @@ export interface CheckoutFormData {
 export interface StylistApplicationFormData {
   name: string;
   email: string;
-  salonName?: string;
-  salonAddress?: string;
-  experience?: string;
-  licenseNumber?: string;
-  referralCode?: string;
+  salonName: string;
+  salonAddress: string;
+  salonCity: string;
+  salonPhone: string;
   about?: string;
 }
 
@@ -360,7 +354,7 @@ export interface DashboardStats {
   pendingStylistRequests: number;
   lowStockProducts: number;
   recentOrders: Order[];
-  ordersByStatus: Record<OrderStatus, number>;
+  ordersByStatus: Record<string, number>;
   revenueByMonth: { month: string; revenue: number }[];
   topProducts: { product: Product; sales: number }[];
 }

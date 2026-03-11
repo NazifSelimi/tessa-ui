@@ -1,122 +1,233 @@
-import { useMemo } from 'react';
-import { Typography, Table, Tag, Card, Statistic, Row, Col } from 'antd';
+'use client';
+
+import { useState } from 'react';
+import {
+  Typography, Table, Tag, Card, Statistic, Row, Col, Input, Select,
+  Space, Modal, Descriptions, Spin, Alert,
+} from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
+import {
+  useGetDistributorCodesQuery,
+  useGetDistributorCodeStatsQuery,
+} from '@/features/admin/api';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const { Title, Text } = Typography;
 
+interface DistributorCode {
+  id: string;
+  code: string;
+  used: boolean;
+  expiresAt: string | null;
+  createdBy: string;
+  usedBy: string | null;
+  creator?: { id: string; name: string | null; email: string };
+  usedByUser?: { id: string; name: string | null; email: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function AdminDistributorsPage() {
-  // TODO: Replace with real API call when backend is ready
-  // const { data: distributors } = useGetDistributorsQuery();
-  
-  const distributors: any[] = []; // Stub data - backend not yet implemented
-  const stylistCodes: any[] = []; // Stub data - backend not yet implemented
-  
-  // Calculate stats for each distributor — memoized to avoid O(n×m) on every render
-  const { distributorStats, totalDistributors, totalCodes, totalStylists } = useMemo(() => {
-    // Build a lookup map for O(1) access instead of O(m) filter per distributor
-    const codesByDistributor = new Map<string, typeof stylistCodes>();
-    for (const c of stylistCodes) {
-      const key = c.distributorId;
-      if (!codesByDistributor.has(key)) codesByDistributor.set(key, []);
-      codesByDistributor.get(key)!.push(c);
-    }
+  const [search, setSearch] = useState('');
+  const [usedFilter, setUsedFilter] = useState<'all' | 'used' | 'unused'>('all');
+  const [page, setPage] = useState(1);
+  const [selectedCode, setSelectedCode] = useState<DistributorCode | null>(null);
+  const perPage = 20;
 
-    const stats = distributors.map(dist => {
-      const codes = codesByDistributor.get(dist.id) ?? [];
-      const activeCodeCount = codes.filter(c => c.isActive && !c.usedBy).length;
-      const usedCodeCount = codes.filter(c => c.usedBy).length;
-      return {
-        ...dist,
-        totalCodes: codes.length,
-        activeCodes: activeCodeCount,
-        usedCodes: usedCodeCount,
-        stylists: usedCodeCount,
-      };
-    });
+  const debouncedSearch = useDebounce(search, 300);
+  const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
 
-    return {
-      distributorStats: stats,
-      totalDistributors: distributors.length,
-      totalCodes: stylistCodes.length,
-      totalStylists: stylistCodes.filter(c => c.usedBy).length,
-    };
-  }, [distributors, stylistCodes]);
+  const queryParams: any = { page, per_page: perPage };
+  if (searchQuery) queryParams.search = searchQuery;
+  if (usedFilter === 'used') queryParams.used = true;
+  if (usedFilter === 'unused') queryParams.used = false;
+
+  const { data, isLoading, error } = useGetDistributorCodesQuery(queryParams);
+  const { data: stats } = useGetDistributorCodeStatsQuery();
+
+  const codes: DistributorCode[] = data?.data || [];
 
   const columns = [
     {
-      title: 'Distributor',
-      key: 'distributor',
-      render: (_: unknown, record: typeof distributorStats[0]) => (
-        <div>
-          <Text strong>{record.name}</Text>
-          <br />
-          <Text type="secondary">{record.email}</Text>
-        </div>
-      ),
+      title: 'Code',
+      dataIndex: 'code',
+      key: 'code',
+      render: (code: string) => <Text strong copyable>{code}</Text>,
     },
     {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      render: (phone: string) => phone || '-',
+      title: 'Created By',
+      key: 'creator',
+      render: (_: unknown, record: DistributorCode) => {
+        const creator = record.creator;
+        if (!creator) return <Text type="secondary">ID: {record.createdBy}</Text>;
+        return (
+          <div>
+            <Text strong>{creator.name || 'Unknown'}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>{creator.email}</Text>
+          </div>
+        );
+      },
     },
     {
-      title: 'Total Codes',
-      dataIndex: 'totalCodes',
-      key: 'totalCodes',
+      title: 'Status',
+      key: 'status',
+      render: (_: unknown, record: DistributorCode) => {
+        if (record.used) return <Tag color="blue">USED</Tag>;
+        const isExpired = record.expiresAt && new Date(record.expiresAt) < new Date();
+        if (isExpired) return <Tag color="red">EXPIRED</Tag>;
+        return <Tag color="green">ACTIVE</Tag>;
+      },
     },
     {
-      title: 'Active Codes',
-      dataIndex: 'activeCodes',
-      key: 'activeCodes',
-      render: (count: number) => (
-        <Tag color={count > 0 ? 'green' : 'default'}>{count}</Tag>
-      ),
+      title: 'Used By',
+      key: 'usedBy',
+      render: (_: unknown, record: DistributorCode) => {
+        if (!record.used || !record.usedByUser) return <Text type="secondary">—</Text>;
+        return (
+          <div>
+            <Text>{record.usedByUser.name || 'Unknown'}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>{record.usedByUser.email}</Text>
+          </div>
+        );
+      },
     },
     {
-      title: 'Stylists Referred',
-      dataIndex: 'stylists',
-      key: 'stylists',
-      render: (count: number) => <Text strong>{count}</Text>,
+      title: 'Expires',
+      dataIndex: 'expiresAt',
+      key: 'expiresAt',
+      render: (date: string | null) => date ? new Date(date).toLocaleDateString() : 'Never',
     },
     {
-      title: 'Joined',
+      title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
   ];
 
+  if (error) {
+    return (
+      <div>
+        <Title level={2}>Distributors</Title>
+        <Alert type="error" message="Failed to load distributor codes" showIcon />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <Title level={2}>Distributors</Title>
-      <Text type="secondary">Manage distributor accounts and track their referral performance</Text>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <Title level={2} style={{ margin: 0 }}>Distributor Codes</Title>
+          <Text type="secondary">Manage stylist invitation codes and track usage</Text>
+        </div>
+        <Space>
+          <Input
+            placeholder="Search codes or creators..."
+            prefix={<SearchOutlined />}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{ width: 220 }}
+            allowClear
+          />
+          <Select
+            value={usedFilter}
+            onChange={(v) => { setUsedFilter(v); setPage(1); }}
+            style={{ width: 120 }}
+          >
+            <Select.Option value="all">All</Select.Option>
+            <Select.Option value="used">Used</Select.Option>
+            <Select.Option value="unused">Unused</Select.Option>
+          </Select>
+        </Space>
+      </div>
 
-      <Row gutter={[16, 16]} style={{ margin: '24px 0' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={8}>
           <Card>
-            <Statistic title="Total Distributors" value={totalDistributors} />
+            <Statistic title="Total Codes" value={stats?.totalCodes ?? 0} loading={!stats} />
           </Card>
         </Col>
         <Col xs={8}>
           <Card>
-            <Statistic title="Total Codes Generated" value={totalCodes} />
+            <Statistic title="Active Codes" value={stats?.activeCodes ?? 0} loading={!stats} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
         <Col xs={8}>
           <Card>
-            <Statistic title="Total Referrals" value={totalStylists} />
+            <Statistic title="Used Codes" value={stats?.usedCodes ?? 0} loading={!stats} valueStyle={{ color: '#1677ff' }} />
           </Card>
         </Col>
       </Row>
 
       <Card>
-        <Table
-          dataSource={distributorStats}
-          columns={columns}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-        />
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>
+        ) : (
+          <Table
+            dataSource={codes}
+            columns={columns}
+            rowKey="id"
+            onRow={(record) => ({
+              onClick: () => setSelectedCode(record),
+              style: { cursor: 'pointer' },
+            })}
+            pagination={{
+              current: page,
+              pageSize: perPage,
+              total: data?.meta?.total || 0,
+              onChange: setPage,
+              showSizeChanger: false,
+              showTotal: (total) => `Total ${total} codes`,
+            }}
+          />
+        )}
       </Card>
+
+      {/* Detail Modal */}
+      <Modal
+        title="Code Details"
+        open={!!selectedCode}
+        onCancel={() => setSelectedCode(null)}
+        footer={null}
+        width={500}
+      >
+        {selectedCode && (
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="Code">
+              <Text copyable>{selectedCode.code}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Status">
+              {selectedCode.used
+                ? <Tag color="blue">USED</Tag>
+                : (selectedCode.expiresAt && new Date(selectedCode.expiresAt) < new Date())
+                  ? <Tag color="red">EXPIRED</Tag>
+                  : <Tag color="green">ACTIVE</Tag>
+              }
+            </Descriptions.Item>
+            <Descriptions.Item label="Created By">
+              {selectedCode.creator
+                ? `${selectedCode.creator.name || 'Unknown'} (${selectedCode.creator.email})`
+                : `ID: ${selectedCode.createdBy}`
+              }
+            </Descriptions.Item>
+            <Descriptions.Item label="Used By">
+              {selectedCode.usedByUser
+                ? `${selectedCode.usedByUser.name || 'Unknown'} (${selectedCode.usedByUser.email})`
+                : '—'
+              }
+            </Descriptions.Item>
+            <Descriptions.Item label="Expires">
+              {selectedCode.expiresAt ? new Date(selectedCode.expiresAt).toLocaleString() : 'Never'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Created">
+              {new Date(selectedCode.createdAt).toLocaleString()}
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
     </div>
   );
 }

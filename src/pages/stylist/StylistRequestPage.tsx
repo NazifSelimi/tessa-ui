@@ -1,13 +1,13 @@
 /**
  * Stylist Request Page
- * 
+ *
  * Allows users to apply to become a stylist.
  * Shows application form, status tracking, and benefits.
  */
 
-import { useState } from 'react';
-import { Typography, Card, Form, Input, Button, Result, Steps, Alert, message } from 'antd';
-import { ScissorOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import { Typography, Card, Form, Input, Button, Result, Steps, Alert, App, Spin } from 'antd';
+import { ScissorOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { store } from '@/store/index';
 import type { StylistRequestStatus } from '@/types';
@@ -21,20 +21,51 @@ const { TextArea } = Input;
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
 
 export default function StylistRequestPage() {
+  const { message } = App.useApp();
   const { user, currentRole, isStylist } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [requestStatus] = useState<StylistRequestStatus | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [requestStatus, setRequestStatus] = useState<StylistRequestStatus | null>(null);
+
+  // Check existing request status on mount
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const token = store.getState().auth.token;
+        if (!token) {
+          setCheckingStatus(false);
+          return;
+        }
+        const response = await fetch(`${API_BASE_URL}/v1/stylist-requests/status`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data?.status) {
+            setRequestStatus(result.data.status as StylistRequestStatus);
+          }
+        }
+      } catch {
+        // Silently fail — user simply hasn't submitted yet
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
+    checkStatus();
+  }, []);
 
   const handleSubmit = async (values: {
     name: string;
     email: string;
-    salonName?: string;
-    salonAddress?: string;
-    salonCity?: string;
-    salonPhone?: string;
-    experience?: string;
-    referralCode?: string;
+    salonName: string;
+    salonAddress: string;
+    salonCity: string;
+    salonPhone: string;
     about?: string;
   }) => {
     setLoading(true);
@@ -44,8 +75,8 @@ export default function StylistRequestPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           saloon_name: values.salonName,
@@ -57,11 +88,11 @@ export default function StylistRequestPage() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
+        const err = await response.json().catch(() => ({ message: 'Failed to submit application' }));
         throw new Error(err.message || 'Failed to submit application');
       }
 
-      setSubmitted(true);
+      setRequestStatus('pending');
       message.success('Application submitted successfully!');
     } catch (error: unknown) {
       notifyError(extractErrorMessage(error));
@@ -70,8 +101,16 @@ export default function StylistRequestPage() {
     }
   };
 
+  if (checkingStatus) {
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', padding: 64 }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   // Already a stylist
-  if (isStylist || currentRole === 'stylist') {
+  if (isStylist || currentRole === 'stylist' || requestStatus === 'approved') {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <Card>
@@ -91,8 +130,8 @@ export default function StylistRequestPage() {
     );
   }
 
-  // Show status based on request state
-  if (requestStatus === 'pending' || submitted) {
+  // Pending request
+  if (requestStatus === 'pending') {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <Card>
@@ -108,26 +147,6 @@ export default function StylistRequestPage() {
               { title: 'Under Review', status: 'process' },
               { title: 'Approved', status: 'wait' },
             ]}
-          />
-        </Card>
-      </div>
-    );
-  }
-
-  if (requestStatus === 'rejected') {
-    return (
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <Card>
-          <Result
-            status="error"
-            icon={<CloseCircleOutlined />}
-            title="Application Not Approved"
-            subTitle="Unfortunately, your stylist application was not approved at this time."
-            extra={
-              <Button type="primary" onClick={() => window.location.reload()}>
-                Apply Again
-              </Button>
-            }
           />
         </Card>
       </div>
@@ -182,32 +201,36 @@ export default function StylistRequestPage() {
             <Input placeholder="your@email.com" />
           </Form.Item>
 
-          <Form.Item name="salonName" label="Salon/Business Name" rules={[{ required: true, message: 'Please enter your salon name' }]}>
+          <Form.Item
+            name="salonName"
+            label="Salon/Business Name"
+            rules={[{ required: true, message: 'Please enter your salon name' }]}
+          >
             <Input placeholder="Where do you work?" />
           </Form.Item>
 
-          <Form.Item name="salonAddress" label="Salon Address" rules={[{ required: true, message: 'Please enter the salon address' }]}>
+          <Form.Item
+            name="salonAddress"
+            label="Salon Address"
+            rules={[{ required: true, message: 'Please enter the salon address' }]}
+          >
             <Input placeholder="Business address" />
           </Form.Item>
 
-          <Form.Item name="salonCity" label="Salon City" rules={[{ required: true, message: 'Please enter the salon city' }]}>
+          <Form.Item
+            name="salonCity"
+            label="Salon City"
+            rules={[{ required: true, message: 'Please enter the salon city' }]}
+          >
             <Input placeholder="City" />
           </Form.Item>
 
-          <Form.Item name="salonPhone" label="Salon Phone" rules={[{ required: true, message: 'Please enter the salon phone number' }]}>
-            <Input placeholder="+1 234 567 8900" />
-          </Form.Item>
-
-          <Form.Item name="experience" label="Years of Experience">
-            <Input placeholder="e.g., 5 years" />
-          </Form.Item>
-
           <Form.Item
-            name="referralCode"
-            label="Distributor Referral Code (Optional)"
-            extra="If a distributor referred you, enter their code here"
+            name="salonPhone"
+            label="Salon Phone"
+            rules={[{ required: true, message: 'Please enter the salon phone number' }]}
           >
-            <Input placeholder="e.g., DIST2024" />
+            <Input placeholder="+1 234 567 8900" />
           </Form.Item>
 
           <Form.Item name="about" label="Tell Us About Yourself">

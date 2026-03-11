@@ -1,43 +1,45 @@
 'use client';
 
 import { useState } from 'react';
-import { Typography, Table, Tag, Select, Input, Space, Card, Button, Modal, Descriptions, App } from 'antd';
-import { SearchOutlined, CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
-import type { StylistRequest, StylistRequestStatus } from '@/types';
-import { useGetStylistRequestsQuery, useApproveStylistRequestMutation, useRejectStylistRequestMutation } from '@/features/admin/api';
+import {
+  Typography, Table, Tag, Select, Input, Space, Card, Button, Modal,
+  Descriptions, App,
+} from 'antd';
+import {
+  SearchOutlined, CheckOutlined, CloseOutlined, EyeOutlined,
+  ExclamationCircleOutlined,
+} from '@ant-design/icons';
+import type { StylistRequest } from '@/types';
+import {
+  useGetStylistRequestsQuery,
+  useApproveStylistRequestMutation,
+  useRejectStylistRequestMutation,
+} from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
-import React from 'react';
 
 const { Title, Text } = Typography;
-
-const statusColors: Record<StylistRequestStatus, string> = {
-  pending: 'orange',
-  approved: 'green',
-  rejected: 'red',
-};
 
 const statusOptions = [
   { value: 'all', label: 'All Status' },
   { value: 'pending', label: 'Pending' },
   { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
 ];
 
 export default function AdminStylistRequestsPage() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<StylistRequest | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  
+
   const debouncedSearch = useDebounce(search, 300);
-  
+
   // Only search if 2+ characters
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
-  
+
   // RTK Query
   const { data, isLoading } = useGetStylistRequestsQuery({
     page: currentPage,
@@ -45,41 +47,57 @@ export default function AdminStylistRequestsPage() {
     status: statusFilter === 'all' ? undefined : statusFilter,
     search: searchQuery,
   });
-  
-  const [approveStylist] = useApproveStylistRequestMutation();
-  const [rejectStylist] = useRejectStylistRequestMutation();
+
+  const [approveStylist, { isLoading: isApproving }] = useApproveStylistRequestMutation();
+  const [rejectStylist, { isLoading: isRejecting }] = useRejectStylistRequestMutation();
 
   const requests = data?.data ?? [];
   const pagination = data?.meta;
 
-  const handleApprove = async (requestId: string) => {
-    try {
-      await approveStylist(requestId).unwrap();
-      message.success('Stylist request approved');
-    } catch (_error) {
-      message.error('Failed to approve request');
-    }
+  /** Derive display status from backend response. */
+  const getStatus = (record: StylistRequest): 'pending' | 'approved' => {
+    if (record.isApproved === true || record.status === 'approved') return 'approved';
+    return 'pending';
+  };
+
+  const handleApprove = (requestId: string) => {
+    modal.confirm({
+      title: 'Approve Stylist Request',
+      icon: <ExclamationCircleOutlined style={{ color: '#52c41a' }} />,
+      content: 'This will upgrade the user to a stylist role with access to stylist pricing.',
+      okText: 'Approve',
+      okType: 'primary',
+      onOk: async () => {
+        try {
+          await approveStylist(requestId).unwrap();
+          message.success('Stylist request approved — user role upgraded.');
+        } catch {
+          message.error('Failed to approve request.');
+        }
+      },
+    });
   };
 
   const handleRejectClick = (requestId: string) => {
     setRejectingId(requestId);
+    setRejectReason('');
     setShowRejectModal(true);
   };
 
   const handleRejectConfirm = async () => {
     if (!rejectingId) return;
     try {
-      await rejectStylist({ id: rejectingId, reason: rejectReason }).unwrap();
-      message.success('Stylist request rejected');
+      await rejectStylist({ id: rejectingId, reason: rejectReason || undefined }).unwrap();
+      message.success('Stylist request rejected and removed.');
       setShowRejectModal(false);
       setRejectReason('');
       setRejectingId(null);
-    } catch (_error) {
-      message.error('Failed to reject request');
+    } catch {
+      message.error('Failed to reject request.');
     }
   };
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const pendingCount = requests.filter((r) => getStatus(r) === 'pending').length;
 
   const columns = [
     {
@@ -95,30 +113,32 @@ export default function AdminStylistRequestsPage() {
     },
     {
       title: 'Salon',
-      dataIndex: 'salonName',
       key: 'salon',
-      render: (name: string | null) => name || '-',
+      render: (_: unknown, record: StylistRequest) => (
+        <div>
+          <Text>{record.saloonName || '-'}</Text>
+          {record.saloonCity && (
+            <>
+              <br />
+              <Text type="secondary" style={{ fontSize: 12 }}>{record.saloonCity}</Text>
+            </>
+          )}
+        </div>
+      ),
     },
     {
-      title: 'Experience',
-      dataIndex: 'experience',
-      key: 'experience',
-      render: (exp: string | null) => exp || '-',
-    },
-    {
-      title: 'Referral Code',
-      dataIndex: 'referralCode',
-      key: 'referralCode',
-      render: (code: string | null) => code ? <Tag>{code}</Tag> : '-',
+      title: 'Phone',
+      key: 'phone',
+      render: (_: unknown, record: StylistRequest) => record.saloonPhone || '-',
     },
     {
       title: 'Status',
-      dataIndex: 'status',
       key: 'status',
-      render: (status: StylistRequestStatus | null) => {
-        if (!status) return <Tag>-</Tag>;
-        const s = typeof status === 'string' ? status : String(status ?? '');
-        return <Tag color={(statusColors as Record<string, string>)[s]}>{s.toUpperCase()}</Tag>;
+      render: (_: unknown, record: StylistRequest) => {
+        const status = getStatus(record);
+        return status === 'approved'
+          ? <Tag color="green">APPROVED</Tag>
+          : <Tag color="orange">PENDING</Tag>;
       },
     },
     {
@@ -130,33 +150,38 @@ export default function AdminStylistRequestsPage() {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: unknown, record: StylistRequest) => (
-        <Space>
-          <Button type="text" icon={<EyeOutlined />} onClick={() => setSelectedRequest(record)}>
-            View
-          </Button>
-          {record.status === 'pending' && (
-            <>
-              <Button 
-                type="text" 
-                icon={<CheckOutlined />} 
-                style={{ color: '#52c41a' }}
-                onClick={() => handleApprove(record.id)}
-              >
-                Approve
-              </Button>
-              <Button 
-                type="text" 
-                danger
-                icon={<CloseOutlined />}
-                onClick={() => handleRejectClick(record.id)}
-              >
-                Reject
-              </Button>
-            </>
-          )}
-        </Space>
-      ),
+      render: (_: unknown, record: StylistRequest) => {
+        const status = getStatus(record);
+        return (
+          <Space onClick={(e) => e.stopPropagation()}>
+            <Button type="text" icon={<EyeOutlined />} onClick={() => setSelectedRequest(record)}>
+              View
+            </Button>
+            {status === 'pending' && (
+              <>
+                <Button
+                  type="text"
+                  icon={<CheckOutlined />}
+                  style={{ color: '#52c41a' }}
+                  loading={isApproving}
+                  onClick={() => handleApprove(record.id)}
+                >
+                  Approve
+                </Button>
+                <Button
+                  type="text"
+                  danger
+                  icon={<CloseOutlined />}
+                  loading={isRejecting}
+                  onClick={() => handleRejectClick(record.id)}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
@@ -175,13 +200,13 @@ export default function AdminStylistRequestsPage() {
             placeholder="Search (min 2 chars)..."
             prefix={<SearchOutlined />}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
             style={{ width: 200 }}
             allowClear
           />
           <Select
             value={statusFilter}
-            onChange={setStatusFilter}
+            onChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}
             options={statusOptions}
             style={{ width: 130 }}
           />
@@ -194,6 +219,10 @@ export default function AdminStylistRequestsPage() {
           columns={columns}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => setSelectedRequest(record),
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: currentPage,
             pageSize: pagination?.per_page ?? 10,
@@ -204,6 +233,7 @@ export default function AdminStylistRequestsPage() {
         />
       </Card>
 
+      {/* Reject Reason Modal */}
       <Modal
         title="Reject Stylist Request"
         open={showRejectModal}
@@ -214,10 +244,10 @@ export default function AdminStylistRequestsPage() {
         }}
         onOk={handleRejectConfirm}
         okText="Reject"
-        okButtonProps={{ danger: true }}
+        okButtonProps={{ danger: true, loading: isRejecting }}
       >
         <div style={{ marginBottom: 16 }}>
-          <Text>Please provide a reason for rejection:</Text>
+          <Text>Provide a reason for rejection (optional):</Text>
         </div>
         <Input.TextArea
           value={rejectReason}
@@ -227,47 +257,61 @@ export default function AdminStylistRequestsPage() {
         />
       </Modal>
 
+      {/* Application Detail Modal */}
       <Modal
         title="Application Details"
         open={!!selectedRequest}
         onCancel={() => setSelectedRequest(null)}
-        footer={selectedRequest?.status === 'pending' ? [
-          <Button key="reject" danger onClick={() => {
-            setSelectedRequest(null);
-            if (selectedRequest) handleRejectClick(selectedRequest.id);
-          }}>
+        footer={selectedRequest && getStatus(selectedRequest) === 'pending' ? [
+          <Button
+            key="reject"
+            danger
+            loading={isRejecting}
+            onClick={() => {
+              setSelectedRequest(null);
+              if (selectedRequest) handleRejectClick(selectedRequest.id);
+            }}
+          >
             Reject
           </Button>,
-          <Button key="approve" type="primary" onClick={() => {
-            if (selectedRequest) {
-              handleApprove(selectedRequest.id);
-              setSelectedRequest(null);
-            }
-          }}>
+          <Button
+            key="approve"
+            type="primary"
+            loading={isApproving}
+            onClick={() => {
+              if (selectedRequest) {
+                handleApprove(selectedRequest.id);
+                setSelectedRequest(null);
+              }
+            }}
+          >
             Approve
           </Button>,
-        ] : null}
+        ] : [
+          <Button key="close" onClick={() => setSelectedRequest(null)}>Close</Button>,
+        ]}
         width={500}
       >
         {selectedRequest && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="Name">{selectedRequest.userName}</Descriptions.Item>
-            <Descriptions.Item label="Email">{selectedRequest.userEmail}</Descriptions.Item>
-            <Descriptions.Item label="Salon Name">{selectedRequest.salonName || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Salon Address">{selectedRequest.salonAddress || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Experience">{selectedRequest.experience || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Referral Code">{selectedRequest.referralCode || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Name">{selectedRequest.userName || 'Unknown'}</Descriptions.Item>
+            <Descriptions.Item label="Email">{selectedRequest.userEmail || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Salon Name">{selectedRequest.saloonName || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Salon Address">{selectedRequest.saloonAddress || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Salon City">{selectedRequest.saloonCity || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Salon Phone">{selectedRequest.saloonPhone || '-'}</Descriptions.Item>
+            {selectedRequest.message && (
+              <Descriptions.Item label="Message">{selectedRequest.message}</Descriptions.Item>
+            )}
             <Descriptions.Item label="Status">
-              <Tag color={(statusColors as Record<string, string>)[typeof selectedRequest.status === 'string' ? selectedRequest.status : String(selectedRequest.status ?? '')]}>{(typeof selectedRequest.status === 'string' ? selectedRequest.status : String(selectedRequest.status ?? '')).toUpperCase()}</Tag>
+              {getStatus(selectedRequest) === 'approved'
+                ? <Tag color="green">APPROVED</Tag>
+                : <Tag color="orange">PENDING</Tag>
+              }
             </Descriptions.Item>
             <Descriptions.Item label="Submitted">
-              {new Date(selectedRequest.createdAt).toLocaleString()}
+              {selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString() : '-'}
             </Descriptions.Item>
-            {selectedRequest.reviewedAt && (
-              <Descriptions.Item label="Reviewed">
-                {new Date(selectedRequest.reviewedAt).toLocaleString()}
-              </Descriptions.Item>
-            )}
           </Descriptions>
         )}
       </Modal>

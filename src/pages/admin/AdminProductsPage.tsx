@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, Switch, App, Modal } from 'antd';
+import { useState, useCallback } from 'react';
+import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal } from 'antd';
+import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
 import { 
@@ -13,8 +14,35 @@ import {
 import type { Product } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { convertToWebP } from '@/shared/utils/imageUtils';
 
 const { Title, Text } = Typography;
+
+/** The fields the backend actually accepts (matching controller validation). */
+interface ProductFormValues {
+  name: string;
+  price: number;
+  stylist_price?: number;
+  quantity: number;
+  category_id: number;
+  brand_id: number;
+  description?: string;
+}
+
+/**
+ * Build snapshot of current form values from a Product so we can diff later.
+ */
+function snapshotFromProduct(product: Product): Record<string, unknown> {
+  return {
+    name: product.name,
+    price: Number(product.price ?? 0),
+    stylist_price: Number(product.stylistPrice ?? 0),
+    quantity: product.quantity ?? 0,
+    category_id: Number(product.categoryId || (product.category as any)?.id || 0),
+    brand_id: Number(product.brandId || (product.brand as any)?.id || 0),
+    description: product.description ?? '',
+  };
+}
 
 export default function AdminProductsPage() {
   const { modal, message } = App.useApp();
@@ -22,13 +50,12 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [form] = Form.useForm();
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [form] = Form.useForm<ProductFormValues>();
 
   const debouncedSearch = useDebounce(search, 300);
-  
-  // Only search if 2+ characters
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
-  
+
   const { data, isLoading, refetch } = useGetProductsQuery({
     page,
     perPage: 20,
@@ -38,26 +65,27 @@ export default function AdminProductsPage() {
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: brands = [] } = useGetBrandsQuery();
 
-  const [createProduct] = useCreateProductMutation();
-  const [updateProduct] = useUpdateProductMutation();
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
-  const [updateStock] = useUpdateProductStockMutation();
+  const [_updateStock] = useUpdateProductStockMutation();
 
-  const handleEdit = (product: Product) => {
+  /* ============================== handlers ============================== */
+
+  const handleEdit = useCallback((product: Product) => {
     setEditingProduct(product);
+    setFileList([]);
     form.setFieldsValue({
       name: product.name,
-      brand_id: product.brandId || (product.brand as any)?.id,
-      category_id: product.categoryId || (product.category as any)?.id,
-      description: product.description,
-      price: product.price,
-      compare_at_price: product.compareAtPrice,
-      quantity: product.quantity,
-      featured: product.featured || false,
-      tags: product.tags || [],
+      price: Number(product.price ?? 0),
+      stylist_price: Number(product.stylistPrice ?? 0),
+      quantity: product.quantity ?? 0,
+      category_id: Number(product.categoryId || (product.category as any)?.id),
+      brand_id: Number(product.brandId || (product.brand as any)?.id),
+      description: product.description ?? '',
     });
     setModalOpen(true);
-  };
+  }, [form]);
 
   const handleDelete = (productId: string | number) => {
     modal.confirm({
@@ -74,78 +102,86 @@ export default function AdminProductsPage() {
     });
   };
 
-  const _handleStockUpdate = (productId: string | number, quantity: number) => {
-    modal.confirm({
-      title: 'Update Stock',
-      content: `Set stock to ${quantity} units?`,
-      onOk: async () => {
-        try {
-          await updateStock({ id: String(productId), quantity, operation: 'set' }).unwrap();
-          message.success('Stock updated successfully');
-        } catch (error: any) {
-          message.error(error?.data?.message || 'Failed to update stock');
-        }
-      },
-    });
-  };
-
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
       const formData = new FormData();
-      
-      // Map form fields to backend snake_case names
-      const fieldMap: Record<string, string> = {
-        name: 'name',
-        description: 'description',
-        price: 'price',
-        compare_at_price: 'compare_at_price',
-        quantity: 'quantity',
-        category_id: 'category_id',
-        brand_id: 'brand_id',
-      };
-
-      Object.entries(fieldMap).forEach(([formKey, apiKey]) => {
-        if (values[formKey] !== undefined && values[formKey] !== null) {
-          formData.append(apiKey, String(values[formKey]));
-        }
-      });
-
-      // Boolean must be sent as '1'/'0' for Laravel validation
-      formData.append('featured', values.featured ? '1' : '0');
-
-      // Handle tags array
-      if (values.tags && values.tags.length > 0) {
-        values.tags.forEach((tag: string, i: number) => {
-          formData.append(`tags[${i}]`, tag);
-        });
-      }
-
-      // Handle image uploads
-      if (values.images?.fileList) {
-        values.images.fileList.forEach((file: any) => {
-          if (file.originFileObj) {
-            formData.append('images[]', file.originFileObj);
-          }
-        });
-      }
 
       if (editingProduct) {
+        /* ---- UPDATE: only send fields that actually changed ---- */
+        const original = snapshotFromProduct(editingProduct);
+        const fieldKeys: (keyof ProductFormValues)[] = [
+          'name', 'price', 'stylist_price', 'quantity', 'category_id', 'brand_id', 'description',
+        ];
+        let hasChanges = false;
+        for (const key of fieldKeys) {
+          const newVal = values[key] ?? '';
+          const oldVal = original[key] ?? '';
+          if (String(newVal) !== String(oldVal)) {
+            formData.append(key, String(newVal));
+            hasChanges = true;
+          }
+        }
+
+        // Handle image upload — always send if a new file was picked
+        if (fileList.length > 0 && fileList[0].originFileObj) {
+          const optimizedFile = await convertToWebP(fileList[0].originFileObj as File, 0.82);
+          formData.append('image', optimizedFile, optimizedFile.name);
+          hasChanges = true;
+        }
+
+        if (!hasChanges) {
+          message.info('No changes detected');
+          return;
+        }
+
         await updateProduct({ id: String(editingProduct.id), data: formData }).unwrap();
         message.success('Product updated successfully');
       } else {
+        /* ---- CREATE: send all fields ---- */
+        formData.append('name', values.name);
+        formData.append('price', String(values.price));
+        if (values.stylist_price !== undefined && values.stylist_price !== null) {
+          formData.append('stylist_price', String(values.stylist_price));
+        }
+        formData.append('quantity', String(values.quantity));
+        formData.append('category_id', String(values.category_id));
+        formData.append('brand_id', String(values.brand_id));
+        if (values.description) {
+          formData.append('description', values.description);
+        }
+
+        // Handle image upload
+        if (fileList.length > 0 && fileList[0].originFileObj) {
+          const optimizedFile = await convertToWebP(fileList[0].originFileObj as File, 0.82);
+          formData.append('image', optimizedFile, optimizedFile.name);
+        }
+
         await createProduct(formData).unwrap();
         message.success('Product created successfully');
       }
-      
+
       setModalOpen(false);
       setEditingProduct(null);
+      setFileList([]);
       form.resetFields();
       refetch();
     } catch (error: any) {
       message.error(error?.data?.message || 'Failed to save product');
     }
   };
+
+  /** Upload props — prevent automatic upload, keep single file in state. */
+  const uploadProps: UploadProps = {
+    beforeUpload: () => false,
+    fileList,
+    onChange: ({ fileList: newList }) => setFileList(newList.slice(-1)),
+    accept: 'image/jpeg,image/jpg,image/png,image/gif,image/webp',
+    maxCount: 1,
+    listType: 'picture-card',
+  };
+
+  /* ============================== columns ============================== */
 
   const columns = [
     {
@@ -154,7 +190,7 @@ export default function AdminProductsPage() {
       render: (_: unknown, record: Product) => (
         <Space>
           <img
-            src={record.images?.[0] || record.image || "/placeholder.svg"}
+            src={record.image || "/placeholder.svg"}
             alt={record.name}
             style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
           />
@@ -207,13 +243,17 @@ export default function AdminProductsPage() {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, record: Product) => (
-        <Space>
+        <Space onClick={(e) => e.stopPropagation()}>
           <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
         </Space>
       ),
     },
   ];
+
+  /* ============================== render ============================== */
+
+  const isEditing = !!editingProduct;
 
   return (
     <div>
@@ -236,6 +276,7 @@ export default function AdminProductsPage() {
             icon={<PlusOutlined />}
             onClick={() => {
               setEditingProduct(null);
+              setFileList([]);
               form.resetFields();
               setModalOpen(true);
             }}
@@ -251,6 +292,10 @@ export default function AdminProductsPage() {
           columns={columns}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => handleEdit(record),
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: page,
             pageSize: 20,
@@ -263,24 +308,27 @@ export default function AdminProductsPage() {
       </Card>
 
       <Modal
-        title={editingProduct ? 'Edit Product' : 'Add Product'}
+        title={isEditing ? 'Edit Product' : 'Add Product'}
         open={modalOpen}
         onOk={handleSave}
+        confirmLoading={isCreating || isUpdating}
         onCancel={() => {
           setModalOpen(false);
           setEditingProduct(null);
+          setFileList([]);
           form.resetFields();
         }}
         width={700}
+        destroyOnClose
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+        <Form form={form} layout="vertical" preserve={false}>
+          <Form.Item name="name" label="Product Name" rules={[{ required: !isEditing, message: 'Please enter product name' }]}>
             <Input placeholder="Product name" />
           </Form.Item>
-          
+
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="brand_id" label="Brand" rules={[{ required: true }]}>
+              <Form.Item name="brand_id" label="Brand" rules={[{ required: !isEditing, message: 'Please select a brand' }]}>
                 <Select placeholder="Select brand">
                   {brands.map((b) => (
                     <Select.Option key={b.id} value={Number(b.id)}>{b.name}</Select.Option>
@@ -288,9 +336,8 @@ export default function AdminProductsPage() {
                 </Select>
               </Form.Item>
             </Col>
-            
             <Col span={12}>
-              <Form.Item name="category_id" label="Category" rules={[{ required: true }]}>
+              <Form.Item name="category_id" label="Category" rules={[{ required: !isEditing, message: 'Please select a category' }]}>
                 <Select placeholder="Select category">
                   {categories.map((c) => (
                     <Select.Option key={c.id} value={Number(c.id)}>{c.name}</Select.Option>
@@ -302,72 +349,50 @@ export default function AdminProductsPage() {
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="price" label="Price (MKD)" rules={[{ required: true }]}>
-                <InputNumber
-                  min={0}
-                  prefix="MKD"
-                  placeholder="0.00"
-                  style={{ width: '100%' }}
-                  precision={2}
-                />
+              <Form.Item name="price" label="Price (MKD)" rules={[{ required: !isEditing, message: 'Please enter price' }]}>
+                <InputNumber min={0} prefix="MKD" placeholder="0.00" style={{ width: '100%' }} precision={2} />
               </Form.Item>
             </Col>
-            
             <Col span={8}>
-              <Form.Item name="compare_at_price" label="Compare Price (MKD)">
-                <InputNumber
-                  min={0}
-                  prefix="MKD"
-                  placeholder="0.00"
-                  style={{ width: '100%' }}
-                  precision={2}
-                />
+              <Form.Item
+                name="stylist_price"
+                label="Stylist Price (MKD)"
+                extra={!isEditing ? 'Auto-calculated as 90% of price if empty' : undefined}
+              >
+                <InputNumber min={0} prefix="MKD" placeholder="0.00" style={{ width: '100%' }} precision={2} />
               </Form.Item>
             </Col>
-
             <Col span={8}>
-              <Form.Item name="quantity" label="Stock Qty" rules={[{ required: true }]}>
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  style={{ width: '100%' }}
-                />
+              <Form.Item name="quantity" label="Stock Qty" rules={[{ required: !isEditing, message: 'Please enter quantity' }]}>
+                <InputNumber min={0} placeholder="0" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="featured" label="Featured" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-          
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={3} placeholder="Product description" />
           </Form.Item>
 
-          <Form.Item name="tags" label="Tags">
-            <Select
-              mode="tags"
-              placeholder="Add tags (press Enter)"
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-
-          <Form.Item name="images" label="Product Images" extra="Upload product images (max 2MB each)">
-            <Upload
-              listType="picture-card"
-              multiple
-              maxCount={5}
-              beforeUpload={() => false}
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
-              </div>
+          <Form.Item label="Product Image" extra="Images are automatically converted to WebP for optimization. Max 10MB.">
+            <Upload {...uploadProps}>
+              {fileList.length === 0 && (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
             </Upload>
+            {isEditing && editingProduct.image && fileList.length === 0 && (
+              <div style={{ marginTop: 8 }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>Current image:</Text>
+                <br />
+                <img
+                  src={editingProduct.image}
+                  alt="Current"
+                  style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, marginTop: 4 }}
+                />
+              </div>
+            )}
           </Form.Item>
         </Form>
       </Modal>
