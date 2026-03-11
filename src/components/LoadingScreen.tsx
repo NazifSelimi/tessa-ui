@@ -25,7 +25,7 @@ const LoadingScreen = () => {
   }, []);
 
   return (
-    <div id="loading-screen">
+    <div id="loading-screen" role="status" aria-label="Loading Tessa Hair Care">
       <svg width="268.000000pt" height="102.000000pt" viewBox="0 0 268.000000 102.000000" preserveAspectRatio="xMidYMid meet">
         <g transform="translate(0.000000,102.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none">
           {/* First shape */}

@@ -5,7 +5,7 @@
  * Mobile-first responsive design approach
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Google Font loaded via <link> in index.html for non-render-blocking */
 
 /* =============================================================================
    CSS VARIABLES - Design Tokens
