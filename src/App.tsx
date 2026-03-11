@@ -6,13 +6,13 @@ import { store, persistor } from './store';
 import { PersistGate } from 'redux-persist/integration/react';
 import './App.css';
 
-// Eagerly loaded components (needed immediately)
-import MainLayout from './components/MainLayout';
+// Eagerly loaded components (no antd dependency)
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 
-// Lazy loaded layouts (only loaded when visiting their route groups)
+// Lazy loaded layouts (defers antd + component imports until route matches)
+const MainLayout = lazy(() => import('./components/MainLayout'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 
 // Lazy loaded pages (code splitting for better performance)
@@ -55,7 +55,7 @@ function App() {
       <ErrorBoundary>
         <Provider store={store}>
           <PersistGate loading={<div style={{ padding: '20px' }}>Loading...</div>} persistor={persistor}>
-          <ConfigProvider>
+          <ConfigProvider theme={{ cssVar: { prefix: 'ant' } }}>
             <AntApp>
             <Router
               future={{

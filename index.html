@@ -38,10 +38,12 @@
       </nav>
     </noscript>
     <script>
-    // Early-fetch: start the default products API call in parallel with JS download/parse.
-    // RTK Query will still make its own request, but the browser may reuse the TCP connection.
+    // Early-fetch products API + preload LCP images before React boots
     (function(){var u='/api/v1/products?page=1&perPage=12&sort=featured&min_price=0&max_price=1000000000';
-    window.__PREFETCH=fetch(u,{headers:{'Accept':'application/json'}}).then(function(r){return r.json()}).catch(function(){return null})})();
+    window.__PREFETCH=fetch(u,{headers:{'Accept':'application/json'}}).then(function(r){return r.json()}).then(function(d){
+      if(d&&d.data){for(var i=0;i<Math.min(4,d.data.length);i++){var s=d.data[i].image||(d.data[i].images&&d.data[i].images[0]);
+      if(s){var l=document.createElement('link');l.rel='preload';l.as='image';l.href=s;if(i===0)l.fetchPriority='high';document.head.appendChild(l)}}}
+      return d}).catch(function(){return null})})();
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

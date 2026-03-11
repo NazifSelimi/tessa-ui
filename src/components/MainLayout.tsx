@@ -26,11 +26,14 @@ import {
   MailOutlined,
   PhoneOutlined,
 } from '@ant-design/icons';
+import { lazy, Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
-import CartDrawer from './CartDrawer';
-import MobileBottomNav from './MobileBottomNav';
 import Logo from './Logo';
+
+// Lazy-load heavy components not needed for initial paint
+const CartDrawer = lazy(() => import('./CartDrawer'));
+const MobileBottomNav = lazy(() => import('./MobileBottomNav'));
 
 const { Text } = Typography;
 
@@ -354,11 +357,15 @@ export default function MainLayout() {
         </div>
       </footer>
 
-      {/* Cart Drawer */}
-      <CartDrawer />
+      {/* Cart Drawer (lazy — not visible on initial paint) */}
+      <Suspense fallback={null}>
+        <CartDrawer />
+      </Suspense>
 
-      {/* Mobile Bottom Navigation — outside Layout, plain element */}
-      <MobileBottomNav />
+      {/* Mobile Bottom Navigation (lazy — renders on mobile only) */}
+      <Suspense fallback={null}>
+        <MobileBottomNav />
+      </Suspense>
 
       {/* Mobile-specific styles */}
       <style>{`
