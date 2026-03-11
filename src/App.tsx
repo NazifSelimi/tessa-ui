@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { ConfigProvider, App as AntApp } from 'antd';
 import { store, persistor } from './store';
 import { PersistGate } from 'redux-persist/integration/react';
 import './App.css';
@@ -11,7 +10,8 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 
-// Lazy loaded layouts (defers antd + component imports until route matches)
+// Lazy loaded layouts & providers (defers antd + component imports until route matches)
+const AntdProvider = lazy(() => import('./components/AntdProvider'));
 const MainLayout = lazy(() => import('./components/MainLayout'));
 const AdminLayout = lazy(() => import('./components/AdminLayout'));
 
@@ -55,8 +55,6 @@ function App() {
       <ErrorBoundary>
         <Provider store={store}>
           <PersistGate loading={<div style={{ padding: '20px' }}>Loading...</div>} persistor={persistor}>
-          <ConfigProvider theme={{ cssVar: { prefix: 'ant' } }}>
-            <AntApp>
             <Router
               future={{
                 v7_startTransition: true,
@@ -65,6 +63,7 @@ function App() {
             >
               <ScrollToTop />
               <Suspense fallback={<LoadingScreen />}>
+              <AntdProvider>
                 <Routes>
               {/* Main shop routes (all wrapped in MainLayout for nav + footer) */}
               <Route element={<MainLayout />}>
@@ -149,10 +148,9 @@ function App() {
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />}  />
             </Routes>
+              </AntdProvider>
             </Suspense>
           </Router>
-        </AntApp>
-        </ConfigProvider>
       </PersistGate>
     </Provider>
     </ErrorBoundary>

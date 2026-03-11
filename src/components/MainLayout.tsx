@@ -279,13 +279,13 @@ export default function MainLayout() {
         </div>
       </Drawer>
 
-      {/* Main Content */}
-      <main className="main-content" style={{ flex: 1 }}>
+      {/* Main Content — min-height pushes footer below fold to prevent CLS */}
+      <main className="main-content" style={{ flex: 1, minHeight: 'calc(100vh - 64px)' }}>
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="site-footer" style={{ background: '#1a1a1a', padding: '48px 24px 24px', minHeight: 480 }}>
+      <footer className="site-footer" style={{ background: '#1a1a1a', padding: '48px 24px 24px', minHeight: 240 }}>
         <div className="site-footer__inner" style={{ maxWidth: 1200, margin: '0 auto' }}>
           {/* Logo & About — centered with flex */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '32px' }}>
