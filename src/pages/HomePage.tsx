@@ -13,9 +13,9 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Row, Col, Input, Select, Checkbox, Card, Typography, 
   Space, Button, Spin, Empty, Drawer, Pagination,
-  Badge, Tag, Alert, InputNumber, Grid,
+  Badge, Tag, Alert, InputNumber, Grid, Tabs, List,
 } from 'antd';
-import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
+import { SearchOutlined, FilterOutlined, CloseOutlined, AppstoreOutlined, TagsOutlined, SortAscendingOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
 import { useTranslation } from 'react-i18next';
@@ -36,11 +36,11 @@ export default function HomePage() {
   const { t } = useTranslation();
 
   const sortOptions = useMemo(() => [
-    { value: 'featured', label: t('home.featured') },
-    { value: 'price_asc', label: t('home.priceLowHigh') },
-    { value: 'price_desc', label: t('home.priceHighLow') },
     { value: 'name_asc', label: t('home.nameAZ') },
     { value: 'name_desc', label: t('home.nameZA') },
+    { value: 'price_asc', label: t('home.priceLowHigh') },
+    { value: 'price_desc', label: t('home.priceHighLow') },
+    { value: 'newest', label: t('home.newest') },
   ], [t]);
 
   // Filter states from URL
@@ -52,7 +52,7 @@ export default function HomePage() {
     Number(searchParams.get('max_price')) || 1000000000
   ]);
   const [inStockOnly, setInStockOnly] = useState(searchParams.get('in_stock') === 'true');
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'featured');
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'name_asc');
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
 
   // Debounce search to prevent API spam (only call backend 300ms after user stops typing)
@@ -164,7 +164,7 @@ const isLoading = isLoadingProducts && !productsData;
     setBrand('');
     setPriceRange([0, 1000]);
     setInStockOnly(false);
-    setSortBy('featured');
+    setSortBy('name_asc');
     setCurrentPage(1);
     setSearchParams({});
   };
@@ -476,11 +476,184 @@ const handlePageChange = (page: number) => {
         height="85vh"
         styles={{
           header: { borderBottom: '1px solid #f0f0f0' },
-          body: { paddingBottom: 80 },
+          body: { padding: 0, paddingBottom: 80 },
         }}
         className="mobile-filter-drawer"
       >
-        {filterContent}
+        <Tabs
+          defaultActiveKey="categories"
+          centered
+          style={{ width: '100%' }}
+          items={[
+            {
+              key: 'categories',
+              label: (
+                <span><AppstoreOutlined /> {t('product.category')}</span>
+              ),
+              children: (
+                <div style={{ padding: '0 16px' }}>
+                  <List
+                    loading={isLoadingCategories}
+                    dataSource={[{ id: '', name: t('home.allCategories') }, ...categories]}
+                    renderItem={(cat) => (
+                      <List.Item
+                        onClick={() => {
+                          setCategory(cat.id ? String(cat.id) : '');
+                          updateUrlParam('category', cat.id ? String(cat.id) : null);
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          background: String(cat.id || '') === category ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
+                          fontWeight: String(cat.id || '') === category ? 600 : 400,
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                        }}
+                      >
+                        {cat.name}
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              ),
+            },
+            {
+              key: 'brands',
+              label: (
+                <span><TagsOutlined /> {t('product.brand')}</span>
+              ),
+              children: (
+                <div style={{ padding: '0 16px' }}>
+                  <List
+                    loading={isLoadingBrands}
+                    dataSource={[{ id: '', name: t('home.allBrands') }, ...brands]}
+                    renderItem={(b) => (
+                      <List.Item
+                        onClick={() => {
+                          setBrand(b.id ? String(b.id) : '');
+                          updateUrlParam('brand', b.id ? String(b.id) : null);
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          background: String(b.id || '') === brand ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
+                          fontWeight: String(b.id || '') === brand ? 600 : 400,
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                        }}
+                      >
+                        {b.name}
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              ),
+            },
+            {
+              key: 'filters',
+              label: (
+                <span><FilterOutlined /> {t('home.filters')}</span>
+              ),
+              children: (
+                <div style={{ padding: '0 16px' }}>
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {/* Search */}
+                    <Input
+                      placeholder={t('home.searchProducts')}
+                      prefix={<SearchOutlined />}
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onBlur={() => {
+                        if (searchQuery) {
+                          updateUrlParam('search', searchQuery);
+                        } else {
+                          updateUrlParam('search', null);
+                        }
+                      }}
+                      allowClear
+                    />
+
+                    {/* Price Range */}
+                    <div>
+                      <Text strong>{t('home.priceRange')} (MKD)</Text>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+                        <InputNumber
+                          placeholder="Min"
+                          min={0}
+                          value={priceRange[0] || undefined}
+                          onChange={(val) => {
+                            const newMin = val ?? 0;
+                            setPriceRange([newMin, priceRange[1]]);
+                          }}
+                          onBlur={() => updateUrlParam('min_price', priceRange[0] || null)}
+                          style={{ flex: 1, minWidth: 0 }}
+                        />
+                        <span style={{ flexShrink: 0 }}>–</span>
+                        <InputNumber
+                          placeholder="Max"
+                          min={0}
+                          value={priceRange[1] < 1000000000 ? priceRange[1] : undefined}
+                          onChange={(val) => {
+                            const newMax = val ?? 1000000000;
+                            setPriceRange([priceRange[0], newMax]);
+                          }}
+                          onBlur={() => updateUrlParam('max_price', priceRange[1] < 1000000000 ? priceRange[1] : null)}
+                          style={{ flex: 1, minWidth: 0 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* In Stock */}
+                    <Checkbox
+                      checked={inStockOnly}
+                      onChange={(e) => {
+                        setInStockOnly(e.target.checked);
+                        updateUrlParam('in_stock', e.target.checked ? 'true' : null);
+                      }}
+                    >
+                      {t('home.inStockOnly')}
+                    </Checkbox>
+
+                    {/* Clear Filters */}
+                    {activeFiltersCount > 0 && (
+                      <Button block danger ghost onClick={clearAllFilters}>
+                        {t('home.clearFilters')}
+                      </Button>
+                    )}
+                  </Space>
+                </div>
+              ),
+            },
+            {
+              key: 'sort',
+              label: (
+                <span><SortAscendingOutlined /> {t('home.sortBy')}</span>
+              ),
+              children: (
+                <div style={{ padding: '0 16px' }}>
+                  <List
+                    dataSource={sortOptions}
+                    renderItem={(opt) => (
+                      <List.Item
+                        onClick={() => {
+                          setSortBy(opt.value);
+                          updateUrlParam('sort', opt.value);
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          background: opt.value === sortBy ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
+                          fontWeight: opt.value === sortBy ? 600 : 400,
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                        }}
+                      >
+                        {opt.label}
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              ),
+            },
+          ]}
+        />
         
         {/* Sticky apply button at bottom of drawer */}
         <div className="mobile-filter-drawer__footer">
@@ -491,7 +664,7 @@ const handlePageChange = (page: number) => {
             onClick={() => setMobileFiltersOpen(false)}
             style={{ height: 48 }}
           >
-            Show {totalProducts} {t('home.products')}
+            {t('home.showing')} {totalProducts} {t('home.products')}
           </Button>
         </div>
       </Drawer>

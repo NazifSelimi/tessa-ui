@@ -25,6 +25,8 @@ import {
   TwitterOutlined,
   MailOutlined,
   PhoneOutlined,
+  AppstoreOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +34,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
 
 // Lazy-load heavy components not needed for initial paint
 const CartDrawer = lazy(() => import('./CartDrawer'));
@@ -45,6 +48,8 @@ export default function MainLayout() {
   const { user, currentRole, logout, isAdmin, isDistributor, isStylist } = useAuth();
   const { itemCount, openDrawer } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: brands = [] } = useGetBrandsQuery();
 
   const handleLogout = async () => {
     await logout();
@@ -84,6 +89,32 @@ export default function MainLayout() {
     const closeMobile = () => setMobileMenuOpen(false);
     const items: any[] = [
       { key: 'shop', label: <Link to="/" onClick={closeMobile}>{t('nav.shop')}</Link> },
+      {
+        key: 'categories',
+        icon: <AppstoreOutlined />,
+        label: t('product.category'),
+        children: categories.map(cat => ({
+          key: `cat-${cat.id}`,
+          label: (
+            <Link to={`/?category=${cat.id}`} onClick={closeMobile}>
+              {cat.name}
+            </Link>
+          ),
+        })),
+      },
+      {
+        key: 'brands',
+        icon: <TagsOutlined />,
+        label: t('product.brand'),
+        children: brands.map(b => ({
+          key: `brand-${b.id}`,
+          label: (
+            <Link to={`/?brand=${b.id}`} onClick={closeMobile}>
+              {b.name}
+            </Link>
+          ),
+        })),
+      },
       { key: 'hair-survey', label: <Link to="/hair-survey" onClick={closeMobile}>{t('nav.hairQuiz')}</Link> },
     ];
 
@@ -105,7 +136,7 @@ export default function MainLayout() {
     }
 
     return items;
-  }, [isStylist, isDistributor, isAdmin, currentRole]);
+  }, [isStylist, isDistributor, isAdmin, currentRole, categories, brands]);
 
   const getRoleBadgeClass = () => {
     switch (currentRole) {
