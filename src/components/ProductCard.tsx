@@ -22,9 +22,11 @@ const { Text, Title } = Typography;
 interface ProductCardProps {
   product: Product;
   showQuickAdd?: boolean;
+  /** Set true for above-the-fold cards to disable lazy loading and boost LCP */
+  priority?: boolean;
 }
 
-const ProductCard = memo(function ProductCard({ product, showQuickAdd = true }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, priority = false }: ProductCardProps) {
   const { addItem } = useCart();
   const PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%23f3f3f3"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="Arial, Helvetica, sans-serif" font-size="20">No image</text></svg>';
   
@@ -69,7 +71,10 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true }: 
               src={product.image || product.images?.[0] || PLACEHOLDER}
               alt={product.name ?? 'Product image'}
               className="product-card__image"
-              loading="lazy"
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : undefined}
+              width={300}
+              height={400}
               onError={handleImageError}
             />
             

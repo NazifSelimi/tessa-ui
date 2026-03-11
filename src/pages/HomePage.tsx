@@ -408,9 +408,9 @@ const handlePageChange = (page: number) => {
           ) : products.length > 0 ? (
             <>
               <Row gutter={[12, 12]}>
-                {products.map((product) => (
+                {products.map((product, index) => (
                   <Col key={product.id} xs={12} sm={12} md={8} lg={6}>
-                    <ProductCard product={product} />
+                    <ProductCard product={product} priority={index < 4} />
                   </Col>
                 ))}
               </Row>

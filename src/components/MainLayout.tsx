@@ -282,7 +282,7 @@ export default function MainLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="site-footer" style={{ background: '#1a1a1a', padding: '48px 24px 24px' }}>
+      <footer className="site-footer" style={{ background: '#1a1a1a', padding: '48px 24px 24px', minHeight: 280 }}>
         <div className="site-footer__inner" style={{ maxWidth: 1200, margin: '0 auto' }}>
           {/* Logo & About — centered with flex */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '32px' }}>
