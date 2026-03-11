@@ -12,11 +12,8 @@ import type { OrderStatus, PaymentStatus, StylistRequestStatus, CouponStatus } f
 const orderStatusConfig: Record<OrderStatus, { color: string; label: string }> = {
   pending: { color: 'orange', label: 'Pending' },
   confirmed: { color: 'blue', label: 'Confirmed' },
-  processing: { color: 'cyan', label: 'Processing' },
   shipped: { color: 'purple', label: 'Shipped' },
-  delivered: { color: 'green', label: 'Delivered' },
   cancelled: { color: 'red', label: 'Cancelled' },
-  refunded: { color: 'default', label: 'Refunded' },
 };
 
 // Payment status colors and labels
@@ -32,7 +29,6 @@ const paymentStatusConfig: Record<PaymentStatus, { color: string; label: string 
 const stylistRequestStatusConfig: Record<StylistRequestStatus, { color: string; label: string }> = {
   pending: { color: 'orange', label: 'Pending Review' },
   approved: { color: 'green', label: 'Approved' },
-  rejected: { color: 'red', label: 'Rejected' },
 };
 
 // Coupon status colors and labels
