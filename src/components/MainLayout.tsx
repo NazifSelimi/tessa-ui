@@ -320,13 +320,13 @@ export default function MainLayout() {
               {/* Social Media */}
               <div style={{ marginTop: '16px' }}>
                 <Space size={4}>
-                  <a href="#" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Facebook">
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Facebook">
                     <FacebookOutlined />
                   </a>
-                  <a href="#" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Instagram">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Instagram">
                     <InstagramOutlined />
                   </a>
-                  <a href="#" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Twitter">
+                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Twitter">
                     <TwitterOutlined />
                   </a>
                 </Space>
@@ -343,12 +343,12 @@ export default function MainLayout() {
             flexWrap: 'wrap',
             gap: '16px'
           }}>
-            <Text style={{ color: '#666', fontSize: 13 }}>
+            <Text style={{ color: '#999', fontSize: 13 }}>
               © {new Date().getFullYear()} Tessa Hair Care. All rights reserved.
             </Text>
             <Space size={24}>
-              <a href="#" style={{ color: '#666', fontSize: 13 }}>Privacy Policy</a>
-              <a href="#" style={{ color: '#666', fontSize: 13 }}>Terms of Service</a>
+              <Link to="/privacy" style={{ color: '#999', fontSize: 13 }}>Privacy Policy</Link>
+              <Link to="/terms" style={{ color: '#999', fontSize: 13 }}>Terms of Service</Link>
             </Space>
           </div>
         </div>

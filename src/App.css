@@ -435,7 +435,7 @@ button {
 
 .product-card__brand {
   font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  color: #555;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 2px;
@@ -444,7 +444,7 @@ button {
 
 .product-card__category {
   font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+  color: #666;
   margin-bottom: var(--spacing-xs);
   display: block;
   text-transform: capitalize;
@@ -528,12 +528,12 @@ button {
 }
 
 .price-display__current--stylist {
-  color: var(--color-accent);
+  color: #15803d;
 }
 
 .price-display__original {
   font-weight: 400;
-  color: var(--color-text-muted);
+  color: #777;
   text-decoration: line-through;
 }
 
