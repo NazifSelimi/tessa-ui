@@ -13,7 +13,7 @@
  * Accessible to both authenticated users and guests.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Card, Space, Progress, Alert, Spin, Tag } from 'antd';
 import {
@@ -22,6 +22,7 @@ import {
   CheckOutlined,
   ExperimentOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useGetRecommendationsMutation } from '@/features/recommendations/api';
 import type { RecommendationPayload } from '@/types';
 
@@ -38,34 +39,27 @@ interface SurveyOption {
   emoji: string;
 }
 
-const HAIR_TYPE_OPTIONS: SurveyOption[] = [
-  { id: 1, label: 'Straight', description: 'Little to no curl pattern', emoji: '➖' },
-  { id: 2, label: 'Wavy', description: 'Loose, S-shaped waves', emoji: '〰️' },
-  { id: 3, label: 'Curly', description: 'Defined spiral curls', emoji: '🌀' },
-  { id: 4, label: 'Coily', description: 'Tight coils or zig-zag pattern', emoji: '🔄' },
+const HAIR_TYPE_KEYS = [
+  { id: 1, labelKey: 'survey.straight', descKey: 'survey.straightDesc', emoji: '➖' },
+  { id: 2, labelKey: 'survey.wavy', descKey: 'survey.wavyDesc', emoji: '〰️' },
+  { id: 3, labelKey: 'survey.curly', descKey: 'survey.curlyDesc', emoji: '🌀' },
+  { id: 4, labelKey: 'survey.coily', descKey: 'survey.coilyDesc', emoji: '🔄' },
 ];
 
-const CONCERN_OPTIONS: SurveyOption[] = [
-  { id: 1, label: 'Dryness', description: 'Hair feels rough or straw-like', emoji: '🏜️' },
-  { id: 2, label: 'Frizz', description: 'Flyaways and lack of smoothness', emoji: '⚡' },
-  { id: 3, label: 'Breakage', description: 'Split ends, breakage from heat or chemicals', emoji: '💔' },
-  { id: 4, label: 'Thinning', description: 'Hair loss or reduced volume', emoji: '🍂' },
-  { id: 5, label: 'Oiliness', description: 'Greasy roots, flat hair', emoji: '💧' },
-  { id: 6, label: 'Dandruff', description: 'Flaky, itchy scalp', emoji: '❄️' },
-  { id: 7, label: 'Color Protection', description: 'Keep color vibrant and lasting', emoji: '🎨' },
+const CONCERN_KEYS = [
+  { id: 1, labelKey: 'survey.dryness', descKey: 'survey.drynessDesc', emoji: '🏜️' },
+  { id: 2, labelKey: 'survey.frizz', descKey: 'survey.frizzDesc', emoji: '⚡' },
+  { id: 3, labelKey: 'survey.breakage', descKey: 'survey.breakageDesc', emoji: '💔' },
+  { id: 4, labelKey: 'survey.thinning', descKey: 'survey.thinningDesc', emoji: '🍂' },
+  { id: 5, labelKey: 'survey.oiliness', descKey: 'survey.oilinessDesc', emoji: '💧' },
+  { id: 6, labelKey: 'survey.dandruff', descKey: 'survey.dandruffDesc', emoji: '❄️' },
+  { id: 7, labelKey: 'survey.colorProtection', descKey: 'survey.colorProtectionDesc', emoji: '🎨' },
 ];
 
-interface BudgetOption {
-  value: string;   // "min-max" sent to backend
-  label: string;
-  description: string;
-  emoji: string;
-}
-
-const BUDGET_OPTIONS: BudgetOption[] = [
-  { value: '0-300',   label: 'Budget-Friendly', description: 'Under R300', emoji: '💰' },
-  { value: '300-600', label: 'Mid-Range',       description: 'R300 – R600', emoji: '💳' },
-  { value: '600-10000', label: 'Premium',        description: 'R600+', emoji: '✨' },
+const BUDGET_KEYS = [
+  { value: '0-300', labelKey: 'survey.budgetFriendly', descKey: 'survey.budgetFriendlyDesc', emoji: '💰' },
+  { value: '300-600', labelKey: 'survey.midRange', descKey: 'survey.midRangeDesc', emoji: '💳' },
+  { value: '600-10000', labelKey: 'survey.premium', descKey: 'survey.premiumDesc', emoji: '✨' },
 ];
 
 const TOTAL_STEPS = 4;
@@ -75,6 +69,7 @@ const TOTAL_STEPS = 4;
 /* ------------------------------------------------------------------ */
 
 export default function HairSurveyPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [getRecommendations, { isLoading, error }] = useGetRecommendationsMutation();
 
@@ -84,6 +79,19 @@ export default function HairSurveyPage() {
   const [primaryConcernId, setPrimaryConcernId] = useState<number | null>(null);
   const [secondaryConcernId, setSecondaryConcernId] = useState<number | null>(null);
   const [budgetRange, setBudgetRange] = useState<string | null>(null);
+
+  const HAIR_TYPE_OPTIONS: SurveyOption[] = useMemo(() =>
+    HAIR_TYPE_KEYS.map(k => ({ id: k.id, label: t(k.labelKey), description: t(k.descKey), emoji: k.emoji })),
+    [t],
+  );
+  const CONCERN_OPTIONS: SurveyOption[] = useMemo(() =>
+    CONCERN_KEYS.map(k => ({ id: k.id, label: t(k.labelKey), description: t(k.descKey), emoji: k.emoji })),
+    [t],
+  );
+  const BUDGET_OPTIONS = useMemo(() =>
+    BUDGET_KEYS.map(k => ({ value: k.value, label: t(k.labelKey), description: t(k.descKey), emoji: k.emoji })),
+    [t],
+  );
 
   /* ----- navigation ----- */
   const canGoNext = (): boolean => {
@@ -159,7 +167,7 @@ export default function HairSurveyPage() {
               <Text type="secondary" style={{ fontSize: 13 }}>{opt.description}</Text>
               {isSelected && (
                 <Tag color="blue" style={{ marginTop: 8 }}>
-                  <CheckOutlined /> Selected
+                  <CheckOutlined /> {t('survey.selected')}
                 </Tag>
               )}
             </Card>
@@ -199,7 +207,7 @@ export default function HairSurveyPage() {
               <Text type="secondary" style={{ fontSize: 13 }}>{opt.description}</Text>
               {isSelected && (
                 <Tag color="blue" style={{ marginTop: 8 }}>
-                  <CheckOutlined /> Selected
+                  <CheckOutlined /> {t('survey.selected')}
                 </Tag>
               )}
             </Card>
@@ -219,9 +227,9 @@ export default function HairSurveyPage() {
       case 1:
         return (
           <>
-            <Title level={3}>What's your hair type?</Title>
+            <Title level={3}>{t('survey.whatHairType')}</Title>
             <Paragraph type="secondary">
-              Select the option that best describes your natural hair texture.
+              {t('survey.hairTypeDescription')}
             </Paragraph>
             {renderIdGrid(HAIR_TYPE_OPTIONS, hairTypeId, setHairTypeId)}
           </>
@@ -230,9 +238,9 @@ export default function HairSurveyPage() {
       case 2:
         return (
           <>
-            <Title level={3}>What's your primary hair concern?</Title>
+            <Title level={3}>{t('survey.primaryConcern')}</Title>
             <Paragraph type="secondary">
-              Choose the one issue you'd most like to address.
+              {t('survey.primaryConcernDescription')}
             </Paragraph>
             {renderIdGrid(CONCERN_OPTIONS, primaryConcernId, setPrimaryConcernId)}
           </>
@@ -241,9 +249,9 @@ export default function HairSurveyPage() {
       case 3:
         return (
           <>
-            <Title level={3}>Any secondary concern?</Title>
+            <Title level={3}>{t('survey.secondaryConcern')}</Title>
             <Paragraph type="secondary">
-              Optional — pick another concern or skip this step.
+              {t('survey.secondaryConcernDescription')}
             </Paragraph>
             {renderIdGrid(CONCERN_OPTIONS, secondaryConcernId, setSecondaryConcernId, primaryConcernId)}
             {secondaryConcernId != null && (
@@ -252,7 +260,7 @@ export default function HairSurveyPage() {
                 onClick={() => setSecondaryConcernId(null)}
                 style={{ marginTop: 12 }}
               >
-                Clear selection
+                {t('survey.clearSelection')}
               </Button>
             )}
           </>
@@ -261,9 +269,9 @@ export default function HairSurveyPage() {
       case 4:
         return (
           <>
-            <Title level={3}>What's your budget?</Title>
+            <Title level={3}>{t('survey.whatBudget')}</Title>
             <Paragraph type="secondary">
-              Optional — helps us tailor product recommendations to your price range.
+              {t('survey.budgetDescription')}
             </Paragraph>
             {renderBudgetGrid()}
             {budgetRange && (
@@ -272,7 +280,7 @@ export default function HairSurveyPage() {
                 onClick={() => setBudgetRange(null)}
                 style={{ marginTop: 12 }}
               >
-                Clear selection
+                {t('survey.clearSelection')}
               </Button>
             )}
           </>
@@ -292,9 +300,9 @@ export default function HairSurveyPage() {
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <ExperimentOutlined style={{ fontSize: 40, color: 'var(--color-primary, #1677ff)' }} />
-        <Title level={2} style={{ marginTop: 8 }}>Hair Care Survey</Title>
+        <Title level={2} style={{ marginTop: 8 }}>{t('survey.hairCareSurvey')}</Title>
         <Paragraph type="secondary">
-          Answer a few quick questions and we'll recommend the best products for you.
+          {t('survey.surveyIntro')}
         </Paragraph>
       </div>
 
@@ -306,7 +314,7 @@ export default function HairSurveyPage() {
         style={{ marginBottom: 32 }}
       />
       <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 24 }}>
-        Step {step} of {TOTAL_STEPS}
+        {t('survey.stepOf', { step, total: TOTAL_STEPS })}
       </Text>
 
       {/* Error */}
@@ -315,14 +323,14 @@ export default function HairSurveyPage() {
           type="error"
           showIcon
           closable
-          message="Something went wrong"
-          description={apiError.data?.message || 'Please try again.'}
+          message={t('survey.somethingWentWrong')}
+          description={apiError.data?.message || t('survey.pleaseTryAgain')}
           style={{ marginBottom: 24 }}
         />
       )}
 
       {/* Step Content */}
-      <Spin spinning={isLoading} tip="Getting your recommendations…">
+      <Spin spinning={isLoading} tip={t('survey.gettingRecommendations')}>
         {renderStep()}
       </Spin>
 
@@ -358,7 +366,7 @@ export default function HairSurveyPage() {
           disabled={step === 1 || isLoading}
           size="large"
         >
-          Back
+          {t('common.back')}
         </Button>
 
         <Space>
@@ -370,7 +378,7 @@ export default function HairSurveyPage() {
               disabled={!canGoNext() || isLoading}
               size="large"
             >
-              Next
+              {t('common.next')}
             </Button>
           ) : (
             <Button
@@ -381,7 +389,7 @@ export default function HairSurveyPage() {
               loading={isLoading}
               size="large"
             >
-              Get Recommendations
+              {t('survey.getRecommendations')}
             </Button>
           )}
         </Space>

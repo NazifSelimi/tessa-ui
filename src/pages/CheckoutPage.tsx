@@ -23,6 +23,7 @@ import {
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiscounts } from '@/hooks/useDiscounts';
+import { useTranslation } from 'react-i18next';
 import { useCreateOrderMutation } from '@/features/orders/api';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
@@ -47,6 +48,7 @@ export default function CheckoutPage() {
   const { isProfessional, user } = useAuth();
   const { appliedCode, applyCode, removeCode, discountAmount, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
+  const { t } = useTranslation();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
@@ -78,12 +80,12 @@ export default function CheckoutPage() {
   if (items.length === 0 && !orderComplete) {
     return (
       <div className="empty-state">
-        <Title level={4}>Your cart is empty</Title>
+        <Title level={4}>{t('cart.yourCartIsEmpty')}</Title>
         <Text type="secondary" className="empty-state__description">
-          Add some products before checking out.
+          {t('checkout.emptyCartCheckout')}
         </Text>
         <Button type="primary" onClick={() => navigate('/')}>
-          Continue Shopping
+          {t('cart.continueShopping')}
         </Button>
       </div>
     );
@@ -94,14 +96,14 @@ export default function CheckoutPage() {
     return (
       <Result
         status="success"
-        title="Order Placed Successfully!"
-        subTitle="Thank you for your order. You will receive a confirmation email shortly."
+        title={t('checkout.orderSuccess')}
+        subTitle={t('checkout.orderSuccessMessage')}
         extra={[
           <Button type="primary" key="home" onClick={() => navigate('/')}>
-            Continue Shopping
+            {t('cart.continueShopping')}
           </Button>,
           <Button key="orders" onClick={() => navigate('/account/orders')}>
-            View Orders
+            {t('auth.myOrders')}
           </Button>,
         ]}
       />
@@ -169,9 +171,9 @@ export default function CheckoutPage() {
 
   // Step items
   const steps = [
-    { title: 'Shipping', icon: <ShoppingOutlined /> },
-    { title: 'Payment', icon: <CreditCardOutlined /> },
-    { title: 'Review', icon: <CheckCircleOutlined /> },
+    { title: t('checkout.shipping'), icon: <ShoppingOutlined /> },
+    { title: t('checkout.payment'), icon: <CreditCardOutlined /> },
+    { title: t('checkout.review'), icon: <CheckCircleOutlined /> },
   ];
 
   return (
@@ -182,9 +184,9 @@ export default function CheckoutPage() {
         onClick={() => navigate(-1)}
         style={{ marginBottom: 8, padding: '4px 0' }}
       >
-        Back
+        {t('common.back')}
       </Button>
-      <Title level={2} style={{ marginBottom: 'var(--spacing-xl)' }}>Checkout</Title>
+      <Title level={2} style={{ marginBottom: 'var(--spacing-xl)' }}>{t('checkout.title')}</Title>
 
       <Steps 
         current={currentStep} 
@@ -198,7 +200,7 @@ export default function CheckoutPage() {
         <Col xs={24} lg={14}>
           {/* Step 1: Shipping */}
           {currentStep === 0 && (
-            <Card title="Shipping Information" className="checkout-card">
+            <Card title={t('checkout.shippingInfo')} className="checkout-card">
               <Form
                 form={shippingForm}
                 layout="vertical"
@@ -209,8 +211,8 @@ export default function CheckoutPage() {
                   <Col xs={24} sm={12}>
                     <Form.Item
                       name="firstName"
-                      label="First Name"
-                      rules={[{ required: true, message: 'Required' }]}
+                      label={t('checkout.firstName')}
+                      rules={[{ required: true, message: t('common.required') }]}
                     >
                       <Input size="large" />
                     </Form.Item>
@@ -218,8 +220,8 @@ export default function CheckoutPage() {
                   <Col xs={24} sm={12}>
                     <Form.Item
                       name="lastName"
-                      label="Last Name"
-                      rules={[{ required: true, message: 'Required' }]}
+                      label={t('checkout.lastName')}
+                      rules={[{ required: true, message: t('common.required') }]}
                     >
                       <Input size="large" />
                     </Form.Item>
@@ -230,10 +232,10 @@ export default function CheckoutPage() {
                   <Col xs={24} sm={12}>
                     <Form.Item
                       name="email"
-                      label="Email"
+                      label={t('checkout.email')}
                       rules={[
-                        { required: true, message: 'Required' },
-                        { type: 'email', message: 'Invalid email' },
+                        { required: true, message: t('common.required') },
+                        { type: 'email', message: t('auth.invalidEmail') },
                       ]}
                     >
                       <Input size="large" type="email" />
@@ -242,8 +244,8 @@ export default function CheckoutPage() {
                   <Col xs={24} sm={12}>
                     <Form.Item
                       name="phone"
-                      label="Phone"
-                      rules={[{ required: true, message: 'Required' }]}
+                      label={t('checkout.phone')}
+                      rules={[{ required: true, message: t('common.required') }]}
                     >
                       <Input size="large" type="tel" />
                     </Form.Item>
@@ -252,8 +254,8 @@ export default function CheckoutPage() {
 
                 <Form.Item
                   name="address"
-                  label="Street Address"
-                  rules={[{ required: true, message: 'Required' }]}
+                  label={t('checkout.address')}
+                  rules={[{ required: true, message: t('common.required') }]}
                 >
                   <Input size="large" />
                 </Form.Item>
@@ -262,8 +264,8 @@ export default function CheckoutPage() {
                   <Col xs={24} sm={8}>
                     <Form.Item
                       name="city"
-                      label="City"
-                      rules={[{ required: true, message: 'Required' }]}
+                      label={t('checkout.city')}
+                      rules={[{ required: true, message: t('common.required') }]}
                     >
                       <Input size="large" />
                     </Form.Item>
@@ -271,8 +273,8 @@ export default function CheckoutPage() {
                   <Col xs={12} sm={8}>
                     <Form.Item
                       name="state"
-                      label="State"
-                      rules={[{ required: true, message: 'Required' }]}
+                      label={t('checkout.state')}
+                      rules={[{ required: true, message: t('common.required') }]}
                     >
                       <Input size="large" />
                     </Form.Item>
@@ -280,8 +282,8 @@ export default function CheckoutPage() {
                   <Col xs={12} sm={8}>
                     <Form.Item
                       name="zip"
-                      label="ZIP Code"
-                      rules={[{ required: true, message: 'Required' }]}
+                      label={t('checkout.zip')}
+                      rules={[{ required: true, message: t('common.required') }]}
                     >
                       <Input size="large" />
                     </Form.Item>
@@ -290,7 +292,7 @@ export default function CheckoutPage() {
 
                 <Form.Item style={{ marginBottom: 0, marginTop: 'var(--spacing-lg)' }}>
                   <Button type="primary" htmlType="submit" size="large" block>
-                    Continue to Payment
+                    {t('checkout.continueToPayment')}
                   </Button>
                 </Form.Item>
               </Form>
@@ -299,20 +301,20 @@ export default function CheckoutPage() {
 
           {/* Step 2: Payment */}
           {currentStep === 1 && (
-            <Card title="Payment Method" className="checkout-card">
+            <Card title={t('checkout.paymentMethod')} className="checkout-card">
               <Alert
-                message="Cash on Delivery (COD)"
-                description="Payment will be collected upon delivery. No online payment is required."
+                message={t('checkout.cod')}
+                description={t('checkout.codDescription')}
                 type="info"
                 showIcon
                 style={{ marginBottom: 'var(--spacing-xl)' }}
               />
               <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
                 <Button onClick={() => setCurrentStep(0)} size="large">
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button type="primary" size="large" style={{ flex: 1 }} onClick={() => setCurrentStep(2)}>
-                  Review Order
+                  {t('checkout.reviewOrder')}
                 </Button>
               </div>
             </Card>
@@ -320,11 +322,11 @@ export default function CheckoutPage() {
 
           {/* Step 3: Review */}
           {currentStep === 2 && (
-            <Card title="Order Review" className="checkout-card">
+            <Card title={t('checkout.orderReview')} className="checkout-card">
               {/* Shipping Address */}
               <div style={{ marginBottom: 'var(--spacing-xl)' }}>
                 <Text strong style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
-                  Shipping Address
+                  {t('checkout.shippingAddress')}
                 </Text>
                 <Paragraph type="secondary" style={{ margin: 0 }}>
                   {shippingData?.firstName} {shippingData?.lastName}<br />
@@ -339,10 +341,10 @@ export default function CheckoutPage() {
               {/* Payment Method */}
               <div style={{ marginBottom: 'var(--spacing-xl)' }}>
                 <Text strong style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
-                  Payment Method
+                  {t('checkout.paymentMethod')}
                 </Text>
                 <Text type="secondary">
-                  Cash on Delivery (COD)
+                  {t('checkout.cod')}
                 </Text>
               </div>
 
@@ -351,7 +353,7 @@ export default function CheckoutPage() {
               {/* Items */}
               <div>
                 <Text strong style={{ display: 'block', marginBottom: 'var(--spacing-md)' }}>
-                  Items ({items.length})
+                  {t('checkout.items')} ({items.length})
                 </Text>
                 <Space direction="vertical" style={{ width: '100%' }}>
                   {items.map(item => (
@@ -387,7 +389,7 @@ export default function CheckoutPage() {
 
               <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
                 <Button onClick={() => setCurrentStep(1)} size="large">
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button 
                   type="primary" 
@@ -396,7 +398,7 @@ export default function CheckoutPage() {
                   loading={placingOrder}
                   style={{ flex: 1 }}
                 >
-                  {placingOrder ? 'Processing...' : `Place Order • ${formatPrice(total)}`}
+                  {placingOrder ? t('checkout.processing') : `${t('checkout.placeOrder')} • ${formatPrice(total)}`}
                 </Button>
               </div>
             </Card>
@@ -406,7 +408,7 @@ export default function CheckoutPage() {
         {/* Order Summary Sidebar */}
         <Col xs={24} lg={10}>
           <Card className="order-summary">
-            <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>Order Summary</Title>
+            <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>{t('checkout.orderSummary')}</Title>
 
             {/* Items Preview */}
             <div className="order-summary__items">
@@ -438,7 +440,7 @@ export default function CheckoutPage() {
               ))}
               {items.length > 3 && (
                 <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
-                  +{items.length - 3} more items
+                  +{items.length - 3} {t('checkout.moreItems')}
                 </Text>
               )}
             </div>
@@ -448,7 +450,7 @@ export default function CheckoutPage() {
             {/* Discount Code */}
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <Text strong style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
-                Discount Code
+                {t('checkout.discountCode')}
               </Text>
               
               {appliedCode ? (
@@ -466,13 +468,13 @@ export default function CheckoutPage() {
                     size="small"
                     icon={<DeleteOutlined />}
                     onClick={removeCode}
-                    aria-label="Remove discount code"
+                    aria-label={t('checkout.removeDiscount')}
                   />
                 </div>
               ) : (
                 <Space.Compact style={{ width: '100%' }}>
                   <Input
-                    placeholder="Enter code"
+                    placeholder={t('checkout.enterCode')}
                     value={discountInput}
                     onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
                     onPressEnter={handleApplyDiscount}
@@ -482,7 +484,7 @@ export default function CheckoutPage() {
                     onClick={handleApplyDiscount}
                     loading={isValidating}
                   >
-                    Apply
+                    {t('checkout.apply')}
                   </Button>
                 </Space.Compact>
               )}
@@ -496,7 +498,7 @@ export default function CheckoutPage() {
               {/* Role hint */}
               {!appliedCode && isProfessional && (
                 <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
-                  You may have access to professional discount codes.
+                  {t('checkout.professionalHint')}
                 </Text>
               )}
             </div>
@@ -506,34 +508,34 @@ export default function CheckoutPage() {
             {/* Price Breakdown */}
             <Space direction="vertical" style={{ width: '100%' }}>
               <div className="price-row">
-                <Text type="secondary">Subtotal</Text>
+                <Text type="secondary">{t('cart.subtotal')}</Text>
                 <Text>{formatPrice(subtotal)}</Text>
               </div>
               
               {discountAmount > 0 && (
                 <div className="price-row">
-                  <Text type="secondary">Discount ({discountPercent}%)</Text>
+                  <Text type="secondary">{t('checkout.discount')} ({discountPercent}%)</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(discountAmount)}</Text>
                 </div>
               )}
               
               <div className="price-row">
-                <Text type="secondary">Shipping</Text>
-                <Text>{shippingCost === 0 ? 'Free' : formatPrice(shippingCost)}</Text>
+                <Text type="secondary">{t('checkout.shippingCost')}</Text>
+                <Text>{shippingCost === 0 ? t('checkout.free') : formatPrice(shippingCost)}</Text>
               </div>
             </Space>
 
             <Divider />
 
             <div className="price-row" style={{ fontSize: 'var(--font-size-lg)' }}>
-              <Text strong>Total</Text>
+              <Text strong>{t('checkout.total')}</Text>
               <Text strong style={{ fontSize: 'var(--font-size-xl)' }}>{formatPrice(total)}</Text>
             </div>
 
             {/* Free Shipping Progress */}
             {shippingCost > 0 && (
               <Alert
-                message={`Add ${formatPrice(3000 - subtotal + discountAmount)} more for free shipping`}
+                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(3000 - subtotal + discountAmount) })}`}
                 type="info"
                 showIcon
                 style={{ marginTop: 'var(--spacing-lg)' }}

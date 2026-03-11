@@ -27,9 +27,11 @@ import {
   PhoneOutlined,
 } from '@ant-design/icons';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import Logo from './Logo';
+import LanguageSwitcher from './LanguageSwitcher';
 
 // Lazy-load heavy components not needed for initial paint
 const CartDrawer = lazy(() => import('./CartDrawer'));
@@ -39,6 +41,7 @@ const { Text } = Typography;
 
 export default function MainLayout() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, currentRole, logout, isAdmin, isDistributor, isStylist } = useAuth();
   const { itemCount, openDrawer } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,51 +57,51 @@ export default function MainLayout() {
     { 
       key: 'account', 
       icon: <UserOutlined />,
-      label: 'My Account', 
+      label: t('auth.myAccount'), 
       onClick: () => { navigate('/account'); setMobileMenuOpen(false); }
     },
     { 
       key: 'orders', 
       icon: <FileTextOutlined />,
-      label: 'My Orders', 
+      label: t('auth.myOrders'), 
       onClick: () => { navigate('/account/orders'); setMobileMenuOpen(false); }
     },
     { type: 'divider' as const },
     { 
       key: 'logout', 
       icon: <LogoutOutlined />,
-      label: 'Logout', 
+      label: t('auth.logout'), 
       danger: true,
       onClick: handleLogout,
     },
   ] : [
-    { key: 'login', label: 'Sign In', onClick: () => { navigate('/login'); setMobileMenuOpen(false); } },
-    { key: 'register', label: 'Create Account', onClick: () => { navigate('/register'); setMobileMenuOpen(false); } },
+    { key: 'login', label: t('auth.signIn'), onClick: () => { navigate('/login'); setMobileMenuOpen(false); } },
+    { key: 'register', label: t('auth.createAccount'), onClick: () => { navigate('/register'); setMobileMenuOpen(false); } },
   ], [user, navigate, handleLogout]);
 
   // Main navigation items — memoized to avoid new objects/JSX on every render
   const navItems = useMemo(() => {
     const closeMobile = () => setMobileMenuOpen(false);
     const items: any[] = [
-      { key: 'shop', label: <Link to="/" onClick={closeMobile}>Shop</Link> },
-      { key: 'hair-survey', label: <Link to="/hair-survey" onClick={closeMobile}>Hair Quiz</Link> },
+      { key: 'shop', label: <Link to="/" onClick={closeMobile}>{t('nav.shop')}</Link> },
+      { key: 'hair-survey', label: <Link to="/hair-survey" onClick={closeMobile}>{t('nav.hairQuiz')}</Link> },
     ];
 
     // Role-specific items
     if (isStylist) {
-      items.push({ key: 'quick-order', label: <Link to="/stylist/quick-order" onClick={closeMobile}>Quick Order</Link> });
+      items.push({ key: 'quick-order', label: <Link to="/stylist/quick-order" onClick={closeMobile}>{t('nav.quickOrder')}</Link> });
     }
     
     if (isDistributor) {
-      items.push({ key: 'distributor', label: <Link to="/distributor" onClick={closeMobile}>Distributor Portal</Link> });
+      items.push({ key: 'distributor', label: <Link to="/distributor" onClick={closeMobile}>{t('nav.distributorPortal')}</Link> });
     }
     
     if (isAdmin) {
-      items.push({ key: 'admin', label: <Link to="/admin" onClick={closeMobile}>Admin Dashboard</Link> });
+      items.push({ key: 'admin', label: <Link to="/admin" onClick={closeMobile}>{t('nav.adminDashboard')}</Link> });
     }
     
     if (currentRole === 'guest' || currentRole === 'user') {
-      items.push({ key: 'become-stylist', label: <Link to="/stylist/request" onClick={closeMobile}>Become a Stylist</Link> });
+      items.push({ key: 'become-stylist', label: <Link to="/stylist/request" onClick={closeMobile}>{t('nav.becomeStylist')}</Link> });
     }
 
     return items;
@@ -140,6 +143,9 @@ export default function MainLayout() {
 
           {/* Right Side Actions */}
           <div className="site-header__actions">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Role Badge - Desktop Only */}
             {currentRole !== 'guest' && (
               <span className={`${getRoleBadgeClass()} hidden-mobile`}>
@@ -171,7 +177,7 @@ export default function MainLayout() {
                 <Space>
                   <UserOutlined />
                   <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user?.name || 'Account'}
+                    {user?.name || t('auth.account')}
                   </span>
                   <DownOutlined style={{ fontSize: 10 }} />
                 </Space>
@@ -241,14 +247,14 @@ export default function MainLayout() {
                 icon={<UserOutlined />}
                 onClick={() => { navigate('/account'); setMobileMenuOpen(false); }}
               >
-                My Account
+                {t('auth.myAccount')}
               </Button>
               <Button 
                 block 
                 icon={<FileTextOutlined />}
                 onClick={() => { navigate('/account/orders'); setMobileMenuOpen(false); }}
               >
-                My Orders
+                {t('auth.myOrders')}
               </Button>
               <Button 
                 block 
@@ -256,7 +262,7 @@ export default function MainLayout() {
                 icon={<LogoutOutlined />}
                 onClick={handleLogout}
               >
-                Logout
+                {t('auth.logout')}
               </Button>
             </Space>
           ) : (
@@ -266,13 +272,13 @@ export default function MainLayout() {
                 block 
                 onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}
               >
-                Sign In
+                {t('auth.signIn')}
               </Button>
               <Button 
                 block 
                 onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}
               >
-                Create Account
+                {t('auth.createAccount')}
               </Button>
             </Space>
           )}
@@ -293,7 +299,7 @@ export default function MainLayout() {
               <Logo variant="light" height={36} />
             </div>
             <Text style={{ display: 'block', color: '#aaa', fontSize: 14, lineHeight: '1.6', maxWidth: 380 }}>
-              Premium professional hair care products for stylists and beauty professionals.
+              {t('footer.tagline')}
             </Text>
           </div>
 
@@ -307,7 +313,7 @@ export default function MainLayout() {
             {/* Contact */}
             <div style={{ textAlign: 'center' }}>
               <Text strong style={{ display: 'block', color: '#fff', marginBottom: '16px', fontSize: 15 }}>
-                Contact Us
+                {t('footer.contactUs')}
               </Text>
               <Space direction="vertical" size={8}>
                 <Text style={{ color: '#aaa', fontSize: 14 }}>
@@ -347,11 +353,11 @@ export default function MainLayout() {
             gap: '16px'
           }}>
             <Text style={{ color: '#999', fontSize: 13 }}>
-              © {new Date().getFullYear()} Tessa Hair Care. All rights reserved.
+              © {new Date().getFullYear()} Tessa Hair Care. {t('footer.allRightsReserved')}
             </Text>
             <Space size={24}>
-              <Link to="/privacy" style={{ color: '#999', fontSize: 13 }}>Privacy Policy</Link>
-              <Link to="/terms" style={{ color: '#999', fontSize: 13 }}>Terms of Service</Link>
+              <Link to="/privacy" style={{ color: '#999', fontSize: 13 }}>{t('footer.privacyPolicy')}</Link>
+              <Link to="/terms" style={{ color: '#999', fontSize: 13 }}>{t('footer.termsOfService')}</Link>
             </Space>
           </div>
         </div>

@@ -15,6 +15,7 @@ import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type Fetch
 import type { RootState } from '@/store/index';
 import { logout } from '@/features/auth/slice';
 import { logWarn, logError } from '@/shared/utils/logger';
+import i18n from '@/i18n';
 
 /**
  * Module-level flag to prevent multiple concurrent 401 responses from each
@@ -42,6 +43,9 @@ const baseQuery = fetchBaseQuery({
     }
 
     headers.set('Accept', 'application/json');
+
+    // Send current locale to backend
+    headers.set('Accept-Language', i18n.language || 'mk');
 
     // Don't set Content-Type here - let fetch handle it for FormData
     // headers.set('Content-Type', 'application/json');

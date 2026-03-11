@@ -3,6 +3,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Typography, Table, Tag, Button, Space, Spin, Empty, Card, Alert, Grid } from 'antd';
 import { EyeOutlined, RightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useGetOrdersQuery } from '@/features/orders/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Order } from '@/types';
@@ -20,6 +21,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function OrdersPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: ordersData, isLoading, error } = useGetOrdersQuery();
   const orders = ordersData?.data || [];
@@ -28,31 +30,31 @@ export default function OrdersPage() {
 
   const columns = [
     {
-      title: 'Order ID',
+      title: t('orders.orderId'),
       dataIndex: 'id',
       key: 'id',
       render: (id: string) => <Text strong>{id}</Text>,
     },
     {
-      title: 'Date',
+      title: t('orders.date'),
       dataIndex: 'createdAt',
       key: 'date',
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
     {
-      title: 'Items',
+      title: t('orders.items'),
       dataIndex: 'items',
       key: 'items',
-      render: (items: Order['items']) => `${items?.length ?? 0} item(s)`,
+      render: (items: Order['items']) => t('orders.itemCount', { count: items?.length ?? 0 }),
     },
     {
-      title: 'Total',
+      title: t('orders.total'),
       dataIndex: 'total',
       key: 'total',
       render: (total: number) => <Text strong>{formatPrice(total)}</Text>,
     },
     {
-      title: 'Status',
+      title: t('orders.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: any) => {
@@ -65,7 +67,7 @@ export default function OrdersPage() {
       },
     },
     {
-      title: 'Payment',
+      title: t('orders.paymentStatus'),
       dataIndex: 'paymentStatus',
       key: 'paymentStatus',
       render: (status: any) => {
@@ -83,7 +85,7 @@ export default function OrdersPage() {
       render: (_: unknown, record: Order) => (
         <Link to={`/account/orders/${record.id}`}>
           <Button type="text" icon={<EyeOutlined />}>
-            View
+            {t('orders.view')}
           </Button>
         </Link>
       ),
@@ -103,12 +105,12 @@ export default function OrdersPage() {
           styles={{ body: { padding: '14px 16px' } }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text strong style={{ fontSize: 15 }}>Order #{order.id}</Text>
+            <Text strong style={{ fontSize: 15 }}>{t('orders.order')} #{order.id}</Text>
             <RightOutlined style={{ color: '#999', fontSize: 12 }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              {new Date(order.createdAt).toLocaleDateString()} · {order.items?.length ?? 0} item(s)
+              {new Date(order.createdAt).toLocaleDateString()} · {t('orders.itemCount', { count: order.items?.length ?? 0 })}
             </Text>
             <Text strong style={{ fontSize: 15 }}>{formatPrice(order.total)}</Text>
           </div>
@@ -135,16 +137,16 @@ export default function OrdersPage() {
             onClick={() => navigate(-1)}
             style={{ marginBottom: 8, padding: '4px 0' }}
           >
-            Back
+            {t('common.back')}
           </Button>
-          <Title level={2}>My Orders</Title>
-          <Text type="secondary">View and track your order history</Text>
+          <Title level={2}>{t('orders.myOrders')}</Title>
+          <Text type="secondary">{t('orders.viewTrackHistory')}</Text>
         </div>
 
         {error && (
           <Alert
-            message="Error loading orders"
-            description="Failed to load your orders. Please try again later."
+            message={t('orders.errorLoading')}
+            description={t('orders.errorDescription')}
             type="error"
             showIcon
             closable
@@ -157,9 +159,9 @@ export default function OrdersPage() {
           </div>
         ) : orders.length === 0 ? (
           <Card>
-            <Empty description="No orders yet">
+            <Empty description={t('orders.noOrdersYet')}>
               <Link to="/">
-                <Button type="primary">Start Shopping</Button>
+                <Button type="primary">{t('orders.startShopping')}</Button>
               </Link>
             </Empty>
           </Card>

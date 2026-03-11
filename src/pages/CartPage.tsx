@@ -28,6 +28,7 @@ import {
   SafetyCertificateOutlined,
   TruckOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
 
@@ -35,6 +36,7 @@ const { Title, Text, Paragraph } = Typography;
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { items, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
 
   const handleQuantityChange = (productId: string | number, quantity: number | null) => {
@@ -45,12 +47,12 @@ const CartPage: React.FC = () => {
 
   const handleRemoveItem = (productId: string | number) => {
     removeItem(productId);
-    message.success('Item removed from cart');
+    message.success(t('cart.itemRemoved'));
   };
 
   const handleClearCart = () => {
     clearCart();
-    message.success('Cart cleared');
+    message.success(t('cart.cartCleared'));
   };
 
   const handleCheckout = () => {
@@ -66,17 +68,16 @@ const CartPage: React.FC = () => {
           image={<ShoppingOutlined style={{ fontSize: 80, color: 'var(--color-text-muted)' }} />}
           description={
             <Space direction="vertical" size={8}>
-              <Title level={4} style={{ margin: 0 }}>Your cart is empty</Title>
+              <Title level={4} style={{ margin: 0 }}>{t('cart.yourCartIsEmpty')}</Title>
               <Paragraph type="secondary">
-                Looks like you haven't added any items to your cart yet.
-                Browse our collection to find something you'll love.
+                {t('cart.emptyCartMessage')}
               </Paragraph>
             </Space>
           }
         >
           <Link to="/">
             <Button type="primary" size="large" icon={<ShoppingOutlined />}>
-              Start Shopping
+              {t('cart.startShopping')}
             </Button>
           </Link>
         </Empty>
@@ -90,11 +91,11 @@ const CartPage: React.FC = () => {
       <div className="cart-page__header">
         <Link to="/" className="back-link">
           <ArrowLeftOutlined />
-          <span>Continue Shopping</span>
+          <span>{t('cart.continueShopping')}</span>
         </Link>
         <div className="cart-page__title-row">
-          <Title level={2} style={{ margin: 0 }}>Shopping Cart</Title>
-          <Text type="secondary">{items.length} {items.length === 1 ? 'item' : 'items'}</Text>
+          <Title level={2} style={{ margin: 0 }}>{t('cart.shoppingCart')}</Title>
+          <Text type="secondary">{items.length} {items.length === 1 ? t('cart.item') : t('cart.items')}</Text>
         </div>
       </div>
 
@@ -146,11 +147,11 @@ const CartPage: React.FC = () => {
                           {formatPrice(getItemTotal(item))}
                         </Text>
                         <Popconfirm
-                          title="Remove item"
-                          description="Are you sure you want to remove this item?"
+                          title={t('cart.removeItem')}
+                          description={t('cart.removeConfirm')}
                           onConfirm={() => handleRemoveItem(item.productId)}
-                          okText="Yes"
-                          cancelText="No"
+                          okText={t('common.yes')}
+                          cancelText={t('common.no')}
                         >
                           <Button
                             type="text"
@@ -172,14 +173,14 @@ const CartPage: React.FC = () => {
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Popconfirm
-                title="Clear cart"
-                description="Are you sure you want to remove all items?"
+                title={t('cart.removeItem')}
+                description={t('cart.removeConfirm')}
                 onConfirm={handleClearCart}
-                okText="Yes"
-                cancelText="No"
+                okText={t('common.yes')}
+                cancelText={t('common.no')}
               >
                 <Button type="text" danger>
-                  Clear Cart
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>
             </div>
@@ -189,11 +190,11 @@ const CartPage: React.FC = () => {
         {/* Order Summary */}
         <Col xs={24} lg={8}>
           <Card className="order-summary" style={{ position: 'sticky', top: 24 }}>
-            <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>Order Summary</Title>
+            <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>{t('checkout.orderSummary')}</Title>
             
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">
-                <Text type="secondary">Subtotal ({totals.itemCount} items)</Text>
+                <Text type="secondary">{t('cart.subtotal')} ({totals.itemCount} {t('cart.items')})</Text>
                 <Text>{formatPrice(totals.subtotal)}</Text>
               </div>
 
@@ -205,14 +206,14 @@ const CartPage: React.FC = () => {
               )}
 
               <div className="price-row">
-                <Text type="secondary">Shipping</Text>
-                <Text>{totals.subtotal >= 3000 ? 'FREE' : formatPrice(150)}</Text>
+                <Text type="secondary">{t('checkout.shippingCost')}</Text>
+                <Text>{totals.subtotal >= 3000 ? t('checkout.free') : formatPrice(150)}</Text>
               </div>
 
               <Divider style={{ margin: 'var(--spacing-sm) 0' }} />
 
               <div className="price-row">
-                <Text strong style={{ fontSize: 'var(--font-size-lg)' }}>Estimated Total</Text>
+                <Text strong style={{ fontSize: 'var(--font-size-lg)' }}>{t('checkout.total')}</Text>
                 <Text strong style={{ fontSize: 'var(--font-size-xl)', color: 'var(--color-text-primary)' }}>
                   {formatPrice(totals.subtotal + (totals.subtotal >= 3000 ? 0 : 150))}
                 </Text>
@@ -241,11 +242,11 @@ const CartPage: React.FC = () => {
               <Space direction="vertical" size={8} style={{ width: '100%' }}>
                 <div className="trust-badge">
                   <SafetyCertificateOutlined style={{ color: 'var(--color-success)' }} />
-                  <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>Secure SSL Checkout</Text>
+                  <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>{t('product.authenticProducts')}</Text>
                 </div>
                 <div className="trust-badge">
                   <TruckOutlined style={{ color: 'var(--color-primary)' }} />
-                  <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>Free shipping on orders over 3.000 MKD</Text>
+                  <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>{t('product.freeShipping')}</Text>
                 </div>
               </Space>
             </Space>

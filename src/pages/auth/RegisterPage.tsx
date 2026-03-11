@@ -27,6 +27,7 @@ import {
   GoogleOutlined,
   FacebookOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 
@@ -45,6 +46,7 @@ interface RegisterFormValues {
 }
 
 const RegisterPage: React.FC = () => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -52,7 +54,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (values: RegisterFormValues) => {
     if (!values.agreeToTerms) {
-      message.error('Please agree to the Terms of Service');
+      message.error(t('auth.pleaseAgreeTerms'));
       return;
     }
 
@@ -65,10 +67,10 @@ const RegisterPage: React.FC = () => {
         last_name: values.lastName,
         phone: values.phone,
       });
-      message.success('Account created successfully! Please check your email to verify your account.');
+      message.success(t('auth.accountCreated'));
       navigate('/login');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : t('auth.registrationFailed');
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -99,7 +101,7 @@ const RegisterPage: React.FC = () => {
             <Logo variant="dark" height={36} />
           </Link>
           <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-            Create your account to get started
+            {t('auth.createYourAccount')}
           </Paragraph>
         </div>
 
@@ -115,8 +117,8 @@ const RegisterPage: React.FC = () => {
           <Space style={{ width: '100%', display: 'flex' }} size={12}>
             <Form.Item
               name="firstName"
-              label="First Name"
-              rules={[{ required: true, message: 'Required' }]}
+              label={t('auth.firstName')}
+              rules={[{ required: true, message: t('common.required') }]}
               style={{ flex: 1, marginBottom: 16 }}
             >
               <Input
@@ -129,8 +131,8 @@ const RegisterPage: React.FC = () => {
 
             <Form.Item
               name="lastName"
-              label="Last Name"
-              rules={[{ required: true, message: 'Required' }]}
+              label={t('auth.lastName')}
+              rules={[{ required: true, message: t('common.required') }]}
               style={{ flex: 1, marginBottom: 16 }}
             >
               <Input
@@ -143,10 +145,10 @@ const RegisterPage: React.FC = () => {
 
           <Form.Item
             name="email"
-            label="Email"
+            label={t('auth.email')}
             rules={[
-              { required: true, message: 'Please enter your email' },
-              { type: 'email', message: 'Please enter a valid email' },
+              { required: true, message: t('auth.enterEmail') },
+              { type: 'email', message: t('auth.invalidEmail') },
             ]}
           >
             <Input
@@ -159,8 +161,8 @@ const RegisterPage: React.FC = () => {
 
           <Form.Item
             name="phone"
-            label="Phone"
-            rules={[{ required: true, message: 'Please enter your phone number' }]}
+            label={t('auth.phone')}
+            rules={[{ required: true, message: t('auth.enterPhone') }]}
           >
             <Input
               prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
@@ -172,31 +174,31 @@ const RegisterPage: React.FC = () => {
 
           <Form.Item
             name="accountType"
-            label="Account Type"
-            rules={[{ required: true, message: 'Please select account type' }]}
+            label={t('auth.accountType')}
+            rules={[{ required: true, message: t('auth.selectAccountType') }]}
           >
             <Select size="large">
-              <Option value="customer">Customer</Option>
-              <Option value="stylist">Stylist / Professional</Option>
+              <Option value="customer">{t('auth.customer')}</Option>
+              <Option value="stylist">{t('auth.stylistProfessional')}</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="password"
-            label="Password"
+            label={t('auth.password')}
             rules={[
-              { required: true, message: 'Please enter a password' },
-              { min: 8, message: 'Password must be at least 8 characters' },
+              { required: true, message: t('auth.enterPassword') },
+              { min: 8, message: t('auth.passwordMin') },
               {
                 pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                message: 'Password must contain uppercase, lowercase, and number',
+                message: t('auth.passwordRequirements'),
               },
             ]}
             hasFeedback
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="Create a strong password"
+              placeholder={t('auth.createPassword')}
               size="large"
               autoComplete="new-password"
             />
@@ -204,16 +206,16 @@ const RegisterPage: React.FC = () => {
 
           <Form.Item
             name="confirmPassword"
-            label="Confirm Password"
+            label={t('auth.confirmPassword')}
             dependencies={['password']}
             rules={[
-              { required: true, message: 'Please confirm your password' },
+              { required: true, message: t('auth.confirmYourPassword') },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue('password') === value) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error('Passwords do not match'));
+                  return Promise.reject(new Error(t('auth.passwordsNoMatch')));
                 },
               }),
             ]}
@@ -221,7 +223,7 @@ const RegisterPage: React.FC = () => {
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="Confirm your password"
+              placeholder={t('auth.confirmYourPassword')}
               size="large"
               autoComplete="new-password"
             />
@@ -233,15 +235,15 @@ const RegisterPage: React.FC = () => {
             rules={[
               {
                 validator: (_, value) =>
-                  value ? Promise.resolve() : Promise.reject(new Error('You must agree to the terms')),
+                  value ? Promise.resolve() : Promise.reject(new Error(t('auth.mustAgreeTerms'))),
               },
             ]}
           >
             <Checkbox>
-              I agree to the{' '}
-              <Link to="/terms" target="_blank">Terms of Service</Link>
-              {' '}and{' '}
-              <Link to="/privacy" target="_blank">Privacy Policy</Link>
+              {t('auth.agreeToTerms')}{' '}
+              <Link to="/terms" target="_blank">{t('auth.termsOfService')}</Link>
+              {' '}{t('auth.and')}{' '}
+              <Link to="/privacy" target="_blank">{t('auth.privacyPolicy')}</Link>
             </Checkbox>
           </Form.Item>
 
@@ -253,14 +255,14 @@ const RegisterPage: React.FC = () => {
               loading={loading}
               block
             >
-              Create Account
+              {t('auth.createAccount')}
             </Button>
           </Form.Item>
         </Form>
 
         {/* OAuth Divider */}
         <Divider plain>
-          <Text type="secondary" style={{ fontSize: 12 }}>OR SIGN UP WITH</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('auth.orSignUpWith')}</Text>
         </Divider>
 
         {/* OAuth Buttons */}
@@ -271,7 +273,7 @@ const RegisterPage: React.FC = () => {
             icon={<GoogleOutlined />}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            Continue with Google
+            {t('auth.continueWithGoogle')}
           </Button>
           <Button
             size="large"
@@ -279,16 +281,16 @@ const RegisterPage: React.FC = () => {
             icon={<FacebookOutlined />}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            Continue with Facebook
+            {t('auth.continueWithFacebook')}
           </Button>
         </Space>
 
         {/* Login Link */}
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <Text type="secondary">
-            Already have an account?{' '}
+            {t('auth.haveAccount')}{' '}
             <Link to="/login" style={{ fontWeight: 500 }}>
-              Sign in
+              {t('auth.signIn')}
             </Link>
           </Text>
         </div>

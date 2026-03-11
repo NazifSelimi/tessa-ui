@@ -25,6 +25,8 @@ import {
 import PriceDisplay from '@/components/PriceDisplay';
 import ProductCard from '@/components/ProductCard';
 import { useCart } from '@/hooks/useCart';
+import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
+import { useTranslation } from 'react-i18next';
 import { getProductById, getRelatedProducts } from '@/api/services';
 import type { Product } from '@/types';
 
@@ -34,12 +36,14 @@ export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { t } = useTranslation();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const localizedDescription = useLocalizedDescription(product);
 
   // Load product data
   useEffect(() => {
@@ -92,12 +96,12 @@ export default function ProductPage() {
   if (!product) {
     return (
       <div className="empty-state">
-        <Title level={4}>Product not found</Title>
+        <Title level={4}>{t('product.notFound')}</Title>
         <Text type="secondary" className="empty-state__description">
-          The product you're looking for doesn't exist or has been removed.
+          {t('product.notFoundDescription')}
         </Text>
         <Button type="primary" onClick={() => navigate('/')}>
-          Back to Shop
+          {t('product.backToShop')}
         </Button>
       </div>
     );
@@ -120,14 +124,14 @@ export default function ProductPage() {
         onClick={() => navigate(-1)}
         style={{ marginBottom: 8, padding: '4px 0' }}
       >
-        Back
+        {t('product.back')}
       </Button>
 
       {/* Breadcrumb */}
       <Breadcrumb 
         style={{ marginBottom: 'var(--spacing-xl)' }}
         items={[
-          { title: <Link to="/">Shop</Link> },
+          { title: <Link to="/">{t('nav.shop')}</Link> },
           { title: typeof product.brand === 'object' ? product.brand?.name : product.brand },
           { title: product.name },
         ]}
@@ -191,7 +195,7 @@ export default function ProductPage() {
           {/* Price Display */}
           <div style={{ marginBottom: 'var(--spacing-xl)' }}>
             <Text type="secondary" style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
-              Price
+              {t('product.price')}
             </Text>
             <PriceDisplay product={product} large showSavings />
           </div>
@@ -206,7 +210,7 @@ export default function ProductPage() {
           }}>
             <div>
               <Text type="secondary" style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
-                Quantity
+                {t('product.quantity')}
               </Text>
               <InputNumber
                 min={1}
@@ -227,7 +231,7 @@ export default function ProductPage() {
                 onClick={handleAddToCart}
                 style={{ flex: 1, minWidth: 0, height: 48 }}
               >
-                {inStock ? 'Add to Cart' : 'Out of Stock'}
+                {inStock ? t('product.addToCart') : t('product.outOfStock')}
               </Button>
               <Button 
                 size="large" 
@@ -252,11 +256,11 @@ export default function ProductPage() {
           <div className="trust-badges" style={{ marginBottom: 'var(--spacing-xl)' }}>
             <div className="trust-badge">
               <TruckOutlined />
-              <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>Free shipping over 3.000 MKD</Text>
+              <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('product.freeShipping')}</Text>
             </div>
             <div className="trust-badge">
               <SafetyCertificateOutlined />
-              <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>Authentic products</Text>
+              <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('product.authenticProducts')}</Text>
             </div>
           </div>
 
@@ -269,37 +273,37 @@ export default function ProductPage() {
             items={[
               {
                 key: 'description',
-                label: <Text strong style={{ fontSize: 16 }}>Description</Text>,
+                label: <Text strong style={{ fontSize: 16 }}>{t('product.description')}</Text>,
                 children: (
                   <Paragraph style={{ whiteSpace: 'pre-line', lineHeight: 1.8 }}>
-                    {product.description}
+                    {localizedDescription}
                   </Paragraph>
                 ),
               },
               {
                 key: 'details',
-                label: <Text strong style={{ fontSize: 16 }}>Product Details</Text>,
+                label: <Text strong style={{ fontSize: 16 }}>{t('product.productDetails')}</Text>,
                 children: (
                   <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 24px' }}>
-                    <Text type="secondary">Brand</Text>
+                    <Text type="secondary">{t('product.brand')}</Text>
                     <Text strong>{typeof product.brand === 'object' ? product.brand?.name : product.brand}</Text>
-                    <Text type="secondary">Category</Text>
+                    <Text type="secondary">{t('product.category')}</Text>
                     <Text strong>{typeof product.category === 'object' ? product.category?.name : product.category}</Text>
-                    <Text type="secondary">Availability</Text>
+                    <Text type="secondary">{t('product.availability')}</Text>
                     <Text strong style={{ color: inStock ? '#52c41a' : '#ff4d4f' }}>
-                      {inStock ? 'In Stock' : 'Out of Stock'}
+                      {inStock ? t('product.inStock') : t('product.outOfStock')}
                     </Text>
                   </div>
                 ),
               },
               {
                 key: 'shipping',
-                label: <Text strong style={{ fontSize: 16 }}>Shipping & Returns</Text>,
+                label: <Text strong style={{ fontSize: 16 }}>{t('product.shippingReturns')}</Text>,
                 children: (
                   <Space direction="vertical" size={8}>
-                    <Text><TruckOutlined style={{ marginRight: 8, color: '#1677ff' }} />Free standard shipping on orders over 3.000 MKD</Text>
-                    <Text><SafetyCertificateOutlined style={{ marginRight: 8, color: '#1677ff' }} />Express shipping available at checkout</Text>
-                    <Text><CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />30-day return policy for unopened items</Text>
+                    <Text><TruckOutlined style={{ marginRight: 8, color: '#1677ff' }} />{t('product.freeStandardShipping')}</Text>
+                    <Text><SafetyCertificateOutlined style={{ marginRight: 8, color: '#1677ff' }} />{t('product.expressShipping')}</Text>
+                    <Text><CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />{t('product.returnPolicy')}</Text>
                   </Space>
                 ),
               },
@@ -312,7 +316,7 @@ export default function ProductPage() {
       {relatedProducts.length > 0 && (
         <div style={{ marginTop: 'var(--spacing-3xl)' }}>
           <Divider />
-          <Title level={4} style={{ marginBottom: 'var(--spacing-xl)' }}>You May Also Like</Title>
+          <Title level={4} style={{ marginBottom: 'var(--spacing-xl)' }}>{t('product.youMayAlsoLike')}</Title>
           <Row gutter={[16, 16]}>
             {relatedProducts.map(p => (
               <Col key={p.id} xs={12} sm={8} md={6}>

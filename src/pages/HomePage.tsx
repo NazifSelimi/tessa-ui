@@ -18,18 +18,11 @@ import {
 import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
+import { useTranslation } from 'react-i18next';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
-
-const sortOptions = [
-  { value: 'featured', label: 'Featured' },
-  { value: 'price_asc', label: 'Price: Low to High' },
-  { value: 'price_desc', label: 'Price: High to Low' },
-  { value: 'name_asc', label: 'Name: A-Z' },
-  { value: 'name_desc', label: 'Name: Z-A' },
-];
 
 const ITEMS_PER_PAGE = 12;
 
@@ -40,6 +33,15 @@ export default function HomePage() {
   const searchInputRef = useRef<any>(null);
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const { t } = useTranslation();
+
+  const sortOptions = useMemo(() => [
+    { value: 'featured', label: t('home.featured') },
+    { value: 'price_asc', label: t('home.priceLowHigh') },
+    { value: 'price_desc', label: t('home.priceHighLow') },
+    { value: 'name_asc', label: t('home.nameAZ') },
+    { value: 'name_desc', label: t('home.nameZA') },
+  ], [t]);
 
   // Filter states from URL
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -183,7 +185,7 @@ const handlePageChange = (page: number) => {
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       {/* Search */}
       <Input
-        placeholder="Search products (min 2 chars)..."
+        placeholder={t('home.searchProducts')}
         prefix={<SearchOutlined />}
         value={search}
         onChange={(e) => {
@@ -205,10 +207,10 @@ const handlePageChange = (page: number) => {
 
       {/* Category Filter */}
       <div>
-        <Text strong>Category</Text>
+        <Text strong>{t('product.category')}</Text>
         <Select
           style={{ width: '100%', marginTop: 8 }}
-          placeholder="All Categories"
+          placeholder={t('home.allCategories')}
           allowClear
           value={category || undefined}
           onChange={(value) => {
@@ -225,10 +227,10 @@ const handlePageChange = (page: number) => {
 
       {/* Brand Filter */}
       <div>
-        <Text strong>Brand</Text>
+        <Text strong>{t('product.brand')}</Text>
         <Select
           style={{ width: '100%', marginTop: 8 }}
-          placeholder="All Brands"
+          placeholder={t('home.allBrands')}
           allowClear
           value={brand || undefined}
           onChange={(value) => {
@@ -245,7 +247,7 @@ const handlePageChange = (page: number) => {
 
       {/* Sort */}
       <div>
-        <Text strong>Sort By</Text>
+        <Text strong>{t('home.sortBy')}</Text>
         <Select
           style={{ width: '100%', marginTop: 8 }}
           value={sortBy}
@@ -259,7 +261,7 @@ const handlePageChange = (page: number) => {
 
       {/* Price Range */}
       <div>
-        <Text strong>Price Range (MKD)</Text>
+        <Text strong>{t('home.priceRange')} (MKD)</Text>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
           <InputNumber
             placeholder="Min"
@@ -295,7 +297,7 @@ const handlePageChange = (page: number) => {
           updateUrlParam('in_stock', e.target.checked ? 'true' : null);
         }}
       >
-        In Stock Only
+        {t('home.inStockOnly')}
       </Checkbox>
 
       {/* Clear Filters */}
@@ -306,7 +308,7 @@ const handlePageChange = (page: number) => {
           ghost
           onClick={clearAllFilters}
         >
-          Clear All Filters
+          {t('home.clearFilters')}
         </Button>
       )}
     </Space>
@@ -320,7 +322,7 @@ const handlePageChange = (page: number) => {
           <div className="mobile-search-bar__inner">
             <Input
               ref={searchInputRef}
-              placeholder="Search products..."
+              placeholder={t('home.searchProducts')}
               prefix={<SearchOutlined style={{ color: '#999' }} />}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -365,7 +367,7 @@ const handlePageChange = (page: number) => {
           <Card style={{ position: 'sticky', top: 20 }}>
             <Space direction="vertical" style={{ width: '100%' }} size="large">
               <Title level={4}>
-                Filters {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}
+                {t('home.filters')} {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}
               </Title>
               {filterContent}
             </Space>
@@ -380,9 +382,9 @@ const handlePageChange = (page: number) => {
               {category && <Tag closable onClose={() => { setCategory(''); updateUrlParam('category', null); }} color="green">{selectedCategoryName}</Tag>}
               {brand && <Tag closable onClose={() => { setBrand(''); updateUrlParam('brand', null); }} color="blue">{selectedBrandName}</Tag>}
               {search && <Tag closable onClose={() => { setSearch(''); updateUrlParam('search', null); }} color="purple">{search}</Tag>}
-              {inStockOnly && <Tag closable onClose={() => { setInStockOnly(false); updateUrlParam('in_stock', null); }} color="cyan">In Stock</Tag>}
+              {inStockOnly && <Tag closable onClose={() => { setInStockOnly(false); updateUrlParam('in_stock', null); }} color="cyan">{t('home.inStockOnly')}</Tag>}
               <Button type="link" size="small" danger onClick={clearAllFilters} style={{ padding: 0, height: 'auto' }}>
-                Clear all
+                {t('home.clearFilters')}
               </Button>
             </div>
           )}
@@ -398,7 +400,7 @@ const handlePageChange = (page: number) => {
               </Title>
             )}
             <Text type="secondary">
-              Showing {products.length} of {totalProducts} products
+              {t('home.showing')} {products.length} {t('home.of')} {totalProducts} {t('home.products')}
             </Text>
           </div>
 
@@ -434,12 +436,12 @@ const handlePageChange = (page: number) => {
             </>
           ) : (
             <Empty 
-              description={activeFiltersCount > 0 ? 'No products match your filters' : 'No products available'}
+              description={activeFiltersCount > 0 ? t('home.noProductsFound') : t('home.noProductsFound')}
               style={{ marginTop: 50 }}
             >
               {activeFiltersCount > 0 && (
                 <Button type="primary" onClick={clearAllFilters}>
-                  Clear Filters
+                  {t('home.clearFilters')}
                 </Button>
               )}
             </Empty>
@@ -465,7 +467,7 @@ const handlePageChange = (page: number) => {
       <Drawer
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Filters {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}</span>
+            <span>{t('home.filters')} {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}</span>
           </div>
         }
         placement="bottom"
@@ -489,7 +491,7 @@ const handlePageChange = (page: number) => {
             onClick={() => setMobileFiltersOpen(false)}
             style={{ height: 48 }}
           >
-            Show {totalProducts} Products
+            Show {totalProducts} {t('home.products')}
           </Button>
         </div>
       </Drawer>

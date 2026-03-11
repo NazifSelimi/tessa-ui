@@ -12,6 +12,7 @@ import {
   Typography, Card, Row, Col, Tag, Button, Steps, Spin, Descriptions, Table, Divider 
 } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useGetOrderQuery } from '@/features/orders/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Order } from '@/types';
@@ -29,6 +30,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function OrderDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading: loading } = useGetOrderQuery(id ?? '', {
@@ -46,8 +48,8 @@ export default function OrderDetailPage() {
   if (!order) {
     return (
       <div style={{ textAlign: 'center', padding: 100 }}>
-        <Title level={4}>Order not found</Title>
-        <Button onClick={() => navigate('/account/orders')}>Back to Orders</Button>
+        <Title level={4}>{t('orders.orderNotFound')}</Title>
+        <Button onClick={() => navigate('/account/orders')}>{t('orders.backToOrders')}</Button>
       </div>
     );
   }
@@ -58,7 +60,7 @@ export default function OrderDetailPage() {
 
   const columns = [
     {
-      title: 'Product',
+      title: t('orders.product'),
       key: 'product',
       render: (_: unknown, record: Order['items'][0]) => (
         <div>
@@ -67,18 +69,18 @@ export default function OrderDetailPage() {
       ),
     },
     {
-      title: 'Price',
+      title: t('orders.price'),
       dataIndex: 'unitPrice',
       key: 'price',
       render: (price: number) => formatPrice(price),
     },
     {
-      title: 'Quantity',
+      title: t('orders.quantity'),
       dataIndex: 'quantity',
       key: 'quantity',
     },
     {
-      title: 'Total',
+      title: t('orders.total'),
       dataIndex: 'total',
       key: 'total',
       render: (total: number) => <Text strong>{formatPrice(total)}</Text>,
@@ -93,14 +95,14 @@ export default function OrderDetailPage() {
         onClick={() => navigate('/account/orders')}
         style={{ marginBottom: 16 }}
       >
-        Back to Orders
+        {t('orders.backToOrders')}
       </Button>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>Order {order.id}</Title>
+          <Title level={2} style={{ margin: 0 }}>{t('orders.order')} {order.id}</Title>
           <Text type="secondary">
-            Placed on {new Date(order.createdAt).toLocaleDateString()}
+            {t('orders.placedOn')} {new Date(order.createdAt).toLocaleDateString()}
           </Text>
         </div>
         <Tag color={statusColors[typeof order.status === 'string' ? order.status : String(order.status ?? '')]} style={{ fontSize: 14, padding: '4px 12px' }}>
@@ -113,11 +115,11 @@ export default function OrderDetailPage() {
           <Steps
             current={currentStep}
             items={[
-              { title: 'Pending' },
-              { title: 'Confirmed' },
-              { title: 'Processing' },
-              { title: 'Shipped' },
-              { title: 'Delivered' },
+              { title: t('orders.pending') },
+              { title: t('orders.confirmed') },
+              { title: t('orders.processing') },
+              { title: t('orders.shipped') },
+              { title: t('orders.delivered') },
             ]}
           />
         </Card>
@@ -125,7 +127,7 @@ export default function OrderDetailPage() {
 
       <Row gutter={24}>
         <Col xs={24} md={14}>
-          <Card title="Order Items" style={{ marginBottom: 24 }}>
+          <Card title={t('orders.orderItems')} style={{ marginBottom: 24 }}>
             <Table
               dataSource={order.items}
               columns={columns}
@@ -135,14 +137,14 @@ export default function OrderDetailPage() {
           </Card>
 
           {order.customMessage && (
-            <Card title="Order Notes" style={{ marginBottom: 24 }}>
+            <Card title={t('orders.orderNotes')} style={{ marginBottom: 24 }}>
               <Text>{order.customMessage}</Text>
             </Card>
           )}
         </Col>
 
         <Col xs={24} md={10}>
-          <Card title="Shipping Address" style={{ marginBottom: 24 }}>
+          <Card title={t('orders.shippingAddress')} style={{ marginBottom: 24 }}>
             <Text strong>{order.shippingAddress?.fullName ?? '—'}</Text>
             <br />
             <Text>{order.shippingAddress?.phone ?? '—'}</Text>
@@ -154,12 +156,12 @@ export default function OrderDetailPage() {
             </Text>
           </Card>
 
-          <Card title="Payment">
+          <Card title={t('orders.payment')}>
             <Descriptions column={1} size="small">
-              <Descriptions.Item label="Method">
-                {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}
+              <Descriptions.Item label={t('orders.method')}>
+                {order.paymentMethod === 'cod' ? t('orders.cashOnDelivery') : t('orders.onlinePayment')}
               </Descriptions.Item>
-              <Descriptions.Item label="Status">
+              <Descriptions.Item label={t('orders.status')}>
                 <Tag color={(typeof order.paymentStatus === 'string' ? order.paymentStatus : String(order.paymentStatus ?? '')) === 'paid' ? 'green' : 'orange'}>
                   {(typeof order.paymentStatus === 'string' ? order.paymentStatus : String(order.paymentStatus ?? '')).toUpperCase()}
                 </Tag>
@@ -169,22 +171,22 @@ export default function OrderDetailPage() {
             <Divider />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text>Subtotal</Text>
+              <Text>{t('orders.subtotal')}</Text>
               <Text>{formatPrice(order.subtotal ?? 0)}</Text>
             </div>
             {(order.discount ?? 0) > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text type="success">Discount {order.couponCode && `(${order.couponCode})`}</Text>
+                <Text type="success">{t('orders.discount')} {order.couponCode && `(${order.couponCode})`}</Text>
                 <Text type="success">-{formatPrice(order.discount ?? 0)}</Text>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text>Shipping</Text>
-              <Text>{(order.shipping ?? 0) === 0 ? 'Free' : formatPrice(order.shipping ?? 0)}</Text>
+              <Text>{t('orders.shipping')}</Text>
+              <Text>{(order.shipping ?? 0) === 0 ? t('orders.free') : formatPrice(order.shipping ?? 0)}</Text>
             </div>
             <Divider style={{ margin: '12px 0' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Text strong style={{ fontSize: 16 }}>Total</Text>
+              <Text strong style={{ fontSize: 16 }}>{t('orders.total')}</Text>
               <Text strong style={{ fontSize: 18 }}>{formatPrice(order.total ?? 0)}</Text>
             </div>
           </Card>

@@ -40,6 +40,7 @@ import type {
   BundleProduct,
 } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -49,6 +50,7 @@ const { Title, Text, Paragraph } = Typography;
 
 function ProductRecommendationCard({ product }: { product: RecommendedProduct }) {
   const { addItem } = useCart();
+  const { t } = useTranslation();
 
   const PLACEHOLDER =
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="100%" height="100%" fill="%23f3f3f3"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="Arial,sans-serif" font-size="14">No image</text></svg>';
@@ -72,7 +74,7 @@ function ProductRecommendationCard({ product }: { product: RecommendedProduct })
       },
       1,
     );
-    message.success(`${product.name} added to cart`);
+    message.success(t('recommendations.addedToCart', { name: product.name }));
   };
 
   return (
@@ -125,7 +127,7 @@ function ProductRecommendationCard({ product }: { product: RecommendedProduct })
         style={{ marginTop: 4 }}
         size="large"
       >
-        {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+        {product.inStock ? t('recommendations.addToCart') : t('product.outOfStock')}
       </Button>
     </Card>
   );
@@ -133,6 +135,7 @@ function ProductRecommendationCard({ product }: { product: RecommendedProduct })
 
 function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
   const { addItem } = useCart();
+  const { t } = useTranslation();
 
   // Calculate total price from product prices
   const totalPrice = bundle.isDynamic
@@ -164,7 +167,7 @@ function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
         bp.quantity,
       );
     });
-    message.success(`"${bundle.name}" — ${bundle.products.length} products added to cart`);
+    message.success(t('recommendations.bundleAdded', { name: bundle.name, count: bundle.products.length }));
   };
 
   return (
@@ -182,7 +185,7 @@ function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
 
         {bundle.isDynamic && (
           <Tag color="purple" style={{ marginBottom: 12 }}>
-            <StarOutlined /> Recommended Routine
+            <StarOutlined /> {t('recommendations.recommendedRoutine')}
           </Tag>
         )}
 
@@ -218,7 +221,7 @@ function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
                 {formatPrice(discountedPrice)}
               </Text>
               {!bundle.isDynamic && bundle.discountPercentage != null && bundle.discountPercentage > 0 && (
-                <Tag color="red">Save {bundle.discountPercentage}%</Tag>
+                <Tag color="red">{t('recommendations.save', { percent: bundle.discountPercentage })}</Tag>
               )}
             </Space>
           ) : (
@@ -236,7 +239,7 @@ function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
         icon={<ShoppingCartOutlined />}
         onClick={handleAddBundle}
       >
-        Add Full Bundle to Cart
+        {t('recommendations.addBundleToCart')}
       </Button>
     </Card>
   );
@@ -249,6 +252,7 @@ function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
 export default function RecommendationsPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const state = location.state as
     | { recommendations: RecommendationResult; survey: RecommendationPayload }
@@ -258,14 +262,14 @@ export default function RecommendationsPage() {
   if (!state?.recommendations) {
     return (
       <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
-        <Empty description="No recommendations yet." />
+        <Empty description={t('recommendations.noRecommendationsYet')} />
         <Button
           type="primary"
           size="large"
           onClick={() => navigate('/hair-survey')}
           style={{ marginTop: 24 }}
         >
-          Take the Hair Survey
+          {t('recommendations.takeHairSurvey')}
         </Button>
       </div>
     );
@@ -285,12 +289,12 @@ export default function RecommendationsPage() {
         onClick={() => navigate('/hair-survey')}
         style={{ marginBottom: 16 }}
       >
-        Retake Survey
+        {t('recommendations.retakeSurvey')}
       </Button>
 
-      <Title level={2}>Your Personalised Recommendations</Title>
+      <Title level={2}>{t('recommendations.title')}</Title>
       <Paragraph type="secondary">
-        Tailored to your hair profile. Browse our top picks and bundles below.
+        {t('recommendations.subtitle')}
       </Paragraph>
 
       <Divider />
@@ -299,7 +303,7 @@ export default function RecommendationsPage() {
       {hasProducts ? (
         <>
           <Title level={3} style={{ marginBottom: 24 }}>
-            Recommended Products
+            {t('recommendations.recommendedProducts')}
           </Title>
           <Row gutter={[24, 24]}>
             {products.map((product) => (
@@ -310,7 +314,7 @@ export default function RecommendationsPage() {
           </Row>
         </>
       ) : (
-        <Empty description="No individual product recommendations." style={{ marginBottom: 40 }} />
+        <Empty description={t('recommendations.noProducts')} style={{ marginBottom: 40 }} />
       )}
 
       {/* Section 2 — Bundles */}
@@ -318,7 +322,7 @@ export default function RecommendationsPage() {
         <>
           <Divider />
           <Title level={3} style={{ marginBottom: 24 }}>
-            Recommended Bundles
+            {t('recommendations.recommendedBundles')}
           </Title>
           <Row gutter={[24, 24]}>
             {bundles.map((bundle, idx) => (
@@ -332,14 +336,14 @@ export default function RecommendationsPage() {
 
       {!hasProducts && !hasBundles && (
         <div style={{ textAlign: 'center', marginTop: 40 }}>
-          <Empty description="We couldn't find matching products. Try adjusting your survey answers." />
+          <Empty description={t('recommendations.noMatchingProducts')} />
           <Button
             type="primary"
             size="large"
             onClick={() => navigate('/hair-survey')}
             style={{ marginTop: 24 }}
           >
-            Retake Survey
+            {t('recommendations.retakeSurvey')}
           </Button>
         </div>
       )}

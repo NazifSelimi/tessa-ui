@@ -42,6 +42,7 @@ export interface Product {
   category: string | { id: string; name: string } | null;
   categoryId?: string | number;
   description: string;
+  translations?: Record<string, string>;
   images?: string[];
   image?: string | null;
   price?: string | number;

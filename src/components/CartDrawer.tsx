@@ -11,6 +11,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Drawer, Button, Typography, Space, InputNumber, Empty, Divider, Badge } from 'antd';
 import { DeleteOutlined, ShoppingOutlined, CloseOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
 
@@ -18,6 +19,7 @@ const { Text } = Typography;
 
 export default function CartDrawer() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { 
     items, 
     isDrawerOpen, 
@@ -45,7 +47,7 @@ export default function CartDrawer() {
       title={
         <Space>
           <ShoppingOutlined />
-          <span>Shopping Cart</span>
+          <span>{t('cart.shoppingCart')}</span>
           <Badge 
             count={itemCount} 
             style={{ backgroundColor: 'var(--color-primary)' }} 
@@ -71,7 +73,7 @@ export default function CartDrawer() {
               marginBottom: 'var(--spacing-lg)',
               padding: '0 var(--spacing-xl)',
             }}>
-              <Text style={{ fontSize: 'var(--font-size-lg)' }}>Subtotal</Text>
+              <Text style={{ fontSize: 'var(--font-size-lg)' }}>{t('cart.subtotal')}</Text>
               <Text strong style={{ fontSize: 'var(--font-size-xl)' }}>
                 {formatPrice(subtotal)}
               </Text>
@@ -87,7 +89,7 @@ export default function CartDrawer() {
                 padding: '0 var(--spacing-xl)',
               }}
             >
-              Shipping calculated at checkout
+              {t('cart.shippingCalculated')}
             </Text>
             
             {/* Action Buttons */}
@@ -99,10 +101,10 @@ export default function CartDrawer() {
                 onClick={handleCheckout}
                 style={{ height: 48 }}
               >
-                Checkout
+                {t('cart.checkout')}
               </Button>
               <Button block onClick={handleViewCart}>
-                View Cart
+                {t('cart.viewCart')}
               </Button>
             </Space>
           </div>
@@ -115,9 +117,9 @@ export default function CartDrawer() {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <Space direction="vertical" size={12}>
-                <Text type="secondary">Your cart is empty</Text>
+                <Text type="secondary">{t('cart.yourCartIsEmpty')}</Text>
                 <Button type="primary" onClick={() => { closeDrawer(); navigate('/'); }}>
-                  Start Shopping
+                  {t('cart.startShopping')}
                 </Button>
               </Space>
             }
@@ -190,7 +192,7 @@ export default function CartDrawer() {
                     
                     {/* Unit Price */}
                     <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)', marginTop: 'var(--spacing-xs)', display: 'block' }}>
-                      {formatPrice(price)} each
+                      {formatPrice(price)} {t('cart.each')}
                     </Text>
                   </div>
                 </div>

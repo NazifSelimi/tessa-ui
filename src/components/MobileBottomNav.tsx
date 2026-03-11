@@ -15,6 +15,7 @@ import {
   ShoppingCartOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,6 +24,7 @@ export default function MobileBottomNav() {
   const location = useLocation();
   const { itemCount, openDrawer } = useCart();
   const { isStylist } = useAuth();
+  const { t } = useTranslation();
 
   /* ---- Determine active tab ---- */
   const isHome = location.pathname === '/';
@@ -74,16 +76,16 @@ export default function MobileBottomNav() {
         aria-label="Home"
       >
         <HomeOutlined className="mobile-bottom-nav__icon" />
-        <span className="mobile-bottom-nav__label">Home</span>
+        <span className="mobile-bottom-nav__label">{t('mobile.home')}</span>
       </button>
 
       <button
         className={`mobile-bottom-nav__item ${isQuickOrder ? 'mobile-bottom-nav__item--active' : ''}`}
         onClick={handleSearch}
-        aria-label={isStylist ? 'Quick Order' : 'Search'}
+        aria-label={isStylist ? t('mobile.order') : t('mobile.search')}
       >
         <SearchOutlined className="mobile-bottom-nav__icon" />
-        <span className="mobile-bottom-nav__label">{isStylist ? 'Order' : 'Search'}</span>
+        <span className="mobile-bottom-nav__label">{isStylist ? t('mobile.order') : t('mobile.search')}</span>
       </button>
 
       <button
@@ -94,16 +96,16 @@ export default function MobileBottomNav() {
         <Badge count={itemCount} size="small" offset={[-2, -2]}>
           <ShoppingCartOutlined className="mobile-bottom-nav__icon" />
         </Badge>
-        <span className="mobile-bottom-nav__label">Cart</span>
+        <span className="mobile-bottom-nav__label">{t('mobile.cart')}</span>
       </button>
 
       <button
         className={`mobile-bottom-nav__item ${isAccount ? 'mobile-bottom-nav__item--active' : ''}`}
         onClick={handleAccount}
-        aria-label="Account"
+        aria-label={t('mobile.account')}
       >
         <UserOutlined className="mobile-bottom-nav__icon" />
-        <span className="mobile-bottom-nav__label">Account</span>
+        <span className="mobile-bottom-nav__label">{t('mobile.account')}</span>
       </button>
     </nav>
   );

@@ -22,6 +22,7 @@ import {
   GoogleOutlined,
   FacebookOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
 import Logo from '@/components/Logo';
@@ -35,6 +36,7 @@ interface LoginFormValues {
 }
 
 const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -48,7 +50,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(values.email, values.password);
-      message.success('Welcome back!');
+      message.success(t('auth.welcomeBack'));
       navigate(from, { replace: true });
     } catch (error: unknown) {
       message.error(extractErrorMessage(error));
@@ -58,11 +60,11 @@ const LoginPage: React.FC = () => {
   };
 
   const handleGoogleLogin = () => {
-    message.info('Google login will be available soon');
+    message.info(t('auth.googleSoon'));
   };
 
   const handleFacebookLogin = () => {
-    message.info('Facebook login will be available soon');
+    message.info(t('auth.facebookSoon'));
   };
 
   return (
@@ -89,7 +91,7 @@ const LoginPage: React.FC = () => {
             <Logo variant="dark" height={36} />
           </Link>
           <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-            Sign in to your account
+            {t('auth.signInToAccount')}
           </Paragraph>
         </div>
 
@@ -103,10 +105,10 @@ const LoginPage: React.FC = () => {
         >
           <Form.Item
             name="email"
-            label="Email"
+            label={t('auth.email')}
             rules={[
-              { required: true, message: 'Please enter your email' },
-              { type: 'email', message: 'Please enter a valid email' },
+              { required: true, message: t('auth.enterEmail') },
+              { type: 'email', message: t('auth.invalidEmail') },
             ]}
           >
             <Input
@@ -119,14 +121,14 @@ const LoginPage: React.FC = () => {
 
           <Form.Item
             name="password"
-            label="Password"
+            label={t('auth.password')}
             rules={[
-              { required: true, message: 'Please enter your password' },
+              { required: true, message: t('auth.enterPassword') },
             ]}
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="Enter your password"
+              placeholder={t('auth.enterPassword')}
               size="large"
               autoComplete="current-password"
             />
@@ -135,10 +137,10 @@ const LoginPage: React.FC = () => {
           <Form.Item style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Form.Item name="remember" valuePropName="checked" noStyle>
-                <Checkbox>Remember me</Checkbox>
+                <Checkbox>{t('auth.rememberMe')}</Checkbox>
               </Form.Item>
               <Link to="/forgot-password">
-                <Text type="secondary" style={{ fontSize: 13 }}>Forgot password?</Text>
+                <Text type="secondary" style={{ fontSize: 13 }}>{t('auth.forgotPassword')}</Text>
               </Link>
             </div>
           </Form.Item>
@@ -151,14 +153,14 @@ const LoginPage: React.FC = () => {
               loading={loading}
               block
             >
-              Sign In
+              {t('auth.signIn')}
             </Button>
           </Form.Item>
         </Form>
 
         {/* OAuth Divider */}
         <Divider plain>
-          <Text type="secondary" style={{ fontSize: 12 }}>OR CONTINUE WITH</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('auth.orContinueWith')}</Text>
         </Divider>
 
         {/* OAuth Buttons */}
@@ -170,7 +172,7 @@ const LoginPage: React.FC = () => {
             onClick={handleGoogleLogin}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            Continue with Google
+            {t('auth.continueWithGoogle')}
           </Button>
           <Button
             size="large"
@@ -179,16 +181,16 @@ const LoginPage: React.FC = () => {
             onClick={handleFacebookLogin}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            Continue with Facebook
+            {t('auth.continueWithFacebook')}
           </Button>
         </Space>
 
         {/* Register Link */}
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <Text type="secondary">
-            Don't have an account?{' '}
+            {t('auth.noAccount')}{' '}
             <Link to="/register" style={{ fontWeight: 500 }}>
-              Create account
+              {t('auth.createAccount')}
             </Link>
           </Text>
         </div>

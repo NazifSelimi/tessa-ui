@@ -16,6 +16,7 @@
 import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { store } from '@/store/index';
 import { logout as logoutAction } from '@/features/auth/slice';
+import i18n from '@/i18n';
 
 /**
  * Module-level flag to prevent concurrent 401 responses from each
@@ -42,6 +43,11 @@ apiClient.interceptors.request.use(
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Send current locale to backend
+    if (config.headers) {
+      config.headers['Accept-Language'] = i18n.language || 'mk';
     }
     
     return config;
