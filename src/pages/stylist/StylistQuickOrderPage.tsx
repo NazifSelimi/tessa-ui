@@ -120,8 +120,21 @@ export default function StylistQuickOrderPage() {
   // Flash feedback: recently-added product ids
   const [flashIds, setFlashIds] = useState<Set<string | number>>(new Set());
 
-  /* ----- fetch on search/page change ----- */
+  // Track previous search to detect search-change vs page-change
+  const prevSearchRef = useRef(debouncedSearch);
+
+  /* ----- fetch on search/page change (single effect to avoid double-fetch) ----- */
   useEffect(() => {
+    const searchChanged = prevSearchRef.current !== debouncedSearch;
+    prevSearchRef.current = debouncedSearch;
+
+    // When search changes and we're not on page 1, reset page first.
+    // The setPage(1) will re-trigger this effect with page=1.
+    if (searchChanged && page !== 1) {
+      setPage(1);
+      return;
+    }
+
     // Abort previous request
     if (abortRef.current) {
       abortRef.current.abort();
@@ -132,11 +145,6 @@ export default function StylistQuickOrderPage() {
       search: debouncedSearch || undefined,
     });
   }, [debouncedSearch, page, trigger]);
-
-  // Reset page when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
 
   /* ----- helpers ----- */
   const getQty = (id: string | number) => quantities[id] ?? 1;

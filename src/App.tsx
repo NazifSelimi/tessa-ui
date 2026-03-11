@@ -57,7 +57,7 @@ function App() {
             >
               <Suspense fallback={<LoadingScreen />}>
                 <Routes>
-              {/* Main shop routes */}
+              {/* Main shop routes (all wrapped in MainLayout for nav + footer) */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/product/:id" element={<ProductPage />} />
@@ -65,29 +65,60 @@ function App() {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/hair-survey" element={<HairSurveyPage />} />
                 <Route path="/recommendations" element={<RecommendationsPage />} />
+
+                {/* Account routes (auth required) */}
+                <Route path="/account" element={
+                  <ProtectedRoute>
+                    <AccountPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/account/orders" element={
+                  <ProtectedRoute>
+                    <OrdersPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/account/orders/:id" element={
+                  <ProtectedRoute>
+                    <OrderDetailPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Distributor routes (distributor role required) */}
+                <Route path="/distributor" element={
+                  <ProtectedRoute requiredRole="distributor">
+                    <DistributorPortalPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/distributor/products" element={
+                  <ProtectedRoute requiredRole="distributor">
+                    <DistributorProductsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/distributor/codes" element={
+                  <ProtectedRoute requiredRole="distributor">
+                    <DistributorCodesPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Stylist request – any logged-in user can apply */}
+                <Route path="/stylist/request" element={
+                  <ProtectedRoute>
+                    <StylistRequestPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Stylist quick-order – stylist role required */}
+                <Route path="/stylist/quick-order" element={
+                  <ProtectedRoute requiredRole="stylist">
+                    <StylistQuickOrderPage />
+                  </ProtectedRoute>
+                } />
               </Route>
 
-              {/* Auth routes */}
+              {/* Auth routes (standalone, no nav/footer) */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
-              {/* Account routes (auth required) */}
-              <Route path="/account" element={
-                <ProtectedRoute>
-                  <AccountPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/account/orders" element={
-                <ProtectedRoute>
-                  <OrdersPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/account/orders/:id" element={
-                <ProtectedRoute>
-                  <OrderDetailPage />
-                </ProtectedRoute>
-              } />
 
               {/* Admin routes – layout + pages are lazy-loaded */}
               <Route element={
@@ -105,41 +136,6 @@ function App() {
                 <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
                 <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
               </Route>
-
-              {/* Distributor routes (distributor role required) */}
-              <Route path="/distributor" element={
-                <ProtectedRoute requiredRole="distributor">
-                  <DistributorPortalPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/distributor/products" element={
-                <ProtectedRoute requiredRole="distributor">
-                  <DistributorProductsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/distributor/codes" element={
-                <ProtectedRoute requiredRole="distributor">
-                  <DistributorCodesPage />
-                </ProtectedRoute>
-              } />
-
-              {/* Stylist request – any logged-in user can apply */}
-              <Route path="/stylist/request" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <StylistRequestPage />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
-
-              {/* Stylist quick-order – stylist role required */}
-              <Route path="/stylist/quick-order" element={
-                <ProtectedRoute requiredRole="stylist">
-                  <Suspense fallback={<LoadingScreen />}>
-                    <StylistQuickOrderPage />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
 
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />}  />
