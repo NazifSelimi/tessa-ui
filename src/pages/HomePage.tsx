@@ -8,15 +8,16 @@
  * - Backend-driven pagination and filtering
  */
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Row, Col, Input, Select, Checkbox, Card, Typography, 
-  Space, Button, Spin, Empty, Drawer, Pagination,
-  Badge, Tag, Alert, InputNumber, Grid, Tabs, List,
+  Space, Button, Spin, Empty, Pagination,
+  Badge, Tag, Alert, InputNumber, Grid,
 } from 'antd';
-import { SearchOutlined, FilterOutlined, CloseOutlined, AppstoreOutlined, TagsOutlined, SortAscendingOutlined } from '@ant-design/icons';
+import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
+import MobileFilterDrawer from '@/components/MobileFilterDrawer';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -464,210 +465,36 @@ const handlePageChange = (page: number) => {
       )}
 
       {/* Mobile Filters Drawer */}
-      <Drawer
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{t('home.filters')} {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}</span>
-          </div>
-        }
-        placement="bottom"
-        onClose={() => setMobileFiltersOpen(false)}
+      <MobileFilterDrawer
         open={mobileFiltersOpen}
-        height="85vh"
-        styles={{
-          header: { borderBottom: '1px solid #f0f0f0' },
-          body: { padding: 0, paddingBottom: 80 },
+        onClose={() => setMobileFiltersOpen(false)}
+        categories={categories}
+        isLoadingCategories={isLoadingCategories}
+        category={category}
+        onCategoryChange={(value) => { setCategory(value); updateUrlParam('category', value || null); }}
+        brands={brands}
+        isLoadingBrands={isLoadingBrands}
+        brand={brand}
+        onBrandChange={(value) => { setBrand(value); updateUrlParam('brand', value || null); }}
+        search={search}
+        onSearchChange={setSearch}
+        onSearchBlur={() => {
+          if (searchQuery) { updateUrlParam('search', searchQuery); }
+          else { updateUrlParam('search', null); }
         }}
-        className="mobile-filter-drawer"
-      >
-        <Tabs
-          defaultActiveKey="categories"
-          centered
-          style={{ width: '100%' }}
-          items={[
-            {
-              key: 'categories',
-              label: (
-                <span><AppstoreOutlined /> {t('product.category')}</span>
-              ),
-              children: (
-                <div style={{ padding: '0 16px' }}>
-                  <List
-                    loading={isLoadingCategories}
-                    dataSource={[{ id: '', name: t('home.allCategories') }, ...categories]}
-                    renderItem={(cat) => (
-                      <List.Item
-                        onClick={() => {
-                          setCategory(cat.id ? String(cat.id) : '');
-                          updateUrlParam('category', cat.id ? String(cat.id) : null);
-                        }}
-                        style={{
-                          cursor: 'pointer',
-                          background: String(cat.id || '') === category ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
-                          fontWeight: String(cat.id || '') === category ? 600 : 400,
-                          padding: '12px 16px',
-                          borderRadius: 8,
-                        }}
-                      >
-                        {cat.name}
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              ),
-            },
-            {
-              key: 'brands',
-              label: (
-                <span><TagsOutlined /> {t('product.brand')}</span>
-              ),
-              children: (
-                <div style={{ padding: '0 16px' }}>
-                  <List
-                    loading={isLoadingBrands}
-                    dataSource={[{ id: '', name: t('home.allBrands') }, ...brands]}
-                    renderItem={(b) => (
-                      <List.Item
-                        onClick={() => {
-                          setBrand(b.id ? String(b.id) : '');
-                          updateUrlParam('brand', b.id ? String(b.id) : null);
-                        }}
-                        style={{
-                          cursor: 'pointer',
-                          background: String(b.id || '') === brand ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
-                          fontWeight: String(b.id || '') === brand ? 600 : 400,
-                          padding: '12px 16px',
-                          borderRadius: 8,
-                        }}
-                      >
-                        {b.name}
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              ),
-            },
-            {
-              key: 'filters',
-              label: (
-                <span><FilterOutlined /> {t('home.filters')}</span>
-              ),
-              children: (
-                <div style={{ padding: '0 16px' }}>
-                  <Space direction="vertical" style={{ width: '100%' }} size="large">
-                    {/* Search */}
-                    <Input
-                      placeholder={t('home.searchProducts')}
-                      prefix={<SearchOutlined />}
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      onBlur={() => {
-                        if (searchQuery) {
-                          updateUrlParam('search', searchQuery);
-                        } else {
-                          updateUrlParam('search', null);
-                        }
-                      }}
-                      allowClear
-                    />
-
-                    {/* Price Range */}
-                    <div>
-                      <Text strong>{t('home.priceRange')} (MKD)</Text>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
-                        <InputNumber
-                          placeholder="Min"
-                          min={0}
-                          value={priceRange[0] || undefined}
-                          onChange={(val) => {
-                            const newMin = val ?? 0;
-                            setPriceRange([newMin, priceRange[1]]);
-                          }}
-                          onBlur={() => updateUrlParam('min_price', priceRange[0] || null)}
-                          style={{ flex: 1, minWidth: 0 }}
-                        />
-                        <span style={{ flexShrink: 0 }}>–</span>
-                        <InputNumber
-                          placeholder="Max"
-                          min={0}
-                          value={priceRange[1] < 1000000000 ? priceRange[1] : undefined}
-                          onChange={(val) => {
-                            const newMax = val ?? 1000000000;
-                            setPriceRange([priceRange[0], newMax]);
-                          }}
-                          onBlur={() => updateUrlParam('max_price', priceRange[1] < 1000000000 ? priceRange[1] : null)}
-                          style={{ flex: 1, minWidth: 0 }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* In Stock */}
-                    <Checkbox
-                      checked={inStockOnly}
-                      onChange={(e) => {
-                        setInStockOnly(e.target.checked);
-                        updateUrlParam('in_stock', e.target.checked ? 'true' : null);
-                      }}
-                    >
-                      {t('home.inStockOnly')}
-                    </Checkbox>
-
-                    {/* Clear Filters */}
-                    {activeFiltersCount > 0 && (
-                      <Button block danger ghost onClick={clearAllFilters}>
-                        {t('home.clearFilters')}
-                      </Button>
-                    )}
-                  </Space>
-                </div>
-              ),
-            },
-            {
-              key: 'sort',
-              label: (
-                <span><SortAscendingOutlined /> {t('home.sortBy')}</span>
-              ),
-              children: (
-                <div style={{ padding: '0 16px' }}>
-                  <List
-                    dataSource={sortOptions}
-                    renderItem={(opt) => (
-                      <List.Item
-                        onClick={() => {
-                          setSortBy(opt.value);
-                          updateUrlParam('sort', opt.value);
-                        }}
-                        style={{
-                          cursor: 'pointer',
-                          background: opt.value === sortBy ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
-                          fontWeight: opt.value === sortBy ? 600 : 400,
-                          padding: '12px 16px',
-                          borderRadius: 8,
-                        }}
-                      >
-                        {opt.label}
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              ),
-            },
-          ]}
-        />
-        
-        {/* Sticky apply button at bottom of drawer */}
-        <div className="mobile-filter-drawer__footer">
-          <Button
-            type="primary"
-            block
-            size="large"
-            onClick={() => setMobileFiltersOpen(false)}
-            style={{ height: 48 }}
-          >
-            {t('home.showing')} {totalProducts} {t('home.products')}
-          </Button>
-        </div>
-      </Drawer>
+        priceRange={priceRange}
+        onPriceRangeChange={setPriceRange}
+        onMinPriceBlur={() => updateUrlParam('min_price', priceRange[0] || null)}
+        onMaxPriceBlur={() => updateUrlParam('max_price', priceRange[1] < 1000000000 ? priceRange[1] : null)}
+        inStockOnly={inStockOnly}
+        onInStockChange={(checked) => { setInStockOnly(checked); updateUrlParam('in_stock', checked ? 'true' : null); }}
+        sortBy={sortBy}
+        sortOptions={sortOptions}
+        onSortChange={(value) => { setSortBy(value); updateUrlParam('sort', value); }}
+        activeFiltersCount={activeFiltersCount}
+        totalProducts={totalProducts}
+        onClearAll={clearAllFilters}
+      />
     </div>
   );
 }

@@ -92,7 +92,7 @@ describe('Checkout Flow', () => {
             createdAt: new Date().toISOString(),
           },
           token: 'fake-token',
-          refreshToken: null,
+
           isAuthenticated: true,
           isLoading: false,
           error: null,

@@ -62,7 +62,14 @@
     "checkYourEmail": "Kontrolloni email-in tuaj",
     "resetEmailSent": "Kemi dërguar udhëzime për rivendosjen e fjalëkalimit në email-in tuaj. Kontrolloni kutinë hyrëse dhe ndiqni linkun për ta rivendosur fjalëkalimin.",
     "backToLogin": "Kthehu te kyçja",
-    "rememberPassword": "E mbani mend fjalëkalimin?"
+    "rememberPassword": "E mbani mend fjalëkalimin?",
+    "invalidResetLink": "Link i pavlefshëm",
+    "invalidResetLinkDescription": "Ky link për rivendosjen e fjalëkalimit është i pavlefshëm ose ka skaduar. Kërkoni një të ri.",
+    "requestNewLink": "Kërko link të ri",
+    "setNewPassword": "Vendos fjalëkalim të ri",
+    "setNewPasswordDescription": "Shkruani fjalëkalimin tuaj të ri më poshtë.",
+    "passwordResetSuccess": "Fjalëkalimi u rivendos!",
+    "passwordResetSuccessDescription": "Fjalëkalimi juaj u rivendos me sukses. Tani mund të kyçeni me fjalëkalimin e ri."
   },
   "product": {
     "addToCart": "Shto në shportë",

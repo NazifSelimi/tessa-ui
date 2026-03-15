@@ -18,7 +18,6 @@ import { authApi } from '@/features/auth/api';
 interface AuthState {
   user: User | null;
   token: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -27,7 +26,6 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   token: null,
-  refreshToken: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -42,12 +40,10 @@ const authSlice = createSlice({
       action: PayloadAction<{
         user: User;
         token: string;
-        refreshToken?: string;
       }>
     ) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
-      state.refreshToken = action.payload.refreshToken || null;
       state.isAuthenticated = true;
       state.isLoading = false;
       state.error = null;
@@ -57,14 +53,11 @@ const authSlice = createSlice({
       state.user = action.payload;
     },
 
-    setTokens: (
+    setToken: (
       state,
-      action: PayloadAction<{ token: string; refreshToken?: string }>
+      action: PayloadAction<string>
     ) => {
-      state.token = action.payload.token;
-      if (action.payload.refreshToken) {
-        state.refreshToken = action.payload.refreshToken;
-      }
+      state.token = action.payload;
     },
 
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -83,7 +76,6 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
-      state.refreshToken = null;
       state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
@@ -101,7 +93,6 @@ const authSlice = createSlice({
       .addMatcher(authApi.endpoints.login.matchFulfilled, (state, action) => {
         state.user = action.payload.user;
         state.token = action.payload.token;
-        state.refreshToken = action.payload.refreshToken || null;
         state.isAuthenticated = true;
         state.isLoading = false;
         state.error = null;
@@ -120,7 +111,6 @@ const authSlice = createSlice({
       .addMatcher(authApi.endpoints.register.matchFulfilled, (state, action) => {
         state.user = action.payload.user;
         state.token = action.payload.token;
-        state.refreshToken = action.payload.refreshToken || null;
         state.isAuthenticated = true;
         state.isLoading = false;
         state.error = null;
@@ -155,7 +145,6 @@ const authSlice = createSlice({
       .addMatcher(authApi.endpoints.logout.matchFulfilled, (state) => {
         state.user = null;
         state.token = null;
-        state.refreshToken = null;
         state.isAuthenticated = false;
       });
   },
@@ -165,7 +154,7 @@ const authSlice = createSlice({
 export const {
   setCredentials,
   setUser,
-  setTokens,
+  setToken,
   setLoading,
   setError,
   clearError,

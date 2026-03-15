@@ -62,7 +62,14 @@
     "checkYourEmail": "Check Your Email",
     "resetEmailSent": "We've sent password reset instructions to your email address. Please check your inbox and follow the link to reset your password.",
     "backToLogin": "Back to Login",
-    "rememberPassword": "Remember your password?"
+    "rememberPassword": "Remember your password?",
+    "invalidResetLink": "Invalid Reset Link",
+    "invalidResetLinkDescription": "This password reset link is invalid or has expired. Please request a new one.",
+    "requestNewLink": "Request New Link",
+    "setNewPassword": "Set New Password",
+    "setNewPasswordDescription": "Enter your new password below.",
+    "passwordResetSuccess": "Password Reset!",
+    "passwordResetSuccessDescription": "Your password has been reset successfully. You can now sign in with your new password."
   },
   "product": {
     "addToCart": "Add to Cart",
