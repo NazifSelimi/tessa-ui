@@ -32,7 +32,6 @@ vi.mock('@/features/auth/api', () => ({
               role: 'user',
             },
             accessToken: 'fake-access-token',
-            refreshToken: 'fake-refresh-token',
           }),
         })),
       },

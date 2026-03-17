@@ -26,12 +26,6 @@ export interface User {
   updatedAt?: string;
 }
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken?: string;
-  expiresIn: number;
-}
-
 // ==================== PRODUCTS ====================
 
 export interface Product {
@@ -313,19 +307,7 @@ export interface ApiError {
 
 // ==================== FORM TYPES ====================
 
-export interface LoginFormData {
-  email: string;
-  password: string;
-  remember?: boolean;
-}
 
-export interface RegisterFormData {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  passwordConfirmation: string;
-}
 
 export interface CheckoutFormData {
   shippingAddress: ShippingAddress;

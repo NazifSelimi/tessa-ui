@@ -15,13 +15,11 @@ import type { User } from '@/types';
 interface LoginResponse {
   user: User;
   token: string;
-  refreshToken?: string;
 }
 
 interface RegisterResponse {
   user: User;
   token: string;
-  refreshToken?: string;
 }
 
 // Request types
