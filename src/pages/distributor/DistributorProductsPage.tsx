@@ -5,12 +5,12 @@
  * Distributors can see margins and share pricing info with stylists.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Table, Button, Tag, Input, Space, Spin, Card } from 'antd';
 import { ArrowLeftOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
-import { getProducts } from '@/api/services';
+import { useGetProductsQuery } from '@/features/products/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Product } from '@/types';
 
@@ -19,29 +19,9 @@ const { Title, Text } = Typography;
 export default function DistributorProductsPage() {
   const navigate = useNavigate();
   const { currentRole } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useGetProductsQuery({ perPage: 100 });
+  const products = data?.data ?? [];
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadProducts() {
-      setLoading(true);
-      try {
-        const data = await getProducts();
-        if (cancelled) return;
-        setProducts(data.data ?? []);
-      } catch (error) {
-        if (!cancelled && import.meta.env.DEV) console.error('Failed to load products:', error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadProducts();
-
-    return () => { cancelled = true; };
-  }, []);
 
   const getBrandName = (b: any) => typeof b === 'object' ? b?.name || '' : b || '';
   const getCategoryName = (c: any) => typeof c === 'object' ? c?.name || '' : c || '';

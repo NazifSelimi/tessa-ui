@@ -92,6 +92,11 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: any) => response.data || [],
     }),
+
+    getRelatedProducts: builder.query<Product[], string | number>({
+      query: (id) => `/v1/products/${id}/related`,
+      transformResponse: (response: any) => response.data || [],
+    }),
   }),
 });
 
@@ -106,4 +111,5 @@ export const {
   useGetBrandsQuery,
   useSearchProductsQuery,
   useLazySearchProductsQuery,
+  useGetRelatedProductsQuery,
 } = productsApi;

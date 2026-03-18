@@ -10,7 +10,7 @@
  * - Related products
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Row, Col, Typography, Button, InputNumber, Space, 
@@ -27,8 +27,7 @@ import ProductCard from '@/components/ProductCard';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
-import { getProductById, getRelatedProducts } from '@/api/services';
-import type { Product } from '@/types';
+import { useGetProductByIdQuery, useGetRelatedProductsQuery } from '@/features/products/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -38,36 +37,11 @@ export default function ProductPage() {
   const { addItem } = useCart();
   const { t } = useTranslation();
   
-  const [product, setProduct] = useState<Product | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: product, isLoading: loading } = useGetProductByIdQuery(id!, { skip: !id });
+  const { data: relatedProducts = [] } = useGetRelatedProductsQuery(product?.id as number | string, { skip: !product?.id });
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const localizedDescription = useLocalizedDescription(product);
-
-  // Load product data
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadProduct() {
-      if (!id) return;
-      setLoading(true);
-      
-      const productData = await getProductById(id);
-      if (cancelled) return;
-      if (productData) {
-        setProduct(productData);
-        const related = await getRelatedProducts(productData.id as number | string);
-        if (cancelled) return;
-        setRelatedProducts(related);
-      }
-      
-      setLoading(false);
-    }
-    loadProduct();
-
-    return () => { cancelled = true; };
-  }, [id]);
+  const localizedDescription = useLocalizedDescription(product ?? null);
 
   // Handle add to cart
   const handleAddToCart = () => {

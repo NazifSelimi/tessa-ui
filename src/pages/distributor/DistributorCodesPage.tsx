@@ -6,57 +6,28 @@
  * TODO: Connect to API for real code management
  */
 
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Typography, Card, Table, Button, Tag, Space, message, Spin 
 } from 'antd';
 import { PlusOutlined, CopyOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
-import { getDistributorCodes, generateStylistCode } from '@/api/services';
-import type { StylistCode } from '@/types';
+import { useGetDistributorCodesQuery, useGenerateDistributorCodeMutation } from '@/features/stylist/api';
 
 const { Title, Text } = Typography;
 
 export default function DistributorCodesPage() {
   const navigate = useNavigate();
-  const { currentRole, user } = useAuth();
-  const [codes, setCodes] = useState<StylistCode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadCodes() {
-      setLoading(true);
-      try {
-        // TODO: Replace with actual API call
-        const data = await getDistributorCodes(user?.id);
-        if (cancelled) return;
-        setCodes(data);
-      } catch (_error) {
-        if (!cancelled) message.error('Failed to load codes');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadCodes();
-
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  const { currentRole } = useAuth();
+  const { data: codes = [], isLoading: loading } = useGetDistributorCodesQuery();
+  const [generateCode, { isLoading: generating }] = useGenerateDistributorCodeMutation();
 
   const handleGenerateCode = async () => {
-    setGenerating(true);
     try {
-      // TODO: Replace with actual API call
-      const newCode = await generateStylistCode(user?.id || 'distributor');
-      setCodes(prev => [newCode, ...prev]);
+      const newCode = await generateCode({}).unwrap();
       message.success(`New code generated: ${newCode.code}`);
     } catch (_error) {
       message.error('Failed to generate code');
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -94,7 +65,7 @@ export default function DistributorCodesPage() {
     {
       title: 'Status',
       key: 'status',
-      render: (_: unknown, record: StylistCode) => (
+      render: (_: unknown, record: any) => (
         record.usedBy ? (
           <Tag color="default">Used</Tag>
         ) : record.isActive ? (
