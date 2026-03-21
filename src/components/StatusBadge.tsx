@@ -29,6 +29,7 @@ const paymentStatusConfig: Record<PaymentStatus, { color: string; label: string 
 const stylistRequestStatusConfig: Record<StylistRequestStatus, { color: string; label: string }> = {
   pending: { color: 'orange', label: 'Pending Review' },
   approved: { color: 'green', label: 'Approved' },
+  rejected: { color: 'red', label: 'Rejected' },
 };
 
 // Coupon status colors and labels

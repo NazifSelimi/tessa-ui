@@ -68,7 +68,7 @@ const RegisterPage: React.FC = () => {
         phone: values.phone,
       });
       message.success(t('auth.accountCreated'));
-      navigate('/login');
+      navigate(values.accountType === 'stylist' ? '/stylist/request' : '/login');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t('auth.registrationFailed');
       message.error(errorMessage);

@@ -26,6 +26,8 @@ export default function StylistRequestPage() {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [requestStatus, setRequestStatus] = useState<StylistRequestStatus | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [allowResubmit, setAllowResubmit] = useState(false);
 
   // Check existing request status on mount
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function StylistRequestPage() {
           const result = await response.json();
           if (result.data?.status) {
             setRequestStatus(result.data.status as StylistRequestStatus);
+            setRejectionReason(result.data.rejectionReason ?? null);
           }
         }
       } catch {
@@ -93,6 +96,8 @@ export default function StylistRequestPage() {
       }
 
       setRequestStatus('pending');
+      setRejectionReason(null);
+      setAllowResubmit(false);
       message.success('Application submitted successfully!');
     } catch (error: unknown) {
       notifyError(extractErrorMessage(error));
@@ -153,6 +158,34 @@ export default function StylistRequestPage() {
     );
   }
 
+  if (requestStatus === 'rejected' && !allowResubmit) {
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <Card>
+          <Result
+            status="error"
+            title="Application Not Approved"
+            subTitle="Your previous stylist application was not approved."
+            extra={
+              <Button type="primary" onClick={() => setAllowResubmit(true)}>
+                Submit a New Application
+              </Button>
+            }
+          />
+          {rejectionReason && (
+            <Alert
+              message="Reason Provided"
+              description={rejectionReason}
+              type="warning"
+              showIcon
+              style={{ marginTop: 16 }}
+            />
+          )}
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -184,7 +217,7 @@ export default function StylistRequestPage() {
             name="name"
             label="Full Name"
             rules={[{ required: true, message: 'Please enter your name' }]}
-            initialValue={user?.name}
+            initialValue={[user?.firstName, user?.lastName].filter(Boolean).join(' ')}
           >
             <Input placeholder="Your full name" />
           </Form.Item>

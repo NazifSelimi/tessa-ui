@@ -147,7 +147,7 @@ export interface Order {
 
 // ==================== STYLIST REQUESTS ====================
 
-export type StylistRequestStatus = 'pending' | 'approved';
+export type StylistRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export interface StylistRequest {
   id: string;
@@ -161,6 +161,7 @@ export interface StylistRequest {
   message?: string;
   isApproved?: boolean;
   status: StylistRequestStatus;
+  rejectionReason?: string | null;
   createdAt: string;
   updatedAt?: string;
 }

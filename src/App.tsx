@@ -5,6 +5,8 @@ import { store, persistor } from './store';
 import { PersistGate } from 'redux-persist/integration/react';
 import './i18n';
 import './App.css';
+import { useAppSelector } from '@/app/hooks';
+import { useGetCurrentUserQuery } from '@/features/auth/api';
 
 // Eagerly loaded components (no antd dependency)
 import LoadingScreen from './components/LoadingScreen';
@@ -51,6 +53,17 @@ function ScrollToTop() {
   return null;
 }
 
+function AuthBootstrap() {
+  const token = useAppSelector((state) => state.auth.token);
+
+  useGetCurrentUserQuery(undefined, {
+    skip: !token,
+    refetchOnMountOrArgChange: true,
+  });
+
+  return null;
+}
+
 function App() {
   return (
     <>
@@ -63,6 +76,7 @@ function App() {
                 v7_relativeSplatPath: true,
               }}
             >
+              <AuthBootstrap />
               <ScrollToTop />
               <Suspense fallback={<LoadingScreen />}>
               <AntdProvider>

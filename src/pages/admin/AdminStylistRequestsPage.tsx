@@ -23,6 +23,7 @@ const statusOptions = [
   { value: 'all', label: 'All Status' },
   { value: 'pending', label: 'Pending' },
   { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 export default function AdminStylistRequestsPage() {
@@ -54,8 +55,8 @@ export default function AdminStylistRequestsPage() {
   const requests = data?.data ?? [];
   const pagination = data?.meta;
 
-  /** Derive display status from backend response. */
-  const getStatus = (record: StylistRequest): 'pending' | 'approved' => {
+  const getStatus = (record: StylistRequest): 'pending' | 'approved' | 'rejected' => {
+    if (record.status === 'rejected') return 'rejected';
     if (record.isApproved === true || record.status === 'approved') return 'approved';
     return 'pending';
   };
@@ -88,7 +89,7 @@ export default function AdminStylistRequestsPage() {
     if (!rejectingId) return;
     try {
       await rejectStylist({ id: rejectingId, reason: rejectReason || undefined }).unwrap();
-      message.success('Stylist request rejected and removed.');
+      message.success('Stylist request rejected.');
       setShowRejectModal(false);
       setRejectReason('');
       setRejectingId(null);
@@ -138,7 +139,9 @@ export default function AdminStylistRequestsPage() {
         const status = getStatus(record);
         return status === 'approved'
           ? <Tag color="green">APPROVED</Tag>
-          : <Tag color="orange">PENDING</Tag>;
+          : status === 'rejected'
+            ? <Tag color="red">REJECTED</Tag>
+            : <Tag color="orange">PENDING</Tag>;
       },
     },
     {
@@ -306,9 +309,14 @@ export default function AdminStylistRequestsPage() {
             <Descriptions.Item label="Status">
               {getStatus(selectedRequest) === 'approved'
                 ? <Tag color="green">APPROVED</Tag>
-                : <Tag color="orange">PENDING</Tag>
+                : getStatus(selectedRequest) === 'rejected'
+                  ? <Tag color="red">REJECTED</Tag>
+                  : <Tag color="orange">PENDING</Tag>
               }
             </Descriptions.Item>
+            {selectedRequest.rejectionReason && (
+              <Descriptions.Item label="Rejection Reason">{selectedRequest.rejectionReason}</Descriptions.Item>
+            )}
             <Descriptions.Item label="Submitted">
               {selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString() : '-'}
             </Descriptions.Item>
