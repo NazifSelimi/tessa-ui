@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal } from 'antd';
+import { useState, useCallback, useEffect } from 'react';
+import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
@@ -23,24 +23,30 @@ interface ProductFormValues {
   name: string;
   price: number;
   stylist_price?: number;
+  stylist_only?: boolean;
   quantity: number;
   category_id: number;
   brand_id: number;
-  description?: string;
+  description_en?: string;
+  description_mk?: string;
+  description_shq?: string;
 }
 
 /**
  * Build snapshot of current form values from a Product so we can diff later.
  */
-function snapshotFromProduct(product: Product): Record<string, unknown> {
+function snapshotFromProduct(product: Product): ProductFormValues {
   return {
     name: product.name,
     price: Number(product.price ?? 0),
     stylist_price: Number(product.stylistPrice ?? 0),
+    stylist_only: Boolean(product.stylistOnly),
     quantity: product.quantity ?? 0,
     category_id: Number(product.categoryId || (product.category as any)?.id || 0),
     brand_id: Number(product.brandId || (product.brand as any)?.id || 0),
-    description: product.description ?? '',
+    description_en: product.translations?.en ?? '',
+    description_mk: product.translations?.mk ?? '',
+    description_shq: product.translations?.shq ?? '',
   };
 }
 
@@ -70,22 +76,29 @@ export default function AdminProductsPage() {
   const [deleteProduct] = useDeleteProductMutation();
   const [_updateStock] = useUpdateProductStockMutation();
 
+  useEffect(() => {
+    if (!modalOpen) return;
+
+    if (editingProduct) {
+      form.setFieldsValue(snapshotFromProduct(editingProduct));
+      return;
+    }
+
+    form.setFieldsValue({
+      stylist_only: false,
+      description_en: '',
+      description_mk: '',
+      description_shq: '',
+    });
+  }, [modalOpen, editingProduct, form]);
+
   /* ============================== handlers ============================== */
 
   const handleEdit = useCallback((product: Product) => {
     setEditingProduct(product);
     setFileList([]);
-    form.setFieldsValue({
-      name: product.name,
-      price: Number(product.price ?? 0),
-      stylist_price: Number(product.stylistPrice ?? 0),
-      quantity: product.quantity ?? 0,
-      category_id: Number(product.categoryId || (product.category as any)?.id),
-      brand_id: Number(product.brandId || (product.brand as any)?.id),
-      description: product.description ?? '',
-    });
     setModalOpen(true);
-  }, [form]);
+  }, []);
 
   const handleDelete = (productId: string | number) => {
     modal.confirm({
@@ -111,16 +124,42 @@ export default function AdminProductsPage() {
         /* ---- UPDATE: only send fields that actually changed ---- */
         const original = snapshotFromProduct(editingProduct);
         const fieldKeys: (keyof ProductFormValues)[] = [
-          'name', 'price', 'stylist_price', 'quantity', 'category_id', 'brand_id', 'description',
+          'name', 'price', 'stylist_price', 'stylist_only', 'quantity', 'category_id', 'brand_id',
         ];
         let hasChanges = false;
         for (const key of fieldKeys) {
           const newVal = values[key] ?? '';
           const oldVal = original[key] ?? '';
           if (String(newVal) !== String(oldVal)) {
-            formData.append(key, String(newVal));
+            if (key === 'stylist_only') {
+              formData.append(key, newVal ? '1' : '0');
+            } else {
+              formData.append(key, String(newVal));
+            }
             hasChanges = true;
           }
+        }
+
+        const translationMap = {
+          en: values.description_en ?? '',
+          mk: values.description_mk ?? '',
+          shq: values.description_shq ?? '',
+        };
+        const originalTranslationMap = {
+          en: String(original.description_en ?? ''),
+          mk: String(original.description_mk ?? ''),
+          shq: String(original.description_shq ?? ''),
+        };
+
+        if (
+          translationMap.en !== originalTranslationMap.en ||
+          translationMap.mk !== originalTranslationMap.mk ||
+          translationMap.shq !== originalTranslationMap.shq
+        ) {
+          formData.append('translations[en]', translationMap.en);
+          formData.append('translations[mk]', translationMap.mk);
+          formData.append('translations[shq]', translationMap.shq);
+          hasChanges = true;
         }
 
         // Handle image upload — always send if a new file was picked
@@ -144,12 +183,13 @@ export default function AdminProductsPage() {
         if (values.stylist_price !== undefined && values.stylist_price !== null) {
           formData.append('stylist_price', String(values.stylist_price));
         }
+        formData.append('stylist_only', values.stylist_only ? '1' : '0');
         formData.append('quantity', String(values.quantity));
         formData.append('category_id', String(values.category_id));
         formData.append('brand_id', String(values.brand_id));
-        if (values.description) {
-          formData.append('description', values.description);
-        }
+        formData.append('translations[en]', values.description_en ?? '');
+        formData.append('translations[mk]', values.description_mk ?? '');
+        formData.append('translations[shq]', values.description_shq ?? '');
 
         // Handle image upload
         if (fileList.length > 0 && fileList[0].originFileObj) {
@@ -240,6 +280,14 @@ export default function AdminProductsPage() {
       },
     },
     {
+      title: 'Access',
+      key: 'access',
+      render: (_: unknown, record: Product) =>
+        record.stylistOnly
+          ? <Tag color="purple">STYLIST ONLY</Tag>
+          : <Tag>ALL USERS</Tag>,
+    },
+    {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, record: Product) => (
@@ -267,7 +315,10 @@ export default function AdminProductsPage() {
             placeholder="Search products (min 2 chars)..."
             prefix={<SearchOutlined />}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             style={{ width: 200 }}
             allowClear
           />
@@ -319,6 +370,7 @@ export default function AdminProductsPage() {
           form.resetFields();
         }}
         width={700}
+        forceRender
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
@@ -367,11 +419,30 @@ export default function AdminProductsPage() {
                 <InputNumber min={0} placeholder="0" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
+            <Col span={8}>
+              <Form.Item name="stylist_only" label="Stylist Only" valuePropName="checked" initialValue={false}>
+                <Switch checkedChildren="Yes" unCheckedChildren="No" />
+              </Form.Item>
+            </Col>
           </Row>
 
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} placeholder="Product description" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item name="description_en" label="Description (English)">
+                <Input.TextArea rows={3} placeholder="English product description" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="description_mk" label="Description (Macedonian)">
+                <Input.TextArea rows={3} placeholder="Македонски опис" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="description_shq" label="Description (Albanian)">
+                <Input.TextArea rows={3} placeholder="Pershkrimi ne shqip" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item label="Product Image" extra="Images are automatically converted to WebP for optimization. Max 10MB.">
             <Upload {...uploadProps}>

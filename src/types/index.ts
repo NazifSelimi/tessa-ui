@@ -43,6 +43,7 @@ export interface Product {
   price?: string | number;
   compareAtPrice?: string | number | null;
   stylistPrice?: string | number;
+  stylistOnly?: boolean;
   inStock?: boolean;
   quantity?: number;
   featured?: boolean;

@@ -3,10 +3,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Provider } from 'react-redux';
 import { store, persistor } from './store';
 import { PersistGate } from 'redux-persist/integration/react';
+import { useDispatch } from 'react-redux';
 import './i18n';
 import './App.css';
 import { useAppSelector } from '@/app/hooks';
 import { useGetCurrentUserQuery } from '@/features/auth/api';
+import { baseApi, API_TAGS } from '@/api/baseApi';
 import i18n, { isSupportedLocale, type Locale } from '@/i18n';
 
 // Eagerly loaded components (no antd dependency)
@@ -55,8 +57,10 @@ function ScrollToTop() {
 }
 
 function AuthBootstrap() {
+  const dispatch = useDispatch();
   const token = useAppSelector((state) => state.auth.token);
   const preferredLocale = useAppSelector((state) => state.auth.user?.preferredLocale);
+  const currentRole = useAppSelector((state) => state.auth.user?.role ?? 'guest');
 
   useGetCurrentUserQuery(undefined, {
     skip: !token,
@@ -69,6 +73,14 @@ function AuthBootstrap() {
 
     void i18n.changeLanguage(preferredLocale as Locale);
   }, [preferredLocale]);
+
+  useEffect(() => {
+    dispatch(baseApi.util.invalidateTags([
+      { type: API_TAGS.Products, id: 'LIST' },
+      { type: API_TAGS.Products, id: 'FEATURED' },
+      API_TAGS.Product,
+    ]));
+  }, [dispatch, token, currentRole]);
 
   return null;
 }
