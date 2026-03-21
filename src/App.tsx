@@ -7,6 +7,7 @@ import './i18n';
 import './App.css';
 import { useAppSelector } from '@/app/hooks';
 import { useGetCurrentUserQuery } from '@/features/auth/api';
+import i18n, { isSupportedLocale, type Locale } from '@/i18n';
 
 // Eagerly loaded components (no antd dependency)
 import LoadingScreen from './components/LoadingScreen';
@@ -55,11 +56,19 @@ function ScrollToTop() {
 
 function AuthBootstrap() {
   const token = useAppSelector((state) => state.auth.token);
+  const preferredLocale = useAppSelector((state) => state.auth.user?.preferredLocale);
 
   useGetCurrentUserQuery(undefined, {
     skip: !token,
     refetchOnMountOrArgChange: true,
   });
+
+  useEffect(() => {
+    if (!preferredLocale || !isSupportedLocale(preferredLocale)) return;
+    if (i18n.language === preferredLocale) return;
+
+    void i18n.changeLanguage(preferredLocale as Locale);
+  }, [preferredLocale]);
 
   return null;
 }

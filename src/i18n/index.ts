@@ -14,6 +14,10 @@ export const SUPPORTED_LANGUAGES = [
 
 export type Locale = 'en' | 'mk' | 'shq';
 
+export function isSupportedLocale(value: string): value is Locale {
+  return SUPPORTED_LANGUAGES.some((language) => language.code === value);
+}
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)

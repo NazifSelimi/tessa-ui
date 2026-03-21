@@ -87,7 +87,8 @@ export function useAuth() {
     first_name?: string;
     last_name?: string;
     phone?: string; 
-    email?: string 
+    email?: string;
+    preferred_locale?: 'en' | 'mk' | 'shq';
   }): Promise<User> => {
     const result = await updateProfileMutation(data).unwrap();
     return result;

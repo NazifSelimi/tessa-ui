@@ -41,6 +41,7 @@ interface UpdateProfileRequest {
   last_name?: string;
   email?: string;
   phone?: string;
+  preferred_locale?: 'en' | 'mk' | 'shq';
 }
 
 interface ForgotPasswordRequest {

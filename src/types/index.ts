@@ -17,6 +17,7 @@ export interface User {
   lastName?: string;
   phone?: string;
   role: UserRole;
+  preferredLocale?: 'en' | 'mk' | 'shq' | null;
   avatar?: string;
   emailVerifiedAt?: string;
   address?: string;
