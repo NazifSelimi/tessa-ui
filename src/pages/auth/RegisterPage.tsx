@@ -24,12 +24,21 @@ import {
   MailOutlined,
   LockOutlined,
   PhoneOutlined,
+  HomeOutlined,
+  PushpinOutlined,
   GoogleOutlined,
   FacebookOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
+import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
+import {
+  MACEDONIA_CITY_OPTIONS,
+  MACEDONIA_POSTCODE_OPTIONS,
+  getCityForPostcode,
+  getPostcodeForCity,
+} from '@/shared/data/macedoniaLocations';
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -39,6 +48,9 @@ interface RegisterFormValues {
   lastName: string;
   email: string;
   phone: string;
+  address: string;
+  city: string;
+  postcode: string;
   password: string;
   confirmPassword: string;
   accountType: 'customer' | 'stylist';
@@ -66,6 +78,9 @@ const RegisterPage: React.FC = () => {
         first_name: values.firstName,
         last_name: values.lastName,
         phone: values.phone,
+        address: values.address,
+        city: values.city,
+        postcode: values.postcode,
       });
       message.success(t('auth.accountCreated'));
       navigate(values.accountType === 'stylist' ? '/stylist/request' : '/login');
@@ -75,6 +90,21 @@ const RegisterPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSocialRegister = (provider: SocialProvider) => {
+    const accountType = form.getFieldValue('accountType') as RegisterFormValues['accountType'] | undefined;
+    const target = accountType === 'stylist' ? '/stylist/request' : '/';
+
+    startSocialAuth(provider, {
+      intent: 'register',
+      redirect: target,
+      accountType,
+    });
+  };
+
+  const handleFacebookComingSoon = () => {
+    message.info(t('auth.facebookSoon'));
   };
 
   return (
@@ -171,6 +201,64 @@ const RegisterPage: React.FC = () => {
               autoComplete="tel"
             />
           </Form.Item>
+
+          <Form.Item
+            name="address"
+            label={t('checkout.address')}
+            rules={[{ required: true, message: t('account.enterAddress') }]}
+          >
+            <Input
+              prefix={<HomeOutlined style={{ color: '#bfbfbf' }} />}
+              placeholder="Street and number"
+              size="large"
+              autoComplete="street-address"
+            />
+          </Form.Item>
+
+          <Space style={{ width: '100%', display: 'flex' }} size={12}>
+            <Form.Item
+              name="city"
+              label={t('checkout.municipality')}
+              rules={[{ required: true, message: t('account.enterMunicipality') }]}
+              style={{ flex: 1, marginBottom: 16 }}
+            >
+              <Select
+                size="large"
+                showSearch
+                options={MACEDONIA_CITY_OPTIONS}
+                placeholder={t('account.selectMunicipality')}
+                optionFilterProp="label"
+                suffixIcon={<PushpinOutlined />}
+                onChange={(city) => {
+                  const postcode = getPostcodeForCity(city);
+                  if (postcode) {
+                    form.setFieldValue('postcode', postcode);
+                  }
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="postcode"
+              label={t('checkout.zip')}
+              rules={[{ required: true, message: t('account.enterPostcode') }]}
+              style={{ flex: 1, marginBottom: 16 }}
+            >
+              <Select
+                size="large"
+                showSearch
+                options={MACEDONIA_POSTCODE_OPTIONS}
+                placeholder={t('account.selectPostcode')}
+                optionFilterProp="label"
+                onChange={(postcode) => {
+                  const city = getCityForPostcode(postcode);
+                  if (city) {
+                    form.setFieldValue('city', city);
+                  }
+                }}
+              />
+            </Form.Item>
+          </Space>
 
           <Form.Item
             name="accountType"
@@ -271,6 +359,7 @@ const RegisterPage: React.FC = () => {
             size="large"
             block
             icon={<GoogleOutlined />}
+            onClick={() => handleSocialRegister('google')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {t('auth.continueWithGoogle')}
@@ -279,6 +368,7 @@ const RegisterPage: React.FC = () => {
             size="large"
             block
             icon={<FacebookOutlined />}
+            onClick={handleFacebookComingSoon}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {t('auth.continueWithFacebook')}

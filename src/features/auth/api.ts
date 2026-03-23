@@ -33,6 +33,9 @@ interface RegisterRequest {
   last_name: string;
   email: string;
   phone: string;
+  address: string;
+  city: string;
+  postcode: string;
   password: string;
 }
 
@@ -41,6 +44,9 @@ interface UpdateProfileRequest {
   last_name?: string;
   email?: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  postcode?: string;
   preferred_locale?: 'en' | 'mk' | 'shq';
 }
 

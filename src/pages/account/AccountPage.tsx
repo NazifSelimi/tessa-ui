@@ -8,10 +8,16 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom';
-import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider, Select } from 'antd';
+import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, ArrowLeftOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  MACEDONIA_CITY_OPTIONS,
+  MACEDONIA_POSTCODE_OPTIONS,
+  getCityForPostcode,
+  getPostcodeForCity,
+} from '@/shared/data/macedoniaLocations';
 
 const { Title, Text } = Typography;
 
@@ -21,7 +27,15 @@ export default function AccountPage() {
   const { user, currentRole, updateProfile, isLoading } = useAuth();
   const [form] = Form.useForm();
 
-  const handleUpdateProfile = async (values: { first_name: string; last_name: string; email: string; phone: string }) => {
+  const handleUpdateProfile = async (values: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    postcode: string;
+  }) => {
     try {
       await updateProfile(values);
       message.success(t('account.profileUpdated'));
@@ -98,6 +112,9 @@ export default function AccountPage() {
                 last_name: user?.lastName || '',
                 email: user?.email || '',
                 phone: user?.phone || '',
+                address: user?.address || '',
+                city: user?.city || '',
+                postcode: user?.postcode || '',
               }}
               onFinish={handleUpdateProfile}
             >
@@ -117,8 +134,43 @@ export default function AccountPage() {
                 <Input prefix={<MailOutlined />} placeholder="your@email.com" />
               </Form.Item>
 
-              <Form.Item name="phone" label={t('auth.phone')}>
+              <Form.Item name="phone" label={t('auth.phone')} rules={[{ required: true, message: t('auth.enterPhone') }]}>
                 <Input prefix={<PhoneOutlined />} placeholder="+1 234 567 8900" />
+              </Form.Item>
+
+              <Form.Item name="address" label={t('checkout.address')} rules={[{ required: true, message: t('account.enterAddress') }]}>
+                <Input prefix={<HomeOutlined />} placeholder="Street and number" />
+              </Form.Item>
+
+              <Form.Item name="city" label={t('checkout.municipality')} rules={[{ required: true, message: t('account.enterMunicipality') }]}>
+                <Select
+                  showSearch
+                  options={MACEDONIA_CITY_OPTIONS}
+                  placeholder={t('account.selectMunicipality')}
+                  optionFilterProp="label"
+                  suffixIcon={<PushpinOutlined />}
+                  onChange={(city) => {
+                    const postcode = getPostcodeForCity(city);
+                    if (postcode) {
+                      form.setFieldValue('postcode', postcode);
+                    }
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item name="postcode" label={t('checkout.zip')} rules={[{ required: true, message: t('account.enterPostcode') }]}>
+                <Select
+                  showSearch
+                  options={MACEDONIA_POSTCODE_OPTIONS}
+                  placeholder={t('account.selectPostcode')}
+                  optionFilterProp="label"
+                  onChange={(postcode) => {
+                    const city = getCityForPostcode(postcode);
+                    if (city) {
+                      form.setFieldValue('city', city);
+                    }
+                  }}
+                />
               </Form.Item>
 
               <Button type="primary" htmlType="submit" loading={isLoading}>

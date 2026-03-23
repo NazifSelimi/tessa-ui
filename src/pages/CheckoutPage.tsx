@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import {
-  Row, Col, Typography, Steps, Form, Input, Button, Card,
+  Row, Col, Typography, Steps, Form, Input, Button, Card, Select,
   Divider, Space, Image, message, Alert, Tag, Result,
 } from 'antd';
 import {
@@ -25,6 +25,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDiscounts } from '@/hooks/useDiscounts';
 import { useTranslation } from 'react-i18next';
 import { useCreateOrderMutation } from '@/features/orders/api';
+import { isProfileComplete } from '@/features/auth/profile';
+import {
+  MACEDONIA_CITY_OPTIONS,
+  MACEDONIA_POSTCODE_OPTIONS,
+  getCityForPostcode,
+  getPostcodeForCity,
+} from '@/shared/data/macedoniaLocations';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
@@ -45,7 +52,7 @@ interface ShippingFormData {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clearCart, getItemTotal } = useCart();
-  const { isProfessional, user } = useAuth();
+  const { isProfessional, user, token } = useAuth();
   const { appliedCode, applyCode, removeCode, discountAmount, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
   const { t } = useTranslation();
@@ -68,9 +75,17 @@ export default function CheckoutPage() {
         phone: user.phone || '',
         address: user.address || '',
         city: user.city || '',
+        zip: user.postcode || '',
+        state: 'North Macedonia',
       });
     }
   }, [user, shippingForm, shippingData]);
+
+  useEffect(() => {
+    if (token && user && !isProfileComplete(user)) {
+      navigate('/complete-profile?continue=%2Fcheckout', { replace: true });
+    }
+  }, [navigate, token, user]);
 
   // Shipping cost calculation
   const shippingCost = subtotal >= 3000 ? 0 : 150;
@@ -264,10 +279,22 @@ export default function CheckoutPage() {
                   <Col xs={24} sm={8}>
                     <Form.Item
                       name="city"
-                      label={t('checkout.city')}
+                      label={t('checkout.municipality')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" />
+                      <Select
+                        size="large"
+                        showSearch
+                        options={MACEDONIA_CITY_OPTIONS}
+                        placeholder={t('account.selectMunicipality')}
+                        optionFilterProp="label"
+                        onChange={(city) => {
+                          const postcode = getPostcodeForCity(city);
+                          if (postcode) {
+                            shippingForm.setFieldValue('zip', postcode);
+                          }
+                        }}
+                      />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={8}>
@@ -275,8 +302,9 @@ export default function CheckoutPage() {
                       name="state"
                       label={t('checkout.state')}
                       rules={[{ required: true, message: t('common.required') }]}
+                      initialValue="North Macedonia"
                     >
-                      <Input size="large" />
+                      <Input size="large" disabled />
                     </Form.Item>
                   </Col>
                   <Col xs={12} sm={8}>
@@ -285,7 +313,19 @@ export default function CheckoutPage() {
                       label={t('checkout.zip')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" />
+                      <Select
+                        size="large"
+                        showSearch
+                        options={MACEDONIA_POSTCODE_OPTIONS}
+                        placeholder={t('account.selectPostcode')}
+                        optionFilterProp="label"
+                        onChange={(postcode) => {
+                          const city = getCityForPostcode(postcode);
+                          if (city) {
+                            shippingForm.setFieldValue('city', city);
+                          }
+                        }}
+                      />
                     </Form.Item>
                   </Col>
                 </Row>

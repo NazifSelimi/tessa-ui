@@ -30,6 +30,8 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
+const SocialAuthCallbackPage = lazy(() => import('./pages/auth/SocialAuthCallbackPage'));
+const CompleteProfilePage = lazy(() => import('./pages/auth/CompleteProfilePage'));
 const AccountPage = lazy(() => import('./pages/account/AccountPage'));
 const OrdersPage = lazy(() => import('./pages/account/OrdersPage'));
 const OrderDetailPage = lazy(() => import('./pages/account/OrderDetailPage'));
@@ -165,6 +167,12 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/social/callback" element={<SocialAuthCallbackPage />} />
+              <Route path="/complete-profile" element={
+                <ProtectedRoute allowIncompleteProfile>
+                  <CompleteProfilePage />
+                </ProtectedRoute>
+              } />
 
               {/* Admin routes – layout + pages are lazy-loaded */}
               <Route element={

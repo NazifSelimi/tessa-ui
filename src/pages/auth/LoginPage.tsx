@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
 import Logo from '@/components/Logo';
+import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 
 const { Text, Paragraph } = Typography;
 
@@ -59,11 +60,14 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    message.info(t('auth.googleSoon'));
+  const handleSocialLogin = (provider: SocialProvider) => {
+    startSocialAuth(provider, {
+      intent: 'login',
+      redirect: from,
+    });
   };
 
-  const handleFacebookLogin = () => {
+  const handleFacebookComingSoon = () => {
     message.info(t('auth.facebookSoon'));
   };
 
@@ -169,7 +173,7 @@ const LoginPage: React.FC = () => {
             size="large"
             block
             icon={<GoogleOutlined />}
-            onClick={handleGoogleLogin}
+            onClick={() => handleSocialLogin('google')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {t('auth.continueWithGoogle')}
@@ -178,7 +182,7 @@ const LoginPage: React.FC = () => {
             size="large"
             block
             icon={<FacebookOutlined />}
-            onClick={handleFacebookLogin}
+            onClick={handleFacebookComingSoon}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {t('auth.continueWithFacebook')}

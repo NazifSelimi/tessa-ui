@@ -65,6 +65,9 @@ export function useAuth() {
     last_name: string;
     email: string; 
     phone: string; 
+    address: string;
+    city: string;
+    postcode: string;
     password: string 
   }): Promise<User> => {
     const result = await registerMutation(data).unwrap();
@@ -88,6 +91,9 @@ export function useAuth() {
     last_name?: string;
     phone?: string; 
     email?: string;
+    address?: string;
+    city?: string;
+    postcode?: string;
     preferred_locale?: 'en' | 'mk' | 'shq';
   }): Promise<User> => {
     const result = await updateProfileMutation(data).unwrap();

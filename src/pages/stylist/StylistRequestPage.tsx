@@ -6,13 +6,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Typography, Card, Form, Input, Button, Result, Steps, Alert, App, Spin } from 'antd';
+import { Typography, Card, Form, Input, Button, Result, Steps, Alert, App, Spin, Select } from 'antd';
 import { ScissorOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { store } from '@/store/index';
 import type { StylistRequestStatus } from '@/types';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
+import { MACEDONIA_CITY_OPTIONS } from '@/shared/data/macedoniaLocations';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -252,10 +253,15 @@ export default function StylistRequestPage() {
 
           <Form.Item
             name="salonCity"
-            label="Salon City"
-            rules={[{ required: true, message: 'Please enter the salon city' }]}
+            label="Salon Municipality"
+            rules={[{ required: true, message: 'Please select the salon municipality' }]}
           >
-            <Input placeholder="City" />
+            <Select
+              showSearch
+              options={MACEDONIA_CITY_OPTIONS}
+              placeholder="Select municipality"
+              optionFilterProp="label"
+            />
           </Form.Item>
 
           <Form.Item
