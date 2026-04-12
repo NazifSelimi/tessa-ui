@@ -12,6 +12,7 @@
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
 import type {
+  Product,
   User,
   Order,
   OrderStatus,
@@ -19,6 +20,7 @@ import type {
   DashboardStats,
   PaginatedResponse
 } from '@/types';
+import type { ProductsQueryParams } from '@/features/products/api';
 
 // Query params for admin endpoints
 interface AdminOrdersQueryParams {
@@ -235,6 +237,33 @@ export const adminApi = baseApi.injectEndpoints({
     }),
 
     // ==================== PRODUCT MANAGEMENT ====================
+
+    getAllProducts: builder.query<PaginatedResponse<Product>, ProductsQueryParams | void>({
+      query: (params) => {
+        const { category, brand, perPage, ...rest } = params ?? {};
+
+        return {
+          url: '/v1/admin/products',
+          params: {
+            ...rest,
+            perPage,
+            category_id: category,
+            brand_id: brand,
+          },
+        };
+      },
+      transformResponse: (response: PaginatedResponse<Product>) => response,
+      providesTags: (result) =>
+        result?.data
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: API_TAGS.Product,
+                id,
+              })),
+              { type: API_TAGS.Products, id: 'LIST' },
+            ]
+          : [{ type: API_TAGS.Products, id: 'LIST' }],
+    }),
 
     createProduct: builder.mutation<any, FormData>({
       query: (formData) => ({
@@ -458,6 +487,7 @@ export const {
   useUpdatePaymentStatusMutation,
   useApproveStylistRequestMutation,
   useRejectStylistRequestMutation,
+  useGetAllProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,

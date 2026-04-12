@@ -14,7 +14,7 @@ import { baseApi, API_TAGS } from '@/api/baseApi';
 import type { Product, Category, Brand, PaginatedResponse } from '@/types';
 
 // Query params for products list
-interface ProductsQueryParams {
+export interface ProductsQueryParams {
   page?: number;
   perPage?: number;
   category?: string;

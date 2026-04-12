@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch } from 'antd';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch, Checkbox } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
-import { 
-  useCreateProductMutation, 
-  useUpdateProductMutation, 
+import { useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
+import {
+  useGetAllProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
   useDeleteProductMutation,
-  useUpdateProductStockMutation
+  useUpdateProductStockMutation,
 } from '@/features/admin/api';
 import type { Product } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -17,6 +18,8 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 import { convertToWebP } from '@/shared/utils/imageUtils';
 
 const { Title, Text } = Typography;
+const ITEMS_PER_PAGE = 20;
+const DEFAULT_MAX_PRICE = 1000000000;
 
 /** The fields the backend actually accepts (matching controller validation). */
 interface ProductFormValues {
@@ -54,27 +57,79 @@ export default function AdminProductsPage() {
   const { modal, message } = App.useApp();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [category, setCategory] = useState('');
+  const [brand, setBrand] = useState('');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, DEFAULT_MAX_PRICE]);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [sortBy, setSortBy] = useState('name_asc');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [form] = Form.useForm<ProductFormValues>();
 
   const debouncedSearch = useDebounce(search, 300);
+  const debouncedPriceRange = useDebounce(priceRange, 400);
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
+  const hasPriceFilter = debouncedPriceRange[0] !== 0 || debouncedPriceRange[1] !== DEFAULT_MAX_PRICE;
+  const hasPendingFilterState =
+    search.length > 0 ||
+    category.length > 0 ||
+    brand.length > 0 ||
+    inStockOnly ||
+    priceRange[0] !== 0 ||
+    priceRange[1] !== DEFAULT_MAX_PRICE ||
+    sortBy !== 'name_asc';
 
-  const { data, isLoading, refetch } = useGetProductsQuery({
+  const sortOptions = useMemo(() => [
+    { value: 'name_asc', label: 'Name A-Z' },
+    { value: 'name_desc', label: 'Name Z-A' },
+    { value: 'price_asc', label: 'Price Low to High' },
+    { value: 'price_desc', label: 'Price High to Low' },
+    { value: 'newest', label: 'Newest First' },
+  ], []);
+
+  const queryParams = useMemo(() => ({
     page,
-    perPage: 20,
+    perPage: ITEMS_PER_PAGE,
     search: searchQuery,
-  });
+    category: category || undefined,
+    brand: brand || undefined,
+    sort: sortBy,
+    min_price: debouncedPriceRange[0],
+    max_price: debouncedPriceRange[1],
+    in_stock: inStockOnly ? 1 : undefined,
+  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly]);
 
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: brands = [] } = useGetBrandsQuery();
+  const { data, isLoading, refetch } = useGetAllProductsQuery(queryParams);
+
+  const selectedCategoryName = category
+    ? categories.find((item) => String(item.id) === category)?.name ?? category
+    : '';
+  const selectedBrandName = brand
+    ? brands.find((item) => String(item.id) === brand)?.name ?? brand
+    : '';
+  const activeFiltersCount = [
+    searchQuery,
+    category,
+    brand,
+    inStockOnly,
+    hasPriceFilter,
+  ].filter(Boolean).length;
 
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
   const [_updateStock] = useUpdateProductStockMutation();
+
+  useEffect(() => {
+    const lastPage = data?.meta?.last_page ?? 1;
+
+    if (page > lastPage) {
+      setPage(lastPage);
+    }
+  }, [data?.meta?.last_page, page]);
 
   useEffect(() => {
     if (!modalOpen) return;
@@ -98,6 +153,16 @@ export default function AdminProductsPage() {
     setEditingProduct(product);
     setFileList([]);
     setModalOpen(true);
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setSearch('');
+    setCategory('');
+    setBrand('');
+    setPriceRange([0, DEFAULT_MAX_PRICE]);
+    setInStockOnly(false);
+    setSortBy('name_asc');
+    setPage(1);
   }, []);
 
   const handleDelete = (productId: string | number) => {
@@ -127,9 +192,11 @@ export default function AdminProductsPage() {
           'name', 'price', 'stylist_price', 'stylist_only', 'quantity', 'category_id', 'brand_id',
         ];
         let hasChanges = false;
+
         for (const key of fieldKeys) {
           const newVal = values[key] ?? '';
           const oldVal = original[key] ?? '';
+
           if (String(newVal) !== String(oldVal)) {
             if (key === 'stylist_only') {
               formData.append(key, newVal ? '1' : '0');
@@ -230,7 +297,7 @@ export default function AdminProductsPage() {
       render: (_: unknown, record: Product) => (
         <Space>
           <img
-            src={record.image || "/placeholder.svg"}
+            src={record.image || '/placeholder.svg'}
             alt={record.name}
             style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
           />
@@ -302,40 +369,211 @@ export default function AdminProductsPage() {
   /* ============================== render ============================== */
 
   const isEditing = !!editingProduct;
+  const totalProducts = data?.meta?.total || 0;
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Products</Title>
-          <Text type="secondary">{data?.meta?.total || 0} products in catalog</Text>
+          <Text type="secondary">
+            {totalProducts} products in catalog
+            {activeFiltersCount > 0 ? ` • ${activeFiltersCount} filters applied` : ''}
+          </Text>
         </div>
-        <Space>
-          <Input
-            placeholder="Search products (min 2 chars)..."
-            prefix={<SearchOutlined />}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingProduct(null);
-              setFileList([]);
-              form.resetFields();
-              setModalOpen(true);
-            }}
-          >
-            Add Product
-          </Button>
-        </Space>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setEditingProduct(null);
+            setFileList([]);
+            form.resetFields();
+            setModalOpen(true);
+          }}
+        >
+          Add Product
+        </Button>
       </div>
+
+      <Card style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} xl={8}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Search</Text>
+            <Input
+              placeholder="Search products (min 2 chars)..."
+              prefix={<SearchOutlined />}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              allowClear
+            />
+          </Col>
+
+          <Col xs={24} sm={12} xl={4}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Category</Text>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="All categories"
+              allowClear
+              value={category || undefined}
+              onChange={(value) => {
+                setCategory(value || '');
+                setPage(1);
+              }}
+              options={categories.map((item) => ({
+                label: item.name,
+                value: String(item.id),
+              }))}
+            />
+          </Col>
+
+          <Col xs={24} sm={12} xl={4}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Brand</Text>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="All brands"
+              allowClear
+              value={brand || undefined}
+              onChange={(value) => {
+                setBrand(value || '');
+                setPage(1);
+              }}
+              options={brands.map((item) => ({
+                label: item.name,
+                value: String(item.id),
+              }))}
+            />
+          </Col>
+
+          <Col xs={24} sm={12} xl={4}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Sort</Text>
+            <Select
+              style={{ width: '100%' }}
+              value={sortBy}
+              onChange={(value) => {
+                setSortBy(value);
+                setPage(1);
+              }}
+              options={sortOptions}
+            />
+          </Col>
+
+          <Col xs={12} sm={6} xl={2}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Min Price</Text>
+            <InputNumber
+              min={0}
+              placeholder="0"
+              value={priceRange[0] || undefined}
+              onChange={(value) => {
+                setPriceRange([value ?? 0, priceRange[1]]);
+                setPage(1);
+              }}
+              style={{ width: '100%' }}
+            />
+          </Col>
+
+          <Col xs={12} sm={6} xl={2}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Max Price</Text>
+            <InputNumber
+              min={0}
+              placeholder="Any"
+              value={priceRange[1] < DEFAULT_MAX_PRICE ? priceRange[1] : undefined}
+              onChange={(value) => {
+                setPriceRange([priceRange[0], value ?? DEFAULT_MAX_PRICE]);
+                setPage(1);
+              }}
+              style={{ width: '100%' }}
+            />
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]} style={{ marginTop: 8 }}>
+          <Col xs={24} md={12}>
+            <Checkbox
+              checked={inStockOnly}
+              onChange={(event) => {
+                setInStockOnly(event.target.checked);
+                setPage(1);
+              }}
+            >
+              In stock only
+            </Checkbox>
+          </Col>
+
+          <Col xs={24} md={12} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={clearAllFilters} disabled={!hasPendingFilterState}>
+              Clear Filters
+            </Button>
+          </Col>
+        </Row>
+
+        {activeFiltersCount > 0 && (
+          <Space wrap style={{ marginTop: 16 }}>
+            {category && (
+              <Tag
+                closable
+                color="green"
+                onClose={() => {
+                  setCategory('');
+                  setPage(1);
+                }}
+              >
+                {selectedCategoryName}
+              </Tag>
+            )}
+            {brand && (
+              <Tag
+                closable
+                color="blue"
+                onClose={() => {
+                  setBrand('');
+                  setPage(1);
+                }}
+              >
+                {selectedBrandName}
+              </Tag>
+            )}
+            {searchQuery && (
+              <Tag
+                closable
+                color="purple"
+                onClose={() => {
+                  setSearch('');
+                  setPage(1);
+                }}
+              >
+                {searchQuery}
+              </Tag>
+            )}
+            {hasPriceFilter && (
+              <Tag
+                closable
+                color="gold"
+                onClose={() => {
+                  setPriceRange([0, DEFAULT_MAX_PRICE]);
+                  setPage(1);
+                }}
+              >
+                {`Price ${debouncedPriceRange[0] > 0 ? formatPrice(debouncedPriceRange[0]) : 'Any'} - ${debouncedPriceRange[1] < DEFAULT_MAX_PRICE ? formatPrice(debouncedPriceRange[1]) : 'Any'}`}
+              </Tag>
+            )}
+            {inStockOnly && (
+              <Tag
+                closable
+                color="cyan"
+                onClose={() => {
+                  setInStockOnly(false);
+                  setPage(1);
+                }}
+              >
+                In Stock Only
+              </Tag>
+            )}
+          </Space>
+        )}
+      </Card>
 
       <Card>
         <Table
@@ -349,8 +587,8 @@ export default function AdminProductsPage() {
           })}
           pagination={{
             current: page,
-            pageSize: 20,
-            total: data?.meta?.total || 0,
+            pageSize: ITEMS_PER_PAGE,
+            total: totalProducts,
             onChange: setPage,
             showSizeChanger: false,
             showTotal: (total) => `Total ${total} products`,
