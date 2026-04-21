@@ -63,7 +63,7 @@ export const ordersApi = baseApi.injectEndpoints({
 
     createOrder: builder.mutation<Order, CreateOrderRequest>({
       query: (body) => ({
-        url: '/v1/orders',
+        url: '/v1/checkout',
         method: 'POST',
         body,
       }),

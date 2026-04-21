@@ -125,7 +125,7 @@ export interface OrderStatusHistory {
 
 export interface Order {
   id: string;
-  userId: string;
+  userId: string | null;
   items: OrderItem[];
   subtotal: number;
   discount: number;

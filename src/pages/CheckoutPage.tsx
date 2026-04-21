@@ -52,7 +52,7 @@ interface ShippingFormData {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clearCart, getItemTotal } = useCart();
-  const { isProfessional, user, token } = useAuth();
+  const { user, token, isAuthenticated, isProfessional } = useAuth();
   const { appliedCode, applyCode, removeCode, discountAmount, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
   const { t } = useTranslation();
@@ -108,19 +108,26 @@ export default function CheckoutPage() {
 
   // Order complete state
   if (orderComplete) {
+    const actions = [
+      <Button type="primary" key="home" onClick={() => navigate('/')}>
+        {t('cart.continueShopping')}
+      </Button>,
+    ];
+
+    if (isAuthenticated) {
+      actions.push(
+        <Button key="orders" onClick={() => navigate('/account/orders')}>
+          {t('auth.myOrders')}
+        </Button>
+      );
+    }
+
     return (
       <Result
         status="success"
         title={t('checkout.orderSuccess')}
         subTitle={t('checkout.orderSuccessMessage')}
-        extra={[
-          <Button type="primary" key="home" onClick={() => navigate('/')}>
-            {t('cart.continueShopping')}
-          </Button>,
-          <Button key="orders" onClick={() => navigate('/account/orders')}>
-            {t('auth.myOrders')}
-          </Button>,
-        ]}
+        extra={actions}
       />
     );
   }
