@@ -27,6 +27,7 @@ interface ProductFormValues {
   price: number;
   stylist_price?: number;
   stylist_only?: boolean;
+  normalize_catalog_background?: boolean;
   quantity: number;
   category_id: number;
   brand_id: number;
@@ -135,12 +136,16 @@ export default function AdminProductsPage() {
     if (!modalOpen) return;
 
     if (editingProduct) {
-      form.setFieldsValue(snapshotFromProduct(editingProduct));
+      form.setFieldsValue({
+        ...snapshotFromProduct(editingProduct),
+        normalize_catalog_background: false,
+      });
       return;
     }
 
     form.setFieldsValue({
       stylist_only: false,
+      normalize_catalog_background: false,
       description_en: '',
       description_mk: '',
       description_shq: '',
@@ -233,6 +238,7 @@ export default function AdminProductsPage() {
         if (fileList.length > 0 && fileList[0].originFileObj) {
           const optimizedFile = await convertToWebP(fileList[0].originFileObj as File, 0.82);
           formData.append('image', optimizedFile, optimizedFile.name);
+          formData.append('normalize_catalog_background', values.normalize_catalog_background ? '1' : '0');
           hasChanges = true;
         }
 
@@ -262,6 +268,7 @@ export default function AdminProductsPage() {
         if (fileList.length > 0 && fileList[0].originFileObj) {
           const optimizedFile = await convertToWebP(fileList[0].originFileObj as File, 0.82);
           formData.append('image', optimizedFile, optimizedFile.name);
+          formData.append('normalize_catalog_background', values.normalize_catalog_background ? '1' : '0');
         }
 
         await createProduct(formData).unwrap();
@@ -682,7 +689,10 @@ export default function AdminProductsPage() {
             </Col>
           </Row>
 
-          <Form.Item label="Product Image" extra="Images are automatically converted to WebP for optimization. Max 10MB.">
+          <Form.Item
+            label="Product Image"
+            extra="Images are automatically converted to WebP. Check the box below if you want this upload matched to the catalog pink background. Max 10MB."
+          >
             <Upload {...uploadProps}>
               {fileList.length === 0 && (
                 <div>
@@ -702,6 +712,15 @@ export default function AdminProductsPage() {
                 />
               </div>
             )}
+            <Form.Item
+              name="normalize_catalog_background"
+              valuePropName="checked"
+              noStyle
+            >
+              <Checkbox style={{ marginTop: 12 }}>
+                Match existing catalog background for this upload
+              </Checkbox>
+            </Form.Item>
           </Form.Item>
         </Form>
       </Modal>
