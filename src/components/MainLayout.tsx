@@ -88,7 +88,7 @@ export default function MainLayout() {
   const navItems = useMemo(() => {
     const closeMobile = () => setMobileMenuOpen(false);
     const items: any[] = [
-      { key: 'shop', label: <Link to="/" onClick={closeMobile}>{t('nav.shop')}</Link> },
+      { key: 'shop', label: <Link to="/shop" onClick={closeMobile}>{t('nav.shop')}</Link> },
       {
         key: 'categories',
         icon: <AppstoreOutlined />,
@@ -132,7 +132,7 @@ export default function MainLayout() {
     }
     
     if (currentRole === 'guest' || currentRole === 'user') {
-      items.push({ key: 'become-stylist', label: <Link to="/stylist/request" onClick={closeMobile}>{t('nav.becomeStylist')}</Link> });
+      items.push({ key: 'for-professionals', label: <Link to="/for-professionals" onClick={closeMobile}>{t('nav.forProfessionals')}</Link> });
     }
 
     return items;

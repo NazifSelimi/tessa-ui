@@ -5,7 +5,8 @@
     "quickOrder": "Quick Order",
     "distributorPortal": "Distributor Portal",
     "adminDashboard": "Admin Dashboard",
-    "becomeStylist": "Become a Stylist"
+    "becomeStylist": "Become a Stylist",
+    "forProfessionals": "For Professionals"
   },
   "auth": {
     "signIn": "Sign In",
@@ -115,6 +116,9 @@
     "removeConfirm": "Are you sure you want to remove this item?",
     "itemRemoved": "Item removed from cart",
     "cartCleared": "Cart cleared",
+    "savings": "Savings",
+    "freeShippingUnlocked": "You've unlocked free delivery!",
+    "freeShippingRemaining": "Add {{amount}} more for free delivery",
     "emptyCartMessage": "Looks like you haven't added any items to your cart yet. Browse our collection to find something you'll love."
   },
   "checkout": {
@@ -190,6 +194,8 @@
   },
   "mobile": {
     "home": "Home",
+    "shop": "Shop",
+    "quiz": "Quiz",
     "search": "Search",
     "order": "Order",
     "cart": "Cart",
@@ -360,5 +366,53 @@
     "submit": "Submit",
     "language": "Language",
     "required": "Required"
+  },
+  "homeLanding": {
+    "eyebrow": "Hair care, personalised",
+    "heroTitle": "Find your perfect hair routine",
+    "heroSubtitle": "Answer a few quick questions and get products matched to your hair type and concerns.",
+    "takeQuiz": "Take the hair quiz",
+    "shopAll": "Shop all products",
+    "shopByCategory": "Shop by category",
+    "viewAll": "View all",
+    "findYourRoutine": "Find your routine",
+    "findYourRoutineSub": "Tell us about your hair and we'll build a routine for you.",
+    "startQuiz": "Start the 60-second quiz",
+    "featured": "Featured products",
+    "proTitle": "Are you a stylist or salon?",
+    "proSub": "Get professional pricing and fast reordering."
+  },
+  "trust": {
+    "freeShipping": "Free delivery over 3.000 MKD",
+    "cod": "Cash on delivery",
+    "authentic": "100% authentic brands"
+  },
+  "reorder": {
+    "orderAgain": "Order again",
+    "added": "Added {{count}} item(s) to your cart",
+    "someUnavailable": "{{count}} item(s) are no longer available",
+    "noneAvailable": "Those products are no longer available"
+  },
+  "forPros": {
+    "eyebrow": "For professionals",
+    "title": "Pro pricing for salons & stylists",
+    "subtitle": "Order the products you use every day at professional prices, with fast reordering and delivery to your salon.",
+    "ctaQuickOrder": "Go to Quick Order",
+    "ctaApply": "Apply for a pro account",
+    "ctaCreateAccount": "Create an account",
+    "alreadyPro": "Already a professional?",
+    "signIn": "Sign in",
+    "benefitPricingTitle": "Professional pricing",
+    "benefitPricingDesc": "See your pro price on every product, automatically.",
+    "benefitReorderTitle": "One-tap reorder",
+    "benefitReorderDesc": "Restock your usual order in seconds.",
+    "benefitDealsTitle": "Professional deals",
+    "benefitDealsDesc": "Volume offers built for salons.",
+    "benefitDeliveryTitle": "Delivery to your salon",
+    "benefitDeliveryDesc": "Reliable delivery on a schedule you can count on.",
+    "howTitle": "How it works",
+    "step1": "Create your account and apply as a professional",
+    "step2": "We verify your salon and unlock pro pricing",
+    "step3": "Order and reorder online — delivered to you"
   }
 }

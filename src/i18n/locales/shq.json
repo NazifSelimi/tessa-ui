@@ -5,7 +5,8 @@
     "quickOrder": "Porosi e shpejtë",
     "distributorPortal": "Portali i distribuitorit",
     "adminDashboard": "Paneli i administratorit",
-    "becomeStylist": "Bëhu stilist"
+    "becomeStylist": "Bëhu stilist",
+    "forProfessionals": "Për profesionistët"
   },
   "auth": {
     "signIn": "Kyçu",
@@ -115,6 +116,9 @@
     "removeConfirm": "A jeni i sigurt që dëshironi të hiqni këtë produkt?",
     "itemRemoved": "Produkti u hoq nga shporta",
     "cartCleared": "Shporta u zbraz",
+    "savings": "Kursim",
+    "freeShippingUnlocked": "Zhbllokuat dërgesën falas!",
+    "freeShippingRemaining": "Shtoni edhe {{amount}} për dërgesë falas",
     "emptyCartMessage": "Duket se nuk keni shtuar asnjë produkt në shportën tuaj. Shfletoni koleksionin tonë për të gjetur diçka që ju pëlqen."
   },
   "checkout": {
@@ -190,6 +194,8 @@
   },
   "mobile": {
     "home": "Ballina",
+    "shop": "Dyqani",
+    "quiz": "Kuizi",
     "search": "Kërko",
     "order": "Porosi",
     "cart": "Shporta",
@@ -360,5 +366,53 @@
     "submit": "Dërgo",
     "language": "Gjuha",
     "required": "E detyrueshme"
+  },
+  "homeLanding": {
+    "eyebrow": "Kujdes për flokët, i personalizuar",
+    "heroTitle": "Gjeni rutinën tuaj të përsosur për flokët",
+    "heroSubtitle": "Përgjigjuni disa pyetjeve të shpejta dhe merrni produkte të përshtatura me llojin dhe nevojat e flokëve tuaj.",
+    "takeQuiz": "Bëj kuizin e flokëve",
+    "shopAll": "Të gjitha produktet",
+    "shopByCategory": "Blej sipas kategorisë",
+    "viewAll": "Shiko të gjitha",
+    "findYourRoutine": "Gjeni rutinën tuaj",
+    "findYourRoutineSub": "Na tregoni për flokët tuaj dhe ne do t'ju ndërtojmë një rutinë.",
+    "startQuiz": "Fillo kuizin 60-sekondësh",
+    "featured": "Produkte të zgjedhura",
+    "proTitle": "Jeni stilist ose sallon?",
+    "proSub": "Merrni çmime profesionale dhe riporositje të shpejtë."
+  },
+  "trust": {
+    "freeShipping": "Dërgesë falas mbi 3.000 MKD",
+    "cod": "Pagesë në dorëzim",
+    "authentic": "100% marka origjinale"
+  },
+  "reorder": {
+    "orderAgain": "Porosit përsëri",
+    "added": "U shtuan {{count}} produkte në shportën tuaj",
+    "someUnavailable": "{{count}} produkte nuk janë më të disponueshme",
+    "noneAvailable": "Ato produkte nuk janë më të disponueshme"
+  },
+  "forPros": {
+    "eyebrow": "Për profesionistët",
+    "title": "Çmime profesionale për sallone dhe stilistë",
+    "subtitle": "Porositni produktet që përdorni çdo ditë me çmime profesionale, me riporositje të shpejtë dhe dërgesë në sallonin tuaj.",
+    "ctaQuickOrder": "Te Porosia e shpejtë",
+    "ctaApply": "Apliko për llogari pro",
+    "ctaCreateAccount": "Krijo një llogari",
+    "alreadyPro": "Jeni tashmë profesionist?",
+    "signIn": "Hyr",
+    "benefitPricingTitle": "Çmime profesionale",
+    "benefitPricingDesc": "Shihni çmimin tuaj pro në çdo produkt, automatikisht.",
+    "benefitReorderTitle": "Riporositje me një prekje",
+    "benefitReorderDesc": "Rifurnizoni porosinë tuaj të zakonshme në sekonda.",
+    "benefitDealsTitle": "Oferta profesionale",
+    "benefitDealsDesc": "Oferta për sasi të mëdha, të ndërtuara për sallonet.",
+    "benefitDeliveryTitle": "Dërgesë në sallonin tuaj",
+    "benefitDeliveryDesc": "Dërgesë e besueshme sipas një orari në të cilin mund të mbështeteni.",
+    "howTitle": "Si funksionon",
+    "step1": "Krijoni llogarinë tuaj dhe aplikoni si profesionist",
+    "step2": "Ne verifikojmë sallonin tuaj dhe zhbllokojmë çmimet pro",
+    "step3": "Porositni dhe riporositni online — dërguar te ju"
   }
 }
