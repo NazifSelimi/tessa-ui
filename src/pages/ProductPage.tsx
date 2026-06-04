@@ -74,7 +74,7 @@ export default function ProductPage() {
         <Text type="secondary" className="empty-state__description">
           {t('product.notFoundDescription')}
         </Text>
-        <Button type="primary" onClick={() => navigate('/')}>
+        <Button type="primary" onClick={() => navigate('/shop')}>
           {t('product.backToShop')}
         </Button>
       </div>
@@ -105,7 +105,7 @@ export default function ProductPage() {
       <Breadcrumb 
         style={{ marginBottom: 'var(--spacing-xl)' }}
         items={[
-          { title: <Link to="/">{t('nav.shop')}</Link> },
+          { title: <Link to="/shop">{t('nav.shop')}</Link> },
           { title: typeof product.brand === 'object' ? product.brand?.name : product.brand },
           { title: product.name },
         ]}

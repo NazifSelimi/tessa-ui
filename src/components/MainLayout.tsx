@@ -349,11 +349,14 @@ export default function MainLayout() {
               <Space direction="vertical" size={8}>
                 <Text style={{ color: '#aaa', fontSize: 14 }}>
                   <PhoneOutlined style={{ marginRight: 8 }} />
-                  +1 (555) 123-4567
+                  {t('footer.phone')}
                 </Text>
                 <Text style={{ color: '#aaa', fontSize: 14 }}>
                   <MailOutlined style={{ marginRight: 8 }} />
-                  info@tessahaircare.com
+                  {t('footer.email')}
+                </Text>
+                <Text style={{ color: '#888', fontSize: 13 }}>
+                  {t('footer.deliveryInfo')}
                 </Text>
               </Space>
 
