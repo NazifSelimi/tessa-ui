@@ -11,9 +11,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Typography, Card, Row, Col, Tag, Button, Steps, Spin, Descriptions, Table, Divider 
 } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetOrderQuery } from '@/features/orders/api';
+import { useReorder } from '@/hooks/useReorder';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Order } from '@/types';
 
@@ -36,6 +37,7 @@ export default function OrderDetailPage() {
   const { data: order, isLoading: loading } = useGetOrderQuery(id ?? '', {
     skip: !id,
   });
+  const { reorder, isReordering } = useReorder();
 
   if (loading) {
     return (
@@ -105,9 +107,19 @@ export default function OrderDetailPage() {
             {t('orders.placedOn')} {new Date(order.createdAt).toLocaleDateString()}
           </Text>
         </div>
-        <Tag color={statusColors[typeof order.status === 'string' ? order.status : String(order.status ?? '')]} style={{ fontSize: 14, padding: '4px 12px' }}>
-          {(typeof order.status === 'string' ? order.status : String(order.status ?? '')).toUpperCase()}
-        </Tag>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <Tag color={statusColors[typeof order.status === 'string' ? order.status : String(order.status ?? '')]} style={{ fontSize: 14, padding: '4px 12px', margin: 0 }}>
+            {(typeof order.status === 'string' ? order.status : String(order.status ?? '')).toUpperCase()}
+          </Tag>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            loading={isReordering}
+            onClick={() => reorder(order)}
+          >
+            {t('reorder.orderAgain')}
+          </Button>
+        </div>
       </div>
 
       {order.status !== 'cancelled' && (

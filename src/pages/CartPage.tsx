@@ -31,6 +31,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import ShippingProgress from '@/components/ShippingProgress';
+import { shippingForSubtotal } from '@/shared/constants/shipping';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -75,7 +77,7 @@ const CartPage: React.FC = () => {
             </Space>
           }
         >
-          <Link to="/">
+          <Link to="/shop">
             <Button type="primary" size="large" icon={<ShoppingOutlined />}>
               {t('cart.startShopping')}
             </Button>
@@ -89,7 +91,7 @@ const CartPage: React.FC = () => {
     <div className="cart-page">
       {/* Header */}
       <div className="cart-page__header">
-        <Link to="/" className="back-link">
+        <Link to="/shop" className="back-link">
           <ArrowLeftOutlined />
           <span>{t('cart.continueShopping')}</span>
         </Link>
@@ -191,7 +193,12 @@ const CartPage: React.FC = () => {
         <Col xs={24} lg={8}>
           <Card className="order-summary" style={{ position: 'sticky', top: 24 }}>
             <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>{t('checkout.orderSummary')}</Title>
-            
+
+            {/* Free-shipping progress */}
+            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+              <ShippingProgress subtotal={totals.subtotal} />
+            </div>
+
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">
                 <Text type="secondary">{t('cart.subtotal')} ({totals.itemCount} {t('cart.items')})</Text>
@@ -200,14 +207,14 @@ const CartPage: React.FC = () => {
 
               {totals.savings > 0 && (
                 <div className="price-row">
-                  <Text type="secondary">Savings</Text>
+                  <Text type="secondary">{t('cart.savings')}</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(totals.savings)}</Text>
                 </div>
               )}
 
               <div className="price-row">
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
-                <Text>{totals.subtotal >= 3000 ? t('checkout.free') : formatPrice(150)}</Text>
+                <Text>{shippingForSubtotal(totals.subtotal) === 0 ? t('checkout.free') : formatPrice(shippingForSubtotal(totals.subtotal))}</Text>
               </div>
 
               <Divider style={{ margin: 'var(--spacing-sm) 0' }} />
@@ -215,17 +222,9 @@ const CartPage: React.FC = () => {
               <div className="price-row">
                 <Text strong style={{ fontSize: 'var(--font-size-lg)' }}>{t('checkout.total')}</Text>
                 <Text strong style={{ fontSize: 'var(--font-size-xl)', color: 'var(--color-text-primary)' }}>
-                  {formatPrice(totals.subtotal + (totals.subtotal >= 3000 ? 0 : 150))}
+                  {formatPrice(totals.subtotal + shippingForSubtotal(totals.subtotal))}
                 </Text>
               </div>
-
-              {totals.subtotal < 3000 && (
-                <div className="shipping-notice">
-                  <Text style={{ color: '#d48806', fontSize: 'var(--font-size-sm)' }}>
-                    Add {formatPrice(3000 - totals.subtotal)} more for FREE shipping!
-                  </Text>
-                </div>
-              )}
 
               <Button
                 type="primary"
@@ -234,7 +233,7 @@ const CartPage: React.FC = () => {
                 onClick={handleCheckout}
                 style={{ marginTop: 'var(--spacing-sm)', height: 48 }}
               >
-                Proceed to Checkout
+                {t('cart.checkout')}
               </Button>
 
               {/* Trust Badges */}

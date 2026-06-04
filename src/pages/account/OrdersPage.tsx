@@ -1,10 +1,12 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Typography, Table, Tag, Button, Space, Spin, Empty, Card, Alert, Grid } from 'antd';
-import { EyeOutlined, RightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { EyeOutlined, RightOutlined, ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetOrdersQuery } from '@/features/orders/api';
+import { useReorder } from '@/hooks/useReorder';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Order } from '@/types';
 
@@ -27,6 +29,13 @@ export default function OrdersPage() {
   const orders = ordersData?.data || [];
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const { reorder, isReordering } = useReorder();
+
+  const handleReorder = (e: MouseEvent, order: Order) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void reorder(order);
+  };
 
   const columns = [
     {
@@ -83,11 +92,21 @@ export default function OrdersPage() {
       title: '',
       key: 'actions',
       render: (_: unknown, record: Order) => (
-        <Link to={`/account/orders/${record.id}`}>
-          <Button type="text" icon={<EyeOutlined />}>
-            {t('orders.view')}
+        <Space>
+          <Button
+            type="text"
+            icon={<ReloadOutlined />}
+            loading={isReordering}
+            onClick={(e) => handleReorder(e, record)}
+          >
+            {t('reorder.orderAgain')}
           </Button>
-        </Link>
+          <Link to={`/account/orders/${record.id}`}>
+            <Button type="text" icon={<EyeOutlined />}>
+              {t('orders.view')}
+            </Button>
+          </Link>
+        </Space>
       ),
     },
   ];
@@ -114,13 +133,23 @@ export default function OrdersPage() {
             </Text>
             <Text strong style={{ fontSize: 15 }}>{formatPrice(order.total)}</Text>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <Tag color={statusColors[s] || 'default'} style={{ margin: 0 }}>
-              {s.toUpperCase()}
-            </Tag>
-            <Tag color={ps === 'paid' ? 'green' : 'orange'} style={{ margin: 0 }}>
-              {ps.toUpperCase()}
-            </Tag>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Tag color={statusColors[s] || 'default'} style={{ margin: 0 }}>
+                {s.toUpperCase()}
+              </Tag>
+              <Tag color={ps === 'paid' ? 'green' : 'orange'} style={{ margin: 0 }}>
+                {ps.toUpperCase()}
+              </Tag>
+            </div>
+            <Button
+              size="small"
+              icon={<ReloadOutlined />}
+              loading={isReordering}
+              onClick={(e) => handleReorder(e, order)}
+            >
+              {t('reorder.orderAgain')}
+            </Button>
           </div>
         </Card>
       </Link>

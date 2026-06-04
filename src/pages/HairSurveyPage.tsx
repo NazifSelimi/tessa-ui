@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetRecommendationsMutation } from '@/features/recommendations/api';
+import { saveHairProfile } from '@/shared/utils/hairProfile';
 import type { RecommendationPayload } from '@/types';
 
 const { Title, Text, Paragraph } = Typography;
@@ -124,6 +125,8 @@ export default function HairSurveyPage() {
 
     try {
       const result = await getRecommendations(payload).unwrap();
+      // Persist so refresh / back / shared link can recover the result.
+      saveHairProfile(result, payload);
       navigate('/recommendations', { state: { recommendations: result, survey: payload } });
     } catch {
       // error state handled by RTK Query `error`

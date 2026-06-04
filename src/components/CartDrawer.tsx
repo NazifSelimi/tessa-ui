@@ -14,6 +14,7 @@ import { DeleteOutlined, ShoppingOutlined, CloseOutlined } from '@ant-design/ico
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import ShippingProgress from './ShippingProgress';
 
 const { Text } = Typography;
 
@@ -66,8 +67,13 @@ export default function CartDrawer() {
       footer={
         items.length > 0 ? (
           <div style={{ padding: 'var(--spacing-lg) 0' }}>
+            {/* Free-shipping progress */}
+            <div style={{ padding: '0 var(--spacing-xl)', marginBottom: 'var(--spacing-md)' }}>
+              <ShippingProgress subtotal={subtotal} />
+            </div>
+
             {/* Subtotal */}
-            <div style={{ 
+            <div style={{
               display: 'flex', 
               justifyContent: 'space-between', 
               marginBottom: 'var(--spacing-lg)',
@@ -118,7 +124,7 @@ export default function CartDrawer() {
             description={
               <Space direction="vertical" size={12}>
                 <Text type="secondary">{t('cart.yourCartIsEmpty')}</Text>
-                <Button type="primary" onClick={() => { closeDrawer(); navigate('/'); }}>
+                <Button type="primary" onClick={() => { closeDrawer(); navigate('/shop'); }}>
                   {t('cart.startShopping')}
                 </Button>
               </Space>
