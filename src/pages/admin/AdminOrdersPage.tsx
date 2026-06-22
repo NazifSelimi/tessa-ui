@@ -179,6 +179,15 @@ export default function AdminOrdersPage() {
               <Tag color={statusColors[selectedOrder.status] || 'default'}>
                 {(selectedOrder.status || '').toUpperCase()}
               </Tag>
+              {selectedOrder.customerRole && (
+                <Tag color={selectedOrder.customerRole === 'stylist' ? 'magenta' : 'default'}>
+                  {selectedOrder.customerRole === 'stylist'
+                    ? 'STYLIST · Pro pricing'
+                    : selectedOrder.customerRole === 'guest'
+                      ? 'GUEST · Retail pricing'
+                      : 'CUSTOMER · Retail pricing'}
+                </Tag>
+              )}
               <br style={{ marginBottom: 8 }} />
               <Text strong>Customer:</Text> {selectedOrder.shippingAddress?.fullName ?? '—'}
               <br />
@@ -190,7 +199,20 @@ export default function AdminOrdersPage() {
             <Table
               dataSource={selectedOrder.items}
               columns={[
-                { title: 'Product', dataIndex: 'productName', key: 'product' },
+                {
+                  title: 'Product',
+                  key: 'product',
+                  render: (_: unknown, item: Order['items'][number]) => (
+                    <div>
+                      <div>{item.productName}</div>
+                      {(item.brandName || item.categoryName) && (
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {[item.brandName, item.categoryName].filter(Boolean).join(' · ')}
+                        </Text>
+                      )}
+                    </div>
+                  ),
+                },
                 { title: 'Qty', dataIndex: 'quantity', key: 'qty' },
                 { title: 'Price', dataIndex: 'unitPrice', key: 'price', render: (v: number) => formatPrice(v) },
                 { title: 'Total', dataIndex: 'total', key: 'total', render: (v: number) => formatPrice(v) },

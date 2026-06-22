@@ -100,6 +100,8 @@ export interface ShippingAddress {
 export interface OrderItem {
   productId: string | number;
   productName: string;
+  brandName?: string | null;
+  categoryName?: string | null;
   quantity: number;
   unitPrice: number;
   total: number;
@@ -126,6 +128,7 @@ export interface OrderStatusHistory {
 export interface Order {
   id: string;
   userId: string | null;
+  customerRole?: UserRole;
   items: OrderItem[];
   subtotal: number;
   discount: number;
