@@ -143,7 +143,7 @@ export default function ActivateStylistInvitationPage() {
               <Form.Item name="last_name" label="Last name" rules={[{ required: true, message: 'Enter your last name.' }]}>
                 <Input prefix={<UserOutlined />} autoComplete="family-name" />
               </Form.Item>
-              {needs('email') && <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email', message: 'Enter a valid email address.' }]}><Input autoComplete="email" /></Form.Item>}
+              {needs('email') && <Form.Item name="email" label="Email (optional)" rules={[{ type: 'email', message: 'Enter a valid email address.' }]}><Input autoComplete="email" /></Form.Item>}
               {needs('phone') && <Form.Item name="phone" label="Phone" rules={[{ required: true, message: 'Enter your phone number.' }]}><Input autoComplete="tel" /></Form.Item>}
               {needs('address') && <Form.Item name="address" label="Address" rules={[{ required: true, message: 'Enter your address.' }]}><Input autoComplete="street-address" /></Form.Item>}
               {needs('city') && <Form.Item name="city" label="City" rules={[{ required: true, message: 'Enter your city.' }]}><Input autoComplete="address-level2" /></Form.Item>}

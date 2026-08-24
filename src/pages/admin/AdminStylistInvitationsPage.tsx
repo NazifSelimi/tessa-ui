@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Col, Form, Input, Row, Space, Table, Tag, Typography, message } from 'antd';
+import { Button, Card, Col, Form, Input, Popconfirm, Row, Space, Table, Tag, Typography, message } from 'antd';
 import { CopyOutlined, QrcodeOutlined, ScissorOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,7 +35,7 @@ interface InvitationRow {
   city: string | null;
   business_name: string | null;
   business_city: string | null;
-  status: 'pending' | 'activated' | 'expired';
+  status: 'pending' | 'activated' | 'expired' | 'revoked';
   expires_at: string;
 }
 
@@ -107,6 +107,37 @@ export default function AdminStylistInvitationsPage() {
     message.success('Activation link copied.');
   };
 
+  const reissueInvitation = async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations/${id}/reissue`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Could not regenerate the activation link.');
+      setCreated(payload.data as CreatedInvitation);
+      void loadInvitations();
+      message.success('New activation QR created.');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Could not regenerate the activation link.');
+    }
+  };
+
+  const revokeInvitation = async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations/${id}/revoke`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Could not revoke the invitation.');
+      void loadInvitations();
+      message.success('Invitation revoked.');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Could not revoke the invitation.');
+    }
+  };
+
   return (
     <div style={{ maxWidth: 1080, margin: '0 auto' }}>
       <Title level={2}><ScissorOutlined /> Stylist invitations</Title>
@@ -169,8 +200,9 @@ export default function AdminStylistInvitationsPage() {
             { title: 'Contact', key: 'contact', width: 220, render: (_: unknown, record: InvitationRow) => <>{record.email || 'No email'}<br />{record.phone || 'No phone'}</> },
             { title: 'City', key: 'city', width: 150, render: (_: unknown, record: InvitationRow) => record.business_city || record.city || 'Not provided' },
             { title: 'Salon', dataIndex: 'business_name', key: 'business_name', width: 190, render: (value: string | null) => value || 'Not provided' },
-            { title: 'Status', dataIndex: 'status', key: 'status', width: 110, render: (status: InvitationRow['status']) => <Tag color={status === 'activated' ? 'green' : status === 'expired' ? 'red' : 'blue'}>{status}</Tag> },
+            { title: 'Status', dataIndex: 'status', key: 'status', width: 110, render: (status: InvitationRow['status']) => <Tag color={status === 'activated' ? 'green' : status === 'pending' ? 'blue' : 'red'}>{status}</Tag> },
             { title: 'Expires', dataIndex: 'expires_at', key: 'expires_at', width: 130, render: (value: string) => new Date(value).toLocaleDateString('en-GB') },
+            { title: 'Actions', key: 'actions', width: 180, render: (_: unknown, record: InvitationRow) => record.status === 'activated' ? 'Account active' : <Space size="small"><Button size="small" onClick={() => void reissueInvitation(record.id)}>New QR</Button><Popconfirm title="Revoke this activation link?" onConfirm={() => void revokeInvitation(record.id)} okText="Revoke" okButtonProps={{ danger: true }}><Button size="small" danger>Revoke</Button></Popconfirm></Space> },
           ]}
         />
       </Card>

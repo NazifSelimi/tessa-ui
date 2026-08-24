@@ -56,8 +56,8 @@ export function useAuth() {
   const [changePasswordMutation] = useChangePasswordMutation();
 
   // Login handler
-  const login = useCallback(async (email: string, password: string): Promise<User> => {
-    const result = await loginMutation({ email, password }).unwrap();
+  const login = useCallback(async (identifier: string, password: string): Promise<User> => {
+    const result = await loginMutation({ identifier, password }).unwrap();
     return result.user;
   }, [loginMutation]);
 

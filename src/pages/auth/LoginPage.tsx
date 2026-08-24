@@ -17,7 +17,7 @@ import {
   Checkbox,
 } from 'antd';
 import {
-  MailOutlined,
+  PhoneOutlined,
   LockOutlined,
   GoogleOutlined,
   FacebookOutlined,
@@ -32,7 +32,7 @@ import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 const { Text, Paragraph } = Typography;
 
 interface LoginFormValues {
-  email: string;
+  identifier: string;
   password: string;
   remember: boolean;
 }
@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);
     try {
-      await login(values.email, values.password);
+      await login(values.identifier, values.password);
       message.success(t('auth.welcomeBack'));
       navigate(from, { replace: true });
     } catch (error: unknown) {
@@ -110,18 +110,17 @@ const LoginPage: React.FC = () => {
           initialValues={{ remember: true }}
         >
           <Form.Item
-            name="email"
-            label={t('auth.email')}
+            name="identifier"
+            label="Email or phone number"
             rules={[
-              { required: true, message: t('auth.enterEmail') },
-              { type: 'email', message: t('auth.invalidEmail') },
+              { required: true, message: 'Enter your email or phone number.' },
             ]}
           >
             <Input
-              prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="you@example.com"
+              prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
+              placeholder="Phone number or you@example.com"
               size="large"
-              autoComplete="email"
+              autoComplete="username"
             />
           </Form.Item>
 

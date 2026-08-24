@@ -24,7 +24,7 @@ interface RegisterResponse {
 
 // Request types
 interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
