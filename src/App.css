@@ -1597,7 +1597,8 @@ a {
   border: 1px solid var(--color-border);
   border-radius: 24px;
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-  overflow: hidden;
+  overflow: clip;
+  contain: layout paint;
 }
 
 .hair-quiz__progress {
@@ -1656,20 +1657,21 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 76px;
-  padding: 13px;
+  min-height: 68px;
+  padding: 11px 12px;
   text-align: left;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 120ms ease, background-color 120ms ease;
 }
 
 .hair-quiz__option:hover:not(:disabled) {
   border-color: var(--color-selection-border);
   background: var(--color-selection-bg);
-  transform: translateY(-1px);
 }
 
 .hair-quiz__option:focus-visible {
@@ -1681,7 +1683,7 @@ a {
   color: var(--color-selection-text);
   background: var(--color-selection-bg);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.1);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
 .hair-quiz__option:disabled {
@@ -1787,8 +1789,8 @@ a {
   }
 
   .hair-quiz__option {
-    min-height: 68px;
-    padding: 10px;
+    min-height: 60px;
+    padding: 9px 10px;
   }
 
   .hair-quiz__option-icon {
@@ -1797,10 +1799,18 @@ a {
     font-size: 19px;
   }
 
+  .hair-quiz__option-description {
+    display: none;
+  }
+
+  .hair-quiz__option-copy {
+    min-height: 36px;
+    align-content: center;
+  }
+
   .hair-quiz__actions {
-    position: sticky;
-    bottom: 56px;
-    z-index: 2;
+    /* Sticky actions inside a clipped panel cause mobile Safari scroll jumps. */
+    position: static;
     padding-bottom: calc(18px + env(safe-area-inset-bottom));
   }
 
