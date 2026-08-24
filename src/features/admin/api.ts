@@ -20,6 +20,7 @@ import type {
   DashboardStats,
   PaginatedResponse
 } from '@/types';
+import type { StoreBundle } from '@/types';
 import type { ProductsQueryParams } from '@/features/products/api';
 
 // Query params for admin endpoints
@@ -98,6 +99,20 @@ interface Coupon {
   createdAt?: string;
   updatedAt?: string;
 }
+
+type BundlePayload = {
+  name?: string;
+  description?: string;
+  audience?: 'all' | 'stylist';
+  promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items';
+  discount_percentage?: number;
+  bundle_price?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  starts_at?: string;
+  ends_at?: string;
+  products: Array<{ product_id: string | number; quantity: number; is_bonus?: boolean }>;
+};
 
 export const adminApi = baseApi.injectEndpoints({
   overrideExisting: false,
@@ -471,6 +486,29 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: any) => response.data,
       providesTags: [API_TAGS.DistributorCodes],
     }),
+
+    getAdminBundles: builder.query<StoreBundle[], void>({
+      query: () => '/v1/admin/bundles',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.Bundles],
+    }),
+
+    createBundle: builder.mutation<StoreBundle, BundlePayload>({
+      query: (body) => ({ url: '/v1/admin/bundles', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
+    updateBundle: builder.mutation<StoreBundle, { id: string; data: BundlePayload }>({
+      query: ({ id, data }) => ({ url: `/v1/admin/bundles/${id}`, method: 'PUT', body: data }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
+    deleteBundle: builder.mutation<void, string>({
+      query: (id) => ({ url: `/v1/admin/bundles/${id}`, method: 'DELETE' }),
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
   }),
 });
 
@@ -507,4 +545,8 @@ export const {
   useDeleteBrandMutation,
   useGetDistributorCodesQuery,
   useGetDistributorCodeStatsQuery,
+  useGetAdminBundlesQuery,
+  useCreateBundleMutation,
+  useUpdateBundleMutation,
+  useDeleteBundleMutation,
 } = adminApi;

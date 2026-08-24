@@ -388,6 +388,27 @@ export interface BundleProduct {
   price: number;
   quantity: number;
   image: string | null;
+  isBonus?: boolean;
+}
+
+export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items';
+
+export interface StoreBundle {
+  id: string;
+  name: string;
+  description: string | null;
+  isDynamic: false;
+  discountPercentage: number | null;
+  promotionType: BundlePromotionType;
+  bundlePrice: number | null;
+  audience: 'all' | 'stylist';
+  isActive: boolean;
+  isFeatured: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  products: BundleProduct[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StaticBundle {
@@ -397,6 +418,8 @@ export interface StaticBundle {
   isDynamic: false;
   discountPercentage: number | null;
   products: BundleProduct[];
+  promotionType?: BundlePromotionType;
+  bundlePrice?: number | null;
   createdAt: string;
   updatedAt: string;
 }

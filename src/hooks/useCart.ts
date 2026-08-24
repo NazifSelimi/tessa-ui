@@ -12,12 +12,14 @@ import {
   removeItem,
   updateQuantity,
   clearCart,
+  applyBundle,
   openDrawer,
   closeDrawer,
   toggleDrawer,
   selectCartItems,
   selectCartDrawerOpen,
   selectCartItemCount,
+  selectCartBundleIds,
 } from '@/features/cart/slice';
 import { selectIsProfessional } from '@/features/auth/slice';
 import type { CartItem, Product } from '@/types';
@@ -36,6 +38,7 @@ export function useCart() {
   const items = useAppSelector(selectCartItems);
   const isDrawerOpen = useAppSelector(selectCartDrawerOpen);
   const itemCount = useAppSelector(selectCartItemCount);
+  const bundleIds = useAppSelector(selectCartBundleIds);
   const isProfessional = useAppSelector(selectIsProfessional);
 
   // Add item to cart with frozen price snapshot
@@ -64,6 +67,10 @@ export function useCart() {
   // Clear entire cart
   const handleClearCart = useCallback(() => {
     dispatch(clearCart());
+  }, [dispatch]);
+
+  const handleApplyBundle = useCallback((bundleId: string) => {
+    dispatch(applyBundle({ bundleId }));
   }, [dispatch]);
 
   // Drawer controls
@@ -117,6 +124,7 @@ export function useCart() {
   return {
     // State
     items,
+    bundleIds,
     isLoading: false, // Cart operations are synchronous with redux-persist
     isDrawerOpen,
     
@@ -125,6 +133,7 @@ export function useCart() {
     removeItem: handleRemoveItem,
     updateQuantity: handleUpdateQuantity,
     clearCart: handleClearCart,
+    applyBundle: handleApplyBundle,
     
     // Drawer controls
     openDrawer: handleOpenDrawer,

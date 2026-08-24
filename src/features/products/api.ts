@@ -11,7 +11,7 @@
  */
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
-import type { Product, Category, Brand, PaginatedResponse } from '@/types';
+import type { Product, Category, Brand, PaginatedResponse, StoreBundle } from '@/types';
 
 // Query params for products list
 export interface ProductsQueryParams {
@@ -67,6 +67,12 @@ export const productsApi = baseApi.injectEndpoints({
       providesTags: [{ type: API_TAGS.Products, id: 'FEATURED' }],
     }),
 
+    getBundles: builder.query<StoreBundle[], void>({
+      query: () => '/v1/bundles',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.Bundles],
+    }),
+
     getCategories: builder.query<Category[], void>({
       query: () => '/v1/categories',
       transformResponse: (response: any) => response.data || [],
@@ -107,6 +113,7 @@ export const {
   useGetProductByIdQuery,
   useLazyGetProductByIdQuery,
   useGetFeaturedProductsQuery,
+  useGetBundlesQuery,
   useGetCategoriesQuery,
   useGetBrandsQuery,
   useSearchProductsQuery,

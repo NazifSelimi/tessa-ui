@@ -44,6 +44,8 @@ const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminCouponsPage = lazy(() => import('./pages/admin/AdminCouponsPage'));
 const AdminDistributorsPage = lazy(() => import('./pages/admin/AdminDistributorsPage'));
 const AdminStylistRequestsPage = lazy(() => import('./pages/admin/AdminStylistRequestsPage'));
+const AdminBundlesPage = lazy(() => import('./pages/admin/AdminBundlesPage'));
+const StylistWorkspacePage = lazy(() => import('./pages/stylist/StylistWorkspacePage'));
 const DistributorPortalPage = lazy(() => import('./pages/distributor/DistributorPortalPage'));
 const DistributorProductsPage = lazy(() => import('./pages/distributor/DistributorProductsPage'));
 const DistributorCodesPage = lazy(() => import('./pages/distributor/DistributorCodesPage'));
@@ -184,6 +186,7 @@ function App() {
                   <CompleteProfilePage />
                 </ProtectedRoute>
               } />
+              <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole="stylist"><StylistWorkspacePage /></ProtectedRoute>} />
 
               {/* Admin routes – layout + pages are lazy-loaded */}
               <Route element={
@@ -200,6 +203,7 @@ function App() {
                 <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                 <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
                 <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
+                <Route path="/admin/bundles" element={<AdminBundlesPage />} />
               </Route>
 
               {/* Catch-all */}

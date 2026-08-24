@@ -115,7 +115,7 @@ export default function MainLayout() {
           ),
         })),
       },
-      { key: 'hair-survey', label: <Link to="/hair-survey" onClick={closeMobile}>{t('nav.hairQuiz')}</Link> },
+      { key: 'hair-survey', label: <Link to={isStylist ? '/stylist/workspace' : '/hair-survey'} onClick={closeMobile}>{isStylist ? t('nav.stylistWorkspace') : t('nav.hairQuiz')}</Link> },
     ];
 
     // Role-specific items

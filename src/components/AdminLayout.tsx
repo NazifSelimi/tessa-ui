@@ -18,6 +18,7 @@ import {
   UserOutlined,
   ScissorOutlined,
   TagOutlined,
+  GiftOutlined,
   TeamOutlined,
   ArrowLeftOutlined,
   MenuFoldOutlined,
@@ -41,6 +42,7 @@ const pageTitles: Record<string, string> = {
   '/admin/stylist-requests': 'Stylist Requests',
   '/admin/coupons': 'Coupons',
   '/admin/distributors': 'Distributors',
+  '/admin/bundles': 'Offers & Bundles',
 };
 
 export default function AdminLayout() {
@@ -70,6 +72,7 @@ const pendingCount = 0;
       ),
     },
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
+    { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
   ], [pendingCount]);
   const [collapsed, setCollapsed] = useState(false);

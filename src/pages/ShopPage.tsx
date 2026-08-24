@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
+import BundleDealRail from '@/components/BundleDealRail';
 import MobileFilterDrawer from '@/components/MobileFilterDrawer';
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
 import { useTranslation } from 'react-i18next';
@@ -378,6 +379,7 @@ const handlePageChange = (page: number) => {
 
         {/* Main Content */}
         <Col xs={24} sm={24} md={18} lg={19} xl={20}>
+          {!search && !category && !brand && <BundleDealRail />}
           {/* Active filter tags (mobile) - show when filters are applied */}
           {isMobile && activeFiltersCount > 0 && (
             <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>

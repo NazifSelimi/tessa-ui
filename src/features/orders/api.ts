@@ -29,6 +29,7 @@ interface CreateOrderRequest {
   payment_method: PaymentMethod;
   custom_message?: string;
   coupon_code?: string;
+  bundle_ids?: string[];
 }
 
 // Query params

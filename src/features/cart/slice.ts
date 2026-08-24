@@ -14,12 +14,14 @@ import type { CartItem, Product } from '@/types';
 
 interface CartState {
   items: CartItem[];
+  bundleIds: string[];
   isDrawerOpen: boolean;
   isLoading: boolean;
 }
 
 const initialState: CartState = {
   items: [],
+  bundleIds: [],
   isDrawerOpen: false,
   isLoading: false,
 };
@@ -103,6 +105,13 @@ const cartSlice = createSlice({
 
     clearCart: (state) => {
       state.items = [];
+      state.bundleIds = [];
+    },
+
+    applyBundle: (state, action: PayloadAction<{ bundleId: string }>) => {
+      if (!state.bundleIds.includes(action.payload.bundleId)) {
+        state.bundleIds.push(action.payload.bundleId);
+      }
     },
 
     setItems: (state, action: PayloadAction<CartItem[]>) => {
@@ -133,6 +142,7 @@ export const {
   removeItem,
   updateQuantity,
   clearCart,
+  applyBundle,
   setItems,
   openDrawer,
   closeDrawer,
@@ -142,6 +152,7 @@ export const {
 
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
+export const selectCartBundleIds = (state: { cart: CartState }) => state.cart.bundleIds;
 export const selectCartDrawerOpen = (state: { cart: CartState }) => state.cart.isDrawerOpen;
 export const selectCartLoading = (state: { cart: CartState }) => state.cart.isLoading;
 

@@ -9,7 +9,7 @@
  * Includes discount code application with role-based validation.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import {
@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDiscounts } from '@/hooks/useDiscounts';
 import { useTranslation } from 'react-i18next';
 import { useCreateOrderMutation } from '@/features/orders/api';
+import { useGetBundlesQuery } from '@/features/products/api';
 import { isProfileComplete } from '@/features/auth/profile';
 import {
   MACEDONIA_CITY_OPTIONS,
@@ -51,10 +52,11 @@ interface ShippingFormData {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clearCart, getItemTotal } = useCart();
+  const { items, bundleIds, subtotal, clearCart, getItemTotal } = useCart();
   const { user, token, isAuthenticated, isProfessional } = useAuth();
   const { appliedCode, applyCode, removeCode, discountAmount, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
+  const { data: activeBundles = [] } = useGetBundlesQuery();
   const { t } = useTranslation();
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -89,7 +91,28 @@ export default function CheckoutPage() {
 
   // Shipping cost calculation
   const shippingCost = subtotal >= 3000 ? 0 : 150;
-  const total = subtotal - discountAmount + shippingCost;
+  const bundleDiscount = useMemo(() => {
+    const quantities = new Map(items.map((item) => [String(item.productId), item.quantity]));
+
+    return bundleIds.reduce((discount, bundleId) => {
+      const bundle = activeBundles.find((candidate) => candidate.id === bundleId);
+      if (!bundle) return discount;
+
+      const qualifies = bundle.products.every((product) => (quantities.get(product.id) ?? 0) >= product.quantity);
+      if (!qualifies) return discount;
+
+      bundle.products.forEach((product) => quantities.set(product.id, (quantities.get(product.id) ?? 0) - product.quantity));
+      const productPrice = (id: string) => getItemTotal(items.find((item) => String(item.productId) === id)! ) / (items.find((item) => String(item.productId) === id)?.quantity ?? 1);
+      const regular = bundle.products.reduce((sum, product) => sum + productPrice(product.id) * product.quantity, 0);
+      const saving = bundle.promotionType === 'fixed_price'
+        ? Math.max(0, regular - Number(bundle.bundlePrice ?? regular))
+        : bundle.promotionType === 'bonus_items'
+          ? bundle.products.filter((product) => product.isBonus).reduce((sum, product) => sum + productPrice(product.id) * product.quantity, 0)
+          : regular * (Number(bundle.discountPercentage ?? 0) / 100);
+      return discount + Math.min(regular, saving);
+    }, 0);
+  }, [activeBundles, bundleIds, getItemTotal, items]);
+  const total = subtotal - discountAmount - bundleDiscount + shippingCost;
 
   // Empty cart check
   if (items.length === 0 && !orderComplete) {
@@ -179,6 +202,7 @@ export default function CheckoutPage() {
         payment_method: 'cod' as const,
         custom_message: undefined,
         coupon_code: appliedCode || undefined,
+        bundle_ids: bundleIds,
       };
 
       await createOrder(payload).unwrap();
@@ -541,6 +565,13 @@ export default function CheckoutPage() {
                 <div className="price-row">
                   <Text type="secondary">{t('checkout.discount')} ({discountPercent}%)</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(discountAmount)}</Text>
+                </div>
+              )}
+
+              {bundleDiscount > 0 && (
+                <div className="price-row">
+                  <Text type="secondary">Bundle savings</Text>
+                  <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(bundleDiscount)}</Text>
                 </div>
               )}
               
