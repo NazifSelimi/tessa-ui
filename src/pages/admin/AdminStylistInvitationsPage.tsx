@@ -39,6 +39,13 @@ interface InvitationRow {
   expires_at: string;
 }
 
+interface InvitationMeta {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}
+
 export default function AdminStylistInvitationsPage() {
   const { token } = useAuth();
   const [form] = Form.useForm<InviteFormValues>();
@@ -46,16 +53,18 @@ export default function AdminStylistInvitationsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(true);
+  const [invitationMeta, setInvitationMeta] = useState<InvitationMeta>({ current_page: 1, per_page: 25, total: 0, last_page: 1 });
 
-  const loadInvitations = async () => {
+  const loadInvitations = async (page = invitationMeta.current_page) => {
     setLoadingInvitations(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations?per_page=100`, {
+      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations?page=${page}&per_page=25`, {
         headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || 'Could not load invitations.');
       setInvitations(payload.data ?? []);
+      setInvitationMeta(payload.meta);
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Could not load invitations.');
     } finally {
@@ -142,12 +151,18 @@ export default function AdminStylistInvitationsPage() {
           </Card>
         </Col>
       </Row>
-      <Card title={`Imported invitations (${invitations.length})`} style={{ marginTop: 24 }} extra={<Button onClick={() => void loadInvitations()}>Refresh</Button>}>
+      <Card title={`Imported invitations (${invitationMeta.total})`} style={{ marginTop: 24 }} extra={<Button onClick={() => void loadInvitations()}>Refresh</Button>}>
         <Table
           loading={loadingInvitations}
           dataSource={invitations}
           rowKey="id"
-          pagination={{ pageSize: 25, showSizeChanger: false }}
+          pagination={{
+            current: invitationMeta.current_page,
+            pageSize: invitationMeta.per_page,
+            total: invitationMeta.total,
+            showSizeChanger: false,
+            onChange: (page) => void loadInvitations(page),
+          }}
           scroll={{ x: 850 }}
           columns={[
             { title: 'Name', dataIndex: 'display_name', key: 'display_name', width: 190 },
