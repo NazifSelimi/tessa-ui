@@ -96,7 +96,7 @@ export default function MainLayout() {
         children: categories.map(cat => ({
           key: `cat-${cat.id}`,
           label: (
-            <Link to={`/?category=${cat.id}`} onClick={closeMobile}>
+            <Link to={`/shop?category=${cat.id}`} onClick={closeMobile}>
               {cat.name}
             </Link>
           ),
@@ -109,7 +109,7 @@ export default function MainLayout() {
         children: brands.map(b => ({
           key: `brand-${b.id}`,
           label: (
-            <Link to={`/?brand=${b.id}`} onClick={closeMobile}>
+            <Link to={`/shop?brand=${b.id}`} onClick={closeMobile}>
               {b.name}
             </Link>
           ),
@@ -136,7 +136,7 @@ export default function MainLayout() {
     }
 
     return items;
-  }, [isStylist, isDistributor, isAdmin, currentRole, categories, brands]);
+  }, [isStylist, isDistributor, isAdmin, currentRole, categories, brands, t]);
 
   const getRoleBadgeClass = () => {
     switch (currentRole) {
@@ -166,7 +166,7 @@ export default function MainLayout() {
               style={{ 
                 border: 'none', 
                 background: 'transparent',
-                minWidth: 400,
+                minWidth: 0,
               }}
               selectedKeys={[]}
             />
@@ -191,7 +191,7 @@ export default function MainLayout() {
                   type="text" 
                   icon={<ShoppingCartOutlined style={{ fontSize: 20 }} />}
                   onClick={openDrawer}
-                  aria-label="Shopping cart"
+                  aria-label={t('cart.shoppingCart')}
                   style={{ width: 40, height: 40 }}
                 />
               </Badge>
@@ -221,7 +221,7 @@ export default function MainLayout() {
               icon={<MenuOutlined style={{ fontSize: 20 }} />}
               onClick={() => setMobileMenuOpen(true)}
               className="mobile-menu-btn"
-              aria-label="Open menu"
+              aria-label={t('nav.openMenu')}
               style={{ 
                 display: 'none',
                 width: 40, 
@@ -409,7 +409,7 @@ export default function MainLayout() {
 
       {/* Mobile-specific styles */}
       <style>{`
-        @media (max-width: 767px) {
+        @media (max-width: 1023px) {
           .site-header__nav {
             display: none !important;
           }
@@ -423,7 +423,7 @@ export default function MainLayout() {
             padding-bottom: calc(var(--spacing-lg) + 64px) !important;
           }
         }
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
           .site-header__nav {
             display: flex !important;
           }

@@ -51,6 +51,8 @@ const StylistRequestPage = lazy(() => import('./pages/stylist/StylistRequestPage
 const HairSurveyPage = lazy(() => import('./pages/HairSurveyPage'));
 const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
 const StylistQuickOrderPage = lazy(() => import('./pages/stylist/StylistQuickOrderPage'));
+// Design Lab — isolated /design-lab route for evaluating Shop/ordering concepts
+const DesignLabPage = lazy(() => import('./pages/design-lab/DesignLabPage'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -167,6 +169,9 @@ function App() {
                   </ProtectedRoute>
                 } />
               </Route>
+
+              {/* Design Lab (standalone, no nav/footer) — design exploration only */}
+              <Route path="/design-lab" element={<DesignLabPage />} />
 
               {/* Auth routes (standalone, no nav/footer) */}
               <Route path="/login" element={<LoginPage />} />

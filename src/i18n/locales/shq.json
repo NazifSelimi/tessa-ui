@@ -6,7 +6,8 @@
     "distributorPortal": "Portali i distribuitorit",
     "adminDashboard": "Paneli i administratorit",
     "becomeStylist": "Bëhu stilist",
-    "forProfessionals": "Për profesionistët"
+    "forProfessionals": "Për profesionistët",
+    "openMenu": "Hap menynë"
   },
   "auth": {
     "signIn": "Kyçu",
@@ -119,7 +120,11 @@
     "savings": "Kursim",
     "freeShippingUnlocked": "Zhbllokuat dërgesën falas!",
     "freeShippingRemaining": "Shtoni edhe {{amount}} për dërgesë falas",
-    "emptyCartMessage": "Duket se nuk keni shtuar asnjë produkt në shportën tuaj. Shfletoni koleksionin tonë për të gjetur diçka që ju pëlqen."
+    "emptyCartMessage": "Duket se nuk keni shtuar asnjë produkt në shportën tuaj. Shfletoni koleksionin tonë për të gjetur diçka që ju pëlqen.",
+    "quantityFor": "Sasia për {{name}}",
+    "removeFromCart": "Hiq {{name}} nga shporta",
+    "clearCart": "Zbraz shportën",
+    "clearCartConfirm": "A jeni i sigurt që dëshironi të hiqni të gjitha produktet nga shporta?"
   },
   "checkout": {
     "title": "Pagesa",
@@ -148,6 +153,7 @@
     "total": "Totali",
     "discount": "Zbritja",
     "continueToPayment": "Vazhdo te pagesa",
+    "continueToReview": "Vazhdo te rishikimi",
     "paymentMethod": "Mënyra e pagesës",
     "cod": "Pagesë në dorëzim (PND)",
     "codDescription": "Pagesa do të bëhet në dorëzim. Nuk kërkohet pagesë online.",
@@ -160,7 +166,9 @@
     "enterCode": "Shkruani kodin",
     "removeDiscount": "Hiq kodin e zbritjes",
     "professionalHint": "Mund të keni qasje në kode profesionale të zbritjes.",
-    "addMoreForFreeShipping": "Shtoni edhe {{amount}} për dërgesë falas"
+    "addMoreForFreeShipping": "Shtoni edhe {{amount}} për dërgesë falas",
+    "discountApplied": "Kodi i zbritjes u aplikua!",
+    "shippingRequired": "Kërkohen të dhënat e dërgesës."
   },
   "home": {
     "searchProducts": "Kërko produkte (min. 2 shkronja)...",
@@ -368,7 +376,8 @@
     "previous": "Paraprake",
     "submit": "Dërgo",
     "language": "Gjuha",
-    "required": "E detyrueshme"
+    "required": "E detyrueshme",
+    "changeLanguage": "Ndrysho gjuhën"
   },
   "homeLanding": {
     "eyebrow": "Kujdes për flokët, i personalizuar",

@@ -131,7 +131,7 @@ const CartPage: React.FC = () => {
                           {typeof item.product.brand === 'object' ? item.product.brand?.name : item.product.brand}
                         </Text>
                         <Text className="cart-item__unit-price">
-                          {formatPrice(getItemPrice(item))} each
+                          {formatPrice(getItemPrice(item))} {t('cart.each')}
                         </Text>
                       </div>
                       
@@ -143,7 +143,7 @@ const CartPage: React.FC = () => {
                           onChange={(val) => handleQuantityChange(item.productId, val)}
                           size="middle"
                           style={{ width: 80 }}
-                          aria-label={`Quantity for ${item.product.name}`}
+                          aria-label={t('cart.quantityFor', { name: item.product.name })}
                         />
                         <Text strong className="cart-item__total">
                           {formatPrice(getItemTotal(item))}
@@ -159,7 +159,7 @@ const CartPage: React.FC = () => {
                             type="text"
                             danger
                             icon={<DeleteOutlined />}
-                            aria-label="Remove item"
+                            aria-label={t('cart.removeFromCart', { name: item.product.name })}
                             size="small"
                           />
                         </Popconfirm>
@@ -175,14 +175,14 @@ const CartPage: React.FC = () => {
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Popconfirm
-                title={t('cart.removeItem')}
-                description={t('cart.removeConfirm')}
+                title={t('cart.clearCart')}
+                description={t('cart.clearCartConfirm')}
                 onConfirm={handleClearCart}
                 okText={t('common.yes')}
                 cancelText={t('common.no')}
               >
                 <Button type="text" danger>
-                  {t('common.delete')}
+                  {t('cart.clearCart')}
                 </Button>
               </Popconfirm>
             </div>
@@ -191,7 +191,7 @@ const CartPage: React.FC = () => {
 
         {/* Order Summary */}
         <Col xs={24} lg={8}>
-          <Card className="order-summary" style={{ position: 'sticky', top: 24 }}>
+          <Card className="order-summary" style={{ position: 'sticky', top: 'calc(var(--header-height) + var(--spacing-lg))' }}>
             <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>{t('checkout.orderSummary')}</Title>
 
             {/* Free-shipping progress */}

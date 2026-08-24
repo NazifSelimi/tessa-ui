@@ -15,6 +15,9 @@
   --color-primary: #1a1a2e;
   --color-primary-light: #2d2d44;
   --color-primary-dark: #0f0f1a;
+  --color-selection-bg: #e8edf8;
+  --color-selection-border: #b7c5e4;
+  --color-selection-text: #172554;
   
   --color-accent: #16a34a;
   --color-accent-light: #22c55e;
@@ -35,6 +38,9 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #3b82f6;
+  --color-success-bg: #ecfdf5;
+  --color-warning-bg: #fffbeb;
+  --color-info-bg: #eff6ff;
   
   /* Role Colors */
   --color-role-admin: #dc2626;
@@ -146,6 +152,11 @@ a {
 button {
   font-family: inherit;
   cursor: pointer;
+  touch-action: manipulation;
+}
+
+a {
+  touch-action: manipulation;
 }
 
 /* =============================================================================
@@ -1193,13 +1204,24 @@ button {
   box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.1);
 }
 
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.1) !important;
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 /* Drawer styles */
 .ant-drawer-content {
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
 
 @media (max-width: 767px) {
-  .ant-drawer-content-wrapper {
+  .ant-drawer-right .ant-drawer-content-wrapper {
     max-width: 85vw !important;
   }
 }
@@ -1488,12 +1510,12 @@ button {
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-sm) var(--spacing-md);
-  background: #dcfce7;
+  background: var(--color-success-bg);
   border-radius: var(--radius-md);
 }
 
 .shipping-notice {
-  background: #fff7e6;
+  background: var(--color-warning-bg);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   border: 1px solid #ffd591;
@@ -1512,6 +1534,14 @@ button {
   gap: var(--spacing-md);
   align-items: center;
   padding: var(--spacing-sm) 0;
+}
+
+.mobile-filter-drawer .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--color-primary);
+}
+
+.mobile-filter-drawer .ant-tabs-ink-bar {
+  background: var(--color-primary);
 }
 
 /* =============================================================================
@@ -1675,6 +1705,19 @@ button {
   .main-content {
     padding: var(--spacing-md) !important;
   }
+
+  /* iOS zooms when a focused form control is rendered below 16px. */
+  input,
+  textarea,
+  select,
+  .ant-input,
+  .ant-input-affix-wrapper input,
+  .ant-input-number-input,
+  .ant-select-selection-search-input,
+  .ant-select-selection-item,
+  .ant-picker-input > input {
+    font-size: 16px !important;
+  }
   
   /* Checkout page compact */
   .checkout-page {
@@ -1725,7 +1768,7 @@ button {
 
 @media (max-width: 767px) {
   /* Ensure drawer doesn't overflow */
-  .ant-drawer-content-wrapper {
+  .ant-drawer-right .ant-drawer-content-wrapper {
     max-width: 85vw !important;
   }
   
@@ -1784,7 +1827,7 @@ button {
 }
 
 .mobile-bottom-nav__item--active {
-  color: var(--color-primary, #722ed1);
+  color: var(--color-primary);
 }
 
 .mobile-bottom-nav__item--active::after {
@@ -1796,7 +1839,7 @@ button {
   width: 20px;
   height: 2px;
   border-radius: 1px;
-  background: var(--color-primary, #722ed1);
+  background: var(--color-primary);
 }
 
 .mobile-bottom-nav__icon {
@@ -1831,11 +1874,11 @@ button {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--color-primary, #722ed1);
+  background: var(--color-primary);
   color: #fff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(114, 46, 209, 0.4);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.28);
   align-items: center;
   justify-content: center;
   font-size: 22px;

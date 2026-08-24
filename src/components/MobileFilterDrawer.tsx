@@ -59,7 +59,7 @@ export default function MobileFilterDrawer(props: FilterProps) {
       open={props.open}
       height="85vh"
       styles={{
-        header: { borderBottom: '1px solid #f0f0f0' },
+        header: { borderBottom: '1px solid var(--color-border-light)' },
         body: { padding: 0, paddingBottom: 80 },
       }}
       className="mobile-filter-drawer"
@@ -82,7 +82,9 @@ export default function MobileFilterDrawer(props: FilterProps) {
                       onClick={() => props.onCategoryChange(cat.id ? String(cat.id) : '')}
                       style={{
                         cursor: 'pointer',
-                        background: String(cat.id || '') === props.category ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
+                        background: String(cat.id || '') === props.category ? 'var(--color-selection-bg)' : 'transparent',
+                        border: `1px solid ${String(cat.id || '') === props.category ? 'var(--color-selection-border)' : 'transparent'}`,
+                        color: String(cat.id || '') === props.category ? 'var(--color-selection-text)' : 'inherit',
                         fontWeight: String(cat.id || '') === props.category ? 600 : 400,
                         padding: '12px 16px',
                         borderRadius: 8,
@@ -108,7 +110,9 @@ export default function MobileFilterDrawer(props: FilterProps) {
                       onClick={() => props.onBrandChange(b.id ? String(b.id) : '')}
                       style={{
                         cursor: 'pointer',
-                        background: String(b.id || '') === props.brand ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
+                        background: String(b.id || '') === props.brand ? 'var(--color-selection-bg)' : 'transparent',
+                        border: `1px solid ${String(b.id || '') === props.brand ? 'var(--color-selection-border)' : 'transparent'}`,
+                        color: String(b.id || '') === props.brand ? 'var(--color-selection-text)' : 'inherit',
                         fontWeight: String(b.id || '') === props.brand ? 600 : 400,
                         padding: '12px 16px',
                         borderRadius: 8,
@@ -139,7 +143,7 @@ export default function MobileFilterDrawer(props: FilterProps) {
                     <Text strong>{t('home.priceRange')} (MKD)</Text>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
                       <InputNumber
-                        placeholder="Min"
+                        placeholder={t('home.minPrice')}
                         min={0}
                         value={props.priceRange[0] || undefined}
                         onChange={(val) => props.onPriceRangeChange([val ?? 0, props.priceRange[1]])}
@@ -148,7 +152,7 @@ export default function MobileFilterDrawer(props: FilterProps) {
                       />
                       <span style={{ flexShrink: 0 }}>–</span>
                       <InputNumber
-                        placeholder="Max"
+                        placeholder={t('home.maxPrice')}
                         min={0}
                         value={props.priceRange[1] < 1000000000 ? props.priceRange[1] : undefined}
                         onChange={(val) => props.onPriceRangeChange([props.priceRange[0], val ?? 1000000000])}
@@ -184,7 +188,9 @@ export default function MobileFilterDrawer(props: FilterProps) {
                       onClick={() => props.onSortChange(opt.value)}
                       style={{
                         cursor: 'pointer',
-                        background: opt.value === props.sortBy ? 'var(--color-primary-light, #e6f7ff)' : 'transparent',
+                        background: opt.value === props.sortBy ? 'var(--color-selection-bg)' : 'transparent',
+                        border: `1px solid ${opt.value === props.sortBy ? 'var(--color-selection-border)' : 'transparent'}`,
+                        color: opt.value === props.sortBy ? 'var(--color-selection-text)' : 'inherit',
                         fontWeight: opt.value === props.sortBy ? 600 : 400,
                         padding: '12px 16px',
                         borderRadius: 8,

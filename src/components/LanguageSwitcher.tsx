@@ -48,7 +48,7 @@ export default function LanguageSwitcher() {
       <Button
         type="text"
         size="small"
-        aria-label="Change language"
+        aria-label={i18n.t('common.changeLanguage')}
         style={{
           height: 36,
           paddingInline: 10,

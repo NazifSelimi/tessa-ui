@@ -17,7 +17,7 @@ import {
   Divider, Space, Image, message, Alert, Tag, Result,
 } from 'antd';
 import {
-  ShoppingOutlined, CreditCardOutlined, CheckCircleOutlined,
+  ShoppingOutlined, CheckCircleOutlined,
   TagOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 import { useCart } from '@/hooks/useCart';
@@ -147,7 +147,7 @@ export default function CheckoutPage() {
     const success = await applyCode(discountInput.trim(), subtotal);
     
     if (success) {
-      message.success('Discount code applied!');
+      message.success(t('checkout.discountApplied'));
       setDiscountInput('');
     }
   };
@@ -157,7 +157,7 @@ export default function CheckoutPage() {
     setPlacingOrder(true);
     try {
       if (!shippingData) {
-        message.error('Shipping information is required.');
+        message.error(t('checkout.shippingRequired'));
         return;
       }
 
@@ -194,7 +194,6 @@ export default function CheckoutPage() {
   // Step items
   const steps = [
     { title: t('checkout.shipping'), icon: <ShoppingOutlined /> },
-    { title: t('checkout.payment'), icon: <CreditCardOutlined /> },
     { title: t('checkout.review'), icon: <CheckCircleOutlined /> },
   ];
 
@@ -339,36 +338,15 @@ export default function CheckoutPage() {
 
                 <Form.Item style={{ marginBottom: 0, marginTop: 'var(--spacing-lg)' }}>
                   <Button type="primary" htmlType="submit" size="large" block>
-                    {t('checkout.continueToPayment')}
+                    {t('checkout.continueToReview')}
                   </Button>
                 </Form.Item>
               </Form>
             </Card>
           )}
 
-          {/* Step 2: Payment */}
+          {/* Step 2: Review */}
           {currentStep === 1 && (
-            <Card title={t('checkout.paymentMethod')} className="checkout-card">
-              <Alert
-                message={t('checkout.cod')}
-                description={t('checkout.codDescription')}
-                type="info"
-                showIcon
-                style={{ marginBottom: 'var(--spacing-xl)' }}
-              />
-              <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
-                <Button onClick={() => setCurrentStep(0)} size="large">
-                  {t('common.back')}
-                </Button>
-                <Button type="primary" size="large" style={{ flex: 1 }} onClick={() => setCurrentStep(2)}>
-                  {t('checkout.reviewOrder')}
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Step 3: Review */}
-          {currentStep === 2 && (
             <Card title={t('checkout.orderReview')} className="checkout-card">
               {/* Shipping Address */}
               <div style={{ marginBottom: 'var(--spacing-xl)' }}>
@@ -435,7 +413,7 @@ export default function CheckoutPage() {
               <Divider />
 
               <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
-                <Button onClick={() => setCurrentStep(1)} size="large">
+                <Button onClick={() => setCurrentStep(0)} size="large">
                   {t('common.back')}
                 </Button>
                 <Button 

@@ -6,7 +6,8 @@
     "distributorPortal": "Distributor Portal",
     "adminDashboard": "Admin Dashboard",
     "becomeStylist": "Become a Stylist",
-    "forProfessionals": "For Professionals"
+    "forProfessionals": "For Professionals",
+    "openMenu": "Open menu"
   },
   "auth": {
     "signIn": "Sign In",
@@ -119,7 +120,11 @@
     "savings": "Savings",
     "freeShippingUnlocked": "You've unlocked free delivery!",
     "freeShippingRemaining": "Add {{amount}} more for free delivery",
-    "emptyCartMessage": "Looks like you haven't added any items to your cart yet. Browse our collection to find something you'll love."
+    "emptyCartMessage": "Looks like you haven't added any items to your cart yet. Browse our collection to find something you'll love.",
+    "quantityFor": "Quantity for {{name}}",
+    "removeFromCart": "Remove {{name}} from cart",
+    "clearCart": "Clear cart",
+    "clearCartConfirm": "Are you sure you want to remove all items from your cart?"
   },
   "checkout": {
     "title": "Checkout",
@@ -148,6 +153,7 @@
     "total": "Total",
     "discount": "Discount",
     "continueToPayment": "Continue to Payment",
+    "continueToReview": "Continue to review",
     "paymentMethod": "Payment Method",
     "cod": "Cash on Delivery (COD)",
     "codDescription": "Payment will be collected upon delivery. No online payment is required.",
@@ -160,7 +166,9 @@
     "enterCode": "Enter code",
     "removeDiscount": "Remove discount code",
     "professionalHint": "You may have access to professional discount codes.",
-    "addMoreForFreeShipping": "Add {{amount}} more for free shipping"
+    "addMoreForFreeShipping": "Add {{amount}} more for free shipping",
+    "discountApplied": "Discount code applied!",
+    "shippingRequired": "Shipping information is required."
   },
   "home": {
     "searchProducts": "Search products (min 2 chars)...",
@@ -368,7 +376,8 @@
     "previous": "Previous",
     "submit": "Submit",
     "language": "Language",
-    "required": "Required"
+    "required": "Required",
+    "changeLanguage": "Change language"
   },
   "homeLanding": {
     "eyebrow": "Hair care, personalised",

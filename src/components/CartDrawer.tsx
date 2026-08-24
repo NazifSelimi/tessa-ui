@@ -180,7 +180,7 @@ export default function CartDrawer() {
                         onChange={(val) => updateQuantity(item.productId, val || 1)}
                         size="small"
                         style={{ width: 70 }}
-                        aria-label={`Quantity for ${item.product.name}`}
+                        aria-label={t('cart.quantityFor', { name: item.product.name })}
                       />
                       <Space size="middle">
                         <Text strong>{formatPrice(total)}</Text>
@@ -190,7 +190,7 @@ export default function CartDrawer() {
                           size="small"
                           icon={<DeleteOutlined />}
                           onClick={() => removeItem(item.productId)}
-                          aria-label={`Remove ${item.product.name} from cart`}
+                          aria-label={t('cart.removeFromCart', { name: item.product.name })}
                           style={{ padding: 4 }}
                         />
                       </Space>

@@ -264,7 +264,7 @@ export default function ProductPage() {
                     <Text type="secondary">{t('product.category')}</Text>
                     <Text strong>{typeof product.category === 'object' ? product.category?.name : product.category}</Text>
                     <Text type="secondary">{t('product.availability')}</Text>
-                    <Text strong style={{ color: inStock ? '#52c41a' : '#ff4d4f' }}>
+                    <Text strong style={{ color: inStock ? 'var(--color-success)' : 'var(--color-error)' }}>
                       {inStock ? t('product.inStock') : t('product.outOfStock')}
                     </Text>
                   </div>
@@ -275,9 +275,9 @@ export default function ProductPage() {
                 label: <Text strong style={{ fontSize: 16 }}>{t('product.shippingReturns')}</Text>,
                 children: (
                   <Space direction="vertical" size={8}>
-                    <Text><TruckOutlined style={{ marginRight: 8, color: '#1677ff' }} />{t('product.freeStandardShipping')}</Text>
-                    <Text><SafetyCertificateOutlined style={{ marginRight: 8, color: '#1677ff' }} />{t('product.expressShipping')}</Text>
-                    <Text><CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />{t('product.returnPolicy')}</Text>
+                    <Text><TruckOutlined style={{ marginRight: 8, color: 'var(--color-info)' }} />{t('product.freeStandardShipping')}</Text>
+                    <Text><SafetyCertificateOutlined style={{ marginRight: 8, color: 'var(--color-info)' }} />{t('product.expressShipping')}</Text>
+                    <Text><CheckCircleOutlined style={{ marginRight: 8, color: 'var(--color-success)' }} />{t('product.returnPolicy')}</Text>
                   </Space>
                 ),
               },
