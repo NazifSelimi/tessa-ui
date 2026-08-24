@@ -11,7 +11,7 @@ function bundlePrice(bundle: StoreBundle) {
   const total = bundle.products.reduce((sum, product) => sum + product.price * product.quantity, 0);
   if (bundle.promotionType === 'fixed_price' && bundle.bundlePrice != null) return bundle.bundlePrice;
   if (bundle.promotionType === 'percentage' && bundle.discountPercentage != null) return total * (1 - bundle.discountPercentage / 100);
-  if (bundle.promotionType === 'bonus_items') return total - bundle.products.filter((product) => product.isBonus).reduce((sum, product) => sum + product.price * product.quantity, 0);
+  if (bundle.promotionType === 'bonus_items') return total - bundle.products.reduce((sum, product) => sum + product.price * (product.bonusQuantity ?? (product.isBonus ? product.quantity : 0)), 0);
   return total;
 }
 
@@ -44,7 +44,7 @@ export default function BundleDealRail() {
             <div className="bundle-deal-card__top"><Tag>{bundle.audience === 'stylist' ? 'STYLIST OFFER' : 'LIMITED OFFER'}</Tag><GiftOutlined /></div>
             <Title level={4}>{bundle.name}</Title>
             <Text type="secondary" className="bundle-deal-card__copy">{bundle.description}</Text>
-            <div className="bundle-deal-card__items">{bundle.products.map((product) => <span key={product.id}>{product.quantity}x {product.name}{product.isBonus ? ' - free' : ''}</span>)}</div>
+            <div className="bundle-deal-card__items">{bundle.products.map((product) => <span key={product.id}>{product.quantity}x {product.name}{(product.bonusQuantity ?? 0) > 0 ? ` - ${product.bonusQuantity} free` : ''}</span>)}</div>
             <div className="bundle-deal-card__price"><Text delete>{formatPrice(regular)}</Text><strong>{formatPrice(price)}</strong></div>
             <Button type="primary" block icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>Add offer</Button>
           </article>;

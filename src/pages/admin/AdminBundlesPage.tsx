@@ -3,6 +3,7 @@ import { Button, Card, Drawer, Form, Input, InputNumber, Popconfirm, Select, Spa
 import { DeleteOutlined, GiftOutlined, PlusOutlined } from '@ant-design/icons';
 import { useCreateBundleMutation, useDeleteBundleMutation, useGetAdminBundlesQuery, useUpdateBundleMutation, useGetAllProductsQuery } from '@/features/admin/api';
 import type { BundlePromotionType, StoreBundle } from '@/types';
+import { extractErrorMessage } from '@/shared/utils/error';
 
 const { Title, Text } = Typography;
 
@@ -15,7 +16,7 @@ type BundleForm = {
   bundle_price?: number;
   is_active: boolean;
   is_featured: boolean;
-  products: Array<{ product_id: string; quantity: number; is_bonus?: boolean }>;
+  products: Array<{ product_id: string; quantity: number; bonus_quantity?: number }>;
 };
 
 export default function AdminBundlesPage() {
@@ -46,10 +47,10 @@ export default function AdminBundlesPage() {
       bundle_price: bundle.bundlePrice ?? undefined,
       is_active: bundle.isActive,
       is_featured: bundle.isFeatured,
-      products: bundle.products.map((product) => ({ product_id: product.id, quantity: product.quantity, is_bonus: product.isBonus })),
+      products: bundle.products.map((product) => ({ product_id: product.id, quantity: product.quantity, bonus_quantity: product.bonusQuantity ?? (product.isBonus ? product.quantity : 0) })),
     } : {
       audience: 'all', promotion_type: 'bonus_items', is_active: true, is_featured: false,
-      products: [{ quantity: 1, is_bonus: false }, { quantity: 1, is_bonus: false }, { quantity: 1, is_bonus: true }],
+      products: [{ quantity: 1, bonus_quantity: 0 }, { quantity: 1, bonus_quantity: 0 }, { quantity: 1, bonus_quantity: 1 }],
     });
     setOpen(true);
   };
@@ -63,8 +64,8 @@ export default function AdminBundlesPage() {
       }
       message.success(editing ? 'Offer updated' : 'Offer created');
       setOpen(false);
-    } catch {
-      message.error('Could not save the offer. Check its products and pricing.');
+    } catch (error) {
+      message.error(extractErrorMessage(error));
     }
   };
 
@@ -108,10 +109,10 @@ export default function AdminBundlesPage() {
                 {fields.map((field) => <Space key={field.key} align="start" style={{ display: 'flex' }}>
                   <Form.Item {...field} name={[field.name, 'product_id']} rules={[{ required: true }]} style={{ width: 300 }}><Select showSearch optionFilterProp="label" options={productOptions} placeholder="Choose product" /></Form.Item>
                   <Form.Item {...field} name={[field.name, 'quantity']} rules={[{ required: true }]}><InputNumber min={1} /></Form.Item>
-                  <Form.Item {...field} name={[field.name, 'is_bonus']} valuePropName="checked" label="Free"><Switch disabled={promotionType !== 'bonus_items'} /></Form.Item>
+                  <Form.Item {...field} name={[field.name, 'bonus_quantity']} label="Free qty"><InputNumber min={0} disabled={promotionType !== 'bonus_items'} /></Form.Item>
                   <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
                 </Space>)}
-                <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, is_bonus: false })}>Add product</Button>
+                <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, bonus_quantity: 0 })}>Add product</Button>
               </Space>}
             </Form.List>
           </Card>

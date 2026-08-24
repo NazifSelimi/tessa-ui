@@ -389,6 +389,7 @@ export interface BundleProduct {
   quantity: number;
   image: string | null;
   isBonus?: boolean;
+  bonusQuantity?: number;
 }
 
 export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items';

@@ -107,7 +107,7 @@ export default function CheckoutPage() {
       const saving = bundle.promotionType === 'fixed_price'
         ? Math.max(0, regular - Number(bundle.bundlePrice ?? regular))
         : bundle.promotionType === 'bonus_items'
-          ? bundle.products.filter((product) => product.isBonus).reduce((sum, product) => sum + productPrice(product.id) * product.quantity, 0)
+          ? bundle.products.reduce((sum, product) => sum + productPrice(product.id) * (product.bonusQuantity ?? (product.isBonus ? product.quantity : 0)), 0)
           : regular * (Number(bundle.discountPercentage ?? 0) / 100);
       return discount + Math.min(regular, saving);
     }, 0);

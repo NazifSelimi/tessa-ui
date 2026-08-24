@@ -111,7 +111,7 @@ type BundlePayload = {
   is_featured?: boolean;
   starts_at?: string;
   ends_at?: string;
-  products: Array<{ product_id: string | number; quantity: number; is_bonus?: boolean }>;
+  products: Array<{ product_id: string | number; quantity: number; bonus_quantity?: number }>;
 };
 
 export const adminApi = baseApi.injectEndpoints({
