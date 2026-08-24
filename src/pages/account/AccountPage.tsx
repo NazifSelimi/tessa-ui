@@ -24,7 +24,7 @@ const { Title, Text } = Typography;
 export default function AccountPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, currentRole, updateProfile, isLoading } = useAuth();
+  const { user, currentRole, updateProfile, changePassword, isLoading } = useAuth();
   const [form] = Form.useForm();
 
   const handleUpdateProfile = async (values: {
@@ -44,8 +44,13 @@ export default function AccountPage() {
     }
   };
 
-  const handleChangePassword = async (_values: { currentPassword: string; newPassword: string }) => {
+  const handleChangePassword = async (values: { currentPassword: string; newPassword: string; confirmPassword: string }) => {
     try {
+      await changePassword({
+        currentPassword: values.currentPassword,
+        password: values.newPassword,
+        passwordConfirmation: values.confirmPassword,
+      });
       message.success(t('account.passwordUpdated'));
     } catch (_error) {
       message.error(t('account.passwordUpdateFailed'));
@@ -216,7 +221,7 @@ export default function AccountPage() {
               >
                 <Input.Password placeholder="Confirm new password" />
               </Form.Item>
-              <Button type="primary" htmlType="submit">{t('account.updatePassword')}</Button>
+              <Button type="primary" htmlType="submit" loading={isLoading}>{t('account.updatePassword')}</Button>
             </Form>
           </Card>
         </Col>

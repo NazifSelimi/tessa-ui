@@ -50,6 +50,12 @@ interface UpdateProfileRequest {
   preferred_locale?: 'en' | 'mk' | 'shq';
 }
 
+interface ChangePasswordRequest {
+  currentPassword: string;
+  password: string;
+  passwordConfirmation: string;
+}
+
 interface ForgotPasswordRequest {
   email: string;
 }
@@ -112,6 +118,19 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.User],
     }),
 
+    changePassword: builder.mutation<void, ChangePasswordRequest>({
+      query: (payload) => ({
+        url: '/v1/auth/password',
+        method: 'PUT',
+        body: {
+          current_password: payload.currentPassword,
+          password: payload.password,
+          password_confirmation: payload.passwordConfirmation,
+        },
+      }),
+      transformResponse: () => undefined,
+    }),
+
     forgotPassword: builder.mutation<{ message: string }, ForgotPasswordRequest>({
       query: (payload) => ({
         url: '/v1/auth/forgot-password',
@@ -149,6 +168,7 @@ export const {
   useGetCurrentUserQuery,
   useLazyGetCurrentUserQuery,
   useUpdateProfileMutation,
+  useChangePasswordMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
 } = authApi;

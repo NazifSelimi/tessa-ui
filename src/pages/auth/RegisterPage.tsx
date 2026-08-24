@@ -84,7 +84,7 @@ const RegisterPage: React.FC = () => {
         postcode: values.postcode,
       });
       message.success(t('auth.accountCreated'));
-      navigate(values.accountType === 'stylist' ? '/stylist/request' : '/login');
+      navigate(values.accountType === 'stylist' ? '/stylist/request' : '/');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t('auth.registrationFailed');
       message.error(errorMessage);

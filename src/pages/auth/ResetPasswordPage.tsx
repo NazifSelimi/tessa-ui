@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Typography, Form, Input, Button, Card, Result, message } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,6 @@ const { Paragraph } = Typography;
 const ResetPasswordPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [resetPassword] = useResetPasswordMutation();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -43,11 +42,11 @@ const ResetPasswordPage: React.FC = () => {
         >
           <Result
             status="error"
-            title="Invalid Reset Link"
-            subTitle="This password reset link is invalid or has expired. Please request a new one."
+            title={t('auth.invalidResetLink')}
+            subTitle={t('auth.invalidResetLinkDescription')}
             extra={
               <Link to="/forgot-password">
-                <Button type="primary" size="large">Request New Link</Button>
+                <Button type="primary" size="large">{t('auth.requestNewLink')}</Button>
               </Link>
             }
           />
@@ -73,8 +72,8 @@ const ResetPasswordPage: React.FC = () => {
         >
           <Result
             status="success"
-            title="Password Reset Successfully"
-            subTitle="Your password has been updated. You can now sign in with your new password."
+            title={t('auth.passwordResetSuccess')}
+            subTitle={t('auth.passwordResetSuccessDescription')}
             extra={
               <Link to="/login">
                 <Button type="primary" size="large">{t('auth.backToLogin')}</Button>
@@ -97,8 +96,7 @@ const ResetPasswordPage: React.FC = () => {
       }).unwrap();
       setSuccess(true);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Failed to reset password. The link may have expired.';
-      message.error(msg);
+      message.error(error instanceof Error ? error.message : t('auth.invalidResetLinkDescription'));
     } finally {
       setLoading(false);
     }
@@ -123,7 +121,7 @@ const ResetPasswordPage: React.FC = () => {
             <Logo variant="dark" height={36} />
           </Link>
           <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-            Choose a new password for your account
+            {t('auth.setNewPasswordDescription')}
           </Paragraph>
         </div>
 

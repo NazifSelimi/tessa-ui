@@ -27,6 +27,7 @@ import {
   useRegisterMutation, 
   useLogoutMutation,
   useForgotPasswordMutation,
+  useChangePasswordMutation,
   useUpdateProfileMutation,
 } from '@/features/auth/api';
 import type { User, UserRole } from '@/types';
@@ -52,6 +53,7 @@ export function useAuth() {
   const [logoutMutation] = useLogoutMutation();
   const [forgotPasswordMutation] = useForgotPasswordMutation();
   const [updateProfileMutation] = useUpdateProfileMutation();
+  const [changePasswordMutation] = useChangePasswordMutation();
 
   // Login handler
   const login = useCallback(async (email: string, password: string): Promise<User> => {
@@ -105,6 +107,14 @@ export function useAuth() {
     return result;
   }, [forgotPasswordMutation]);
 
+  const changePassword = useCallback(async (data: {
+    currentPassword: string;
+    password: string;
+    passwordConfirmation: string;
+  }): Promise<void> => {
+    await changePasswordMutation(data).unwrap();
+  }, [changePasswordMutation]);
+
   // Role checking helper
   const hasRole = useCallback((role: UserRole | UserRole[]): boolean => {
     const roles = Array.isArray(role) ? role : [role];
@@ -129,6 +139,7 @@ export function useAuth() {
     register,
     logout,
     updateProfile,
+    changePassword,
     forgotPassword,
     
     // Role helpers
