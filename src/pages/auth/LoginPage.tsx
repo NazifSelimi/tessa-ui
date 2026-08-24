@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
 import Logo from '@/components/Logo';
+import AuthPageHeader from '@/components/AuthPageHeader';
 import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 
 const { Text, Paragraph } = Typography;
@@ -72,7 +73,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -80,6 +81,7 @@ const LoginPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{
           width: '100%',

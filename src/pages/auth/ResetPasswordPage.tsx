@@ -11,6 +11,7 @@ import { LockOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '@/features/auth/api';
 import Logo from '@/components/Logo';
+import AuthPageHeader from '@/components/AuthPageHeader';
 
 const { Paragraph } = Typography;
 
@@ -27,7 +28,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (!token || !email) {
     return (
-      <div style={{
+      <div className="auth-page" style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -35,6 +36,7 @@ const ResetPasswordPage: React.FC = () => {
         background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
         padding: '24px',
       }}>
+        <AuthPageHeader />
         <Card
           style={{ width: '100%', maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 12 }}
           styles={{ body: { padding: 32 } }}
@@ -56,7 +58,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (success) {
     return (
-      <div style={{
+      <div className="auth-page" style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -64,6 +66,7 @@ const ResetPasswordPage: React.FC = () => {
         background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
         padding: '24px',
       }}>
+        <AuthPageHeader />
         <Card
           style={{ width: '100%', maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 12 }}
           styles={{ body: { padding: 32 } }}
@@ -102,7 +105,7 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -110,6 +113,7 @@ const ResetPasswordPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{ width: '100%', maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 12 }}
         styles={{ body: { padding: 32 } }}

@@ -32,6 +32,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
+import AuthPageHeader from '@/components/AuthPageHeader';
 import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 import {
   MACEDONIA_CITY_OPTIONS,
@@ -108,7 +109,7 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -116,6 +117,7 @@ const RegisterPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{
           width: '100%',
@@ -144,7 +146,7 @@ const RegisterPage: React.FC = () => {
           initialValues={{ accountType: 'customer' }}
         >
           {/* Name Fields */}
-          <Space style={{ width: '100%', display: 'flex' }} size={12}>
+          <Space className="register-form__row" style={{ width: '100%', display: 'flex' }} size={12}>
             <Form.Item
               name="firstName"
               label={t('auth.firstName')}
@@ -215,7 +217,7 @@ const RegisterPage: React.FC = () => {
             />
           </Form.Item>
 
-          <Space style={{ width: '100%', display: 'flex' }} size={12}>
+          <Space className="register-form__row" style={{ width: '100%', display: 'flex' }} size={12}>
             <Form.Item
               name="city"
               label={t('checkout.municipality')}

@@ -782,6 +782,47 @@ a {
   margin-top: var(--spacing-sm);
 }
 
+.auth-page-header {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: var(--z-fixed);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.auth-page-header > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 575px) {
+  .auth-page {
+    align-items: flex-start !important;
+    padding: 72px 12px 24px !important;
+  }
+
+  .auth-page .ant-card {
+    border-radius: 18px !important;
+  }
+
+  .auth-page .ant-card-body {
+    padding: 20px !important;
+  }
+
+  .register-form__row {
+    flex-direction: column;
+    gap: 0 !important;
+  }
+
+  .register-form__row .ant-form-item {
+    width: 100%;
+  }
+}
+
 /* =============================================================================
    CHECKOUT STYLES
    ============================================================================= */
