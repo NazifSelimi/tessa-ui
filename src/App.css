@@ -2690,5 +2690,21 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   .home-hero__actions .ant-btn { width: 100%; min-height: 48px; }
   .home-section__head .ant-typography { font-size: 1.45rem; }
   .home-routine { padding: 18px; }
+  .home-routine__chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trust-strip { padding: 16px 0; }
+}
+
+@media (max-width: 1023px) {
+  /* The bottom tab is the only Account entry on mobile. */
+  .site-header__actions > .hidden-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 359px) {
+  /* Two product cards cannot carry price and CTA accessibly at this width. */
+  .shop-product-grid > .ant-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }

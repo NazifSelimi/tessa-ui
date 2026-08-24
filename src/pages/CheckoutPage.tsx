@@ -303,7 +303,7 @@ export default function CheckoutPage() {
                       />
                     </Form.Item>
                   </Col>
-                  <Col xs={12} sm={8}>
+                  <Col xs={24} sm={8}>
                     <Form.Item
                       name="state"
                       label={t('checkout.state')}
@@ -313,7 +313,7 @@ export default function CheckoutPage() {
                       <Input size="large" disabled />
                     </Form.Item>
                   </Col>
-                  <Col xs={12} sm={8}>
+                  <Col xs={24} sm={8}>
                     <Form.Item
                       name="zip"
                       label={t('checkout.zip')}

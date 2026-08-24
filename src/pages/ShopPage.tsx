@@ -422,7 +422,7 @@ const handlePageChange = (page: number) => {
             </div>
           ) : products.length > 0 ? (
             <>
-              <Row gutter={[12, 12]}>
+              <Row gutter={[12, 12]} className="shop-product-grid">
                 {products.map((product, index) => (
                   <Col key={product.id} xs={12} sm={12} md={8} lg={6}>
                     <ProductCard product={product} priority={index < 4} />
