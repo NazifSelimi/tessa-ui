@@ -99,7 +99,9 @@
     "returnPolicy": "Politika e kthimit 30-ditore për produkte të pahapura",
     "addedToCart": "u shtua në shportë",
     "lowStock": "Kanë mbetur vetëm {{count}} në stok",
-    "noImage": "Nuk ka imazh"
+    "noImage": "Nuk ka imazh",
+    "professionalUse": "Vetëm për përdorim profesional",
+    "compatibleWith": "Sistemi i përputhshëm"
   },
   "cart": {
     "shoppingCart": "Shporta e blerjeve",

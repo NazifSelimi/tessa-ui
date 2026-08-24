@@ -44,6 +44,11 @@ export interface Product {
   compareAtPrice?: string | number | null;
   stylistPrice?: string | number;
   stylistOnly?: boolean;
+  catalogGuidance?: {
+    audience: 'consumer' | 'professional';
+    professionalOnly: boolean;
+    compatibleWith: string[];
+  };
   inStock?: boolean;
   quantity?: number;
   featured?: boolean;

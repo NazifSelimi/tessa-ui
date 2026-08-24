@@ -18,7 +18,7 @@ import {
   Alert,
 } from 'antd';
 import { 
-  ShoppingCartOutlined, HeartOutlined, ArrowLeftOutlined,
+  ShoppingCartOutlined, ArrowLeftOutlined,
   CheckCircleOutlined, TruckOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
@@ -50,7 +50,7 @@ export default function ProductPage() {
     message.success({
       content: (
         <span>
-          Added <strong>{product.name}</strong> to cart
+          <strong>{product.name}</strong> {t('product.addedToCart')}
         </span>
       ),
       icon: <CheckCircleOutlined style={{ color: 'var(--color-success)' }} />,
@@ -207,19 +207,13 @@ export default function ProductPage() {
               >
                 {inStock ? t('product.addToCart') : t('product.outOfStock')}
               </Button>
-              <Button 
-                size="large" 
-                icon={<HeartOutlined />}
-                style={{ height: 48, flexShrink: 0 }}
-                aria-label="Add to wishlist"
-              />
             </div>
           </div>
 
           {/* Stock Warning */}
           {lowStock && (
             <Alert
-              message={`Only ${product.quantity} left in stock`}
+              message={t('product.lowStock', { count: product.quantity })}
               type="warning"
               showIcon
               style={{ marginBottom: 'var(--spacing-lg)' }}
@@ -239,6 +233,18 @@ export default function ProductPage() {
           </div>
 
           <Divider />
+
+          {product.catalogGuidance?.professionalOnly && (
+            <Alert
+              className="product-guidance"
+              type="info"
+              showIcon
+              message={t('product.professionalUse')}
+              description={product.catalogGuidance.compatibleWith.length > 0
+                ? `${t('product.compatibleWith')}: ${product.catalogGuidance.compatibleWith.join(', ')}`
+                : undefined}
+            />
+          )}
 
           {/* Description & Details */}
           <Collapse 

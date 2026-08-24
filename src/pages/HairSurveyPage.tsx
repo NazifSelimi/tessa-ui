@@ -15,7 +15,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Button, Card, Space, Progress, Alert, Spin, Tag } from 'antd';
+import { Typography, Button, Progress, Alert, Spin } from 'antd';
 import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
@@ -141,39 +141,26 @@ export default function HairSurveyPage() {
     disabledId?: number | null,
   ) {
     return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-        gap: 16,
-        marginTop: 24,
-      }}>
+      <div className={`hair-quiz__options ${options.length > 4 ? 'hair-quiz__options--stacked' : ''}`}>
         {options.map((opt) => {
           const isSelected = selectedId === opt.id;
           const isDisabled = disabledId != null && disabledId === opt.id;
           return (
-            <Card
+            <button
+              type="button"
               key={opt.id}
-              hoverable={!isDisabled}
               onClick={() => !isDisabled && onSelect(opt.id)}
-              style={{
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                borderColor: isSelected ? 'var(--color-primary, #1677ff)' : undefined,
-                borderWidth: isSelected ? 2 : 1,
-                opacity: isDisabled ? 0.45 : 1,
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                boxShadow: isSelected ? '0 0 0 2px rgba(22,119,255,0.15)' : undefined,
-              }}
-              styles={{ body: { padding: 20, textAlign: 'center' } }}
+              className={`hair-quiz__option ${isSelected ? 'hair-quiz__option--selected' : ''}`}
+              disabled={isDisabled}
+              aria-pressed={isSelected}
             >
-              <div style={{ fontSize: 32, marginBottom: 8 }}>{opt.emoji}</div>
-              <Text strong style={{ fontSize: 16, display: 'block' }}>{opt.label}</Text>
-              <Text type="secondary" style={{ fontSize: 13 }}>{opt.description}</Text>
-              {isSelected && (
-                <Tag color="blue" style={{ marginTop: 8 }}>
-                  <CheckOutlined /> {t('survey.selected')}
-                </Tag>
-              )}
-            </Card>
+              <span className="hair-quiz__option-icon">{opt.emoji}</span>
+              <span className="hair-quiz__option-copy">
+                <span className="hair-quiz__option-title">{opt.label}</span>
+                <span className="hair-quiz__option-description">{opt.description}</span>
+              </span>
+              {isSelected && <CheckOutlined className="hair-quiz__option-check" />}
+            </button>
           );
         })}
       </div>
@@ -183,37 +170,24 @@ export default function HairSurveyPage() {
   /* ----- budget option grid (string-based "min-max") ----- */
   function renderBudgetGrid() {
     return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-        gap: 16,
-        marginTop: 24,
-      }}>
+      <div className="hair-quiz__options hair-quiz__options--budget">
         {BUDGET_OPTIONS.map((opt) => {
           const isSelected = budgetRange === opt.value;
           return (
-            <Card
+            <button
+              type="button"
               key={opt.value}
-              hoverable
               onClick={() => setBudgetRange(opt.value)}
-              style={{
-                cursor: 'pointer',
-                borderColor: isSelected ? 'var(--color-primary, #1677ff)' : undefined,
-                borderWidth: isSelected ? 2 : 1,
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                boxShadow: isSelected ? '0 0 0 2px rgba(22,119,255,0.15)' : undefined,
-              }}
-              styles={{ body: { padding: 20, textAlign: 'center' } }}
+              className={`hair-quiz__option ${isSelected ? 'hair-quiz__option--selected' : ''}`}
+              aria-pressed={isSelected}
             >
-              <div style={{ fontSize: 32, marginBottom: 8 }}>{opt.emoji}</div>
-              <Text strong style={{ fontSize: 16, display: 'block' }}>{opt.label}</Text>
-              <Text type="secondary" style={{ fontSize: 13 }}>{opt.description}</Text>
-              {isSelected && (
-                <Tag color="blue" style={{ marginTop: 8 }}>
-                  <CheckOutlined /> {t('survey.selected')}
-                </Tag>
-              )}
-            </Card>
+              <span className="hair-quiz__option-icon">{opt.emoji}</span>
+              <span className="hair-quiz__option-copy">
+                <span className="hair-quiz__option-title">{opt.label}</span>
+                <span className="hair-quiz__option-description">{opt.description}</span>
+              </span>
+              {isSelected && <CheckOutlined className="hair-quiz__option-check" />}
+            </button>
           );
         })}
       </div>
@@ -299,80 +273,49 @@ export default function HairSurveyPage() {
 
   /* ----- render ----- */
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px 80px' }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <ExperimentOutlined style={{ fontSize: 40, color: 'var(--color-primary, #1677ff)' }} />
-        <Title level={2} style={{ marginTop: 8 }}>{t('survey.hairCareSurvey')}</Title>
-        <Paragraph type="secondary">
+    <main className="hair-quiz">
+      <header className="hair-quiz__header">
+        <div className="hair-quiz__mark"><ExperimentOutlined /></div>
+        <Title level={2}>{t('survey.hairCareSurvey')}</Title>
+        <Paragraph>
           {t('survey.surveyIntro')}
         </Paragraph>
-      </div>
+      </header>
 
-      {/* Progress */}
-      <Progress
-        percent={Math.round((step / TOTAL_STEPS) * 100)}
-        showInfo={false}
-        strokeColor="var(--color-primary, #1677ff)"
-        style={{ marginBottom: 32 }}
-      />
-      <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 24 }}>
-        {t('survey.stepOf', { step, total: TOTAL_STEPS })}
-      </Text>
-
-      {/* Error */}
-      {apiError && (
-        <Alert
-          type="error"
-          showIcon
-          closable
-          message={t('survey.somethingWentWrong')}
-          description={apiError.data?.message || t('survey.pleaseTryAgain')}
-          style={{ marginBottom: 24 }}
-        />
-      )}
-
-      {/* Step Content */}
-      <Spin spinning={isLoading} tip={t('survey.gettingRecommendations')}>
-        {renderStep()}
-      </Spin>
-
-      {/* Summary chips (show selections so far) */}
-      {(hairTypeLabel || primaryLabel) && (
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          {hairTypeLabel && <Tag color="blue">{hairTypeLabel}</Tag>}
-          {primaryLabel && <Tag color="geekblue">{primaryLabel}</Tag>}
-          {secondaryConcernId != null && (
-            <Tag color="cyan">
-              {CONCERN_OPTIONS.find((o) => o.id === secondaryConcernId)?.label}
-            </Tag>
-          )}
-          {budgetRange && (
-            <Tag color="gold">
-              {BUDGET_OPTIONS.find((o) => o.value === budgetRange)?.label}
-            </Tag>
-          )}
+      <section className="hair-quiz__panel">
+        <div className="hair-quiz__progress">
+          <Text>{t('survey.stepOf', { step, total: TOTAL_STEPS })}</Text>
+          <Progress percent={Math.round((step / TOTAL_STEPS) * 100)} showInfo={false} strokeColor="var(--color-primary)" />
         </div>
-      )}
 
-      {/* Navigation */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginTop: 40,
-        gap: 16,
-        flexWrap: 'wrap',
-      }}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={goBack}
-          disabled={step === 1 || isLoading}
-          size="large"
-        >
-          {t('common.back')}
-        </Button>
+        {apiError && (
+          <Alert
+            type="error"
+            showIcon
+            closable
+            message={t('survey.somethingWentWrong')}
+            description={apiError.data?.message || t('survey.pleaseTryAgain')}
+          />
+        )}
 
-        <Space>
+        <Spin spinning={isLoading} tip={t('survey.gettingRecommendations')}>
+          <div className="hair-quiz__question">{renderStep()}</div>
+        </Spin>
+
+        {(hairTypeLabel || primaryLabel) && (
+          <div className="hair-quiz__answers">
+            {hairTypeLabel && <span>{hairTypeLabel}</span>}
+            {primaryLabel && <span>{primaryLabel}</span>}
+            {secondaryConcernId != null && <span>{CONCERN_OPTIONS.find((o) => o.id === secondaryConcernId)?.label}</span>}
+            {budgetRange && <span>{BUDGET_OPTIONS.find((o) => o.value === budgetRange)?.label}</span>}
+          </div>
+        )}
+
+        <div className="hair-quiz__actions">
+          <Button icon={<ArrowLeftOutlined />} onClick={goBack} disabled={step === 1 || isLoading} size="large">
+            {t('common.back')}
+          </Button>
+
           {step < TOTAL_STEPS ? (
             <Button
               type="primary"
@@ -395,8 +338,8 @@ export default function HairSurveyPage() {
               {t('survey.getRecommendations')}
             </Button>
           )}
-        </Space>
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
   );
 }

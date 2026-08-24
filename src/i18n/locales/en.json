@@ -99,7 +99,9 @@
     "returnPolicy": "30-day return policy for unopened items",
     "addedToCart": "added to cart",
     "lowStock": "Only {{count}} left in stock",
-    "noImage": "No image"
+    "noImage": "No image",
+    "professionalUse": "Professional use only",
+    "compatibleWith": "Compatible system"
   },
   "cart": {
     "shoppingCart": "Shopping Cart",

@@ -275,13 +275,6 @@ export default function MainLayout() {
             <Space direction="vertical" style={{ width: '100%' }}>
               <Button 
                 block 
-                icon={<UserOutlined />}
-                onClick={() => { navigate('/account'); setMobileMenuOpen(false); }}
-              >
-                {t('auth.myAccount')}
-              </Button>
-              <Button 
-                block 
                 icon={<FileTextOutlined />}
                 onClick={() => { navigate('/account/orders'); setMobileMenuOpen(false); }}
               >
@@ -297,21 +290,9 @@ export default function MainLayout() {
               </Button>
             </Space>
           ) : (
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Button 
-                type="primary" 
-                block 
-                onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}
-              >
-                {t('auth.signIn')}
-              </Button>
-              <Button 
-                block 
-                onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}
-              >
-                {t('auth.createAccount')}
-              </Button>
-            </Space>
+            <Text type="secondary" style={{ display: 'block', fontSize: 'var(--font-size-sm)' }}>
+              {t('auth.account')}
+            </Text>
           )}
         </div>
       </Drawer>
