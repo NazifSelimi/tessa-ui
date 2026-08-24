@@ -26,6 +26,7 @@ import {
   LogoutOutlined,
   BellOutlined,
   CloseOutlined,
+  QrcodeOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from './Logo';
@@ -40,6 +41,7 @@ const pageTitles: Record<string, string> = {
   '/admin/orders': 'Orders',
   '/admin/users': 'Users',
   '/admin/stylist-requests': 'Stylist Requests',
+  '/admin/stylist-invitations': 'Stylist Invitations',
   '/admin/coupons': 'Coupons',
   '/admin/distributors': 'Distributors',
   '/admin/bundles': 'Offers & Bundles',
@@ -71,6 +73,7 @@ const pendingCount = 0;
         </Link>
       ),
     },
+    { key: '/admin/stylist-invitations', icon: <QrcodeOutlined />, label: <Link to="/admin/stylist-invitations">Stylist Invitations</Link> },
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
