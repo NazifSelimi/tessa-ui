@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Card, Col, Form, Input, Row, Space, Typography, message } from 'antd';
+import { useEffect, useState } from 'react';
+import { Button, Card, Col, Form, Input, Row, Space, Table, Tag, Typography, message } from 'antd';
 import { CopyOutlined, QrcodeOutlined, ScissorOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,11 +27,45 @@ interface CreatedInvitation {
   expires_at: string;
 }
 
+interface InvitationRow {
+  id: string;
+  display_name: string;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  business_name: string | null;
+  business_city: string | null;
+  status: 'pending' | 'activated' | 'expired';
+  expires_at: string;
+}
+
 export default function AdminStylistInvitationsPage() {
   const { token } = useAuth();
   const [form] = Form.useForm<InviteFormValues>();
   const [created, setCreated] = useState<CreatedInvitation | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(true);
+
+  const loadInvitations = async () => {
+    setLoadingInvitations(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations?per_page=100`, {
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Could not load invitations.');
+      setInvitations(payload.data ?? []);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Could not load invitations.');
+    } finally {
+      setLoadingInvitations(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadInvitations();
+  }, [token]);
 
   const createInvitation = async (values: InviteFormValues) => {
     setSubmitting(true);
@@ -49,6 +83,7 @@ export default function AdminStylistInvitationsPage() {
       if (!response.ok) throw new Error(payload.message || 'Could not create the invitation.');
 
       setCreated(payload.data as CreatedInvitation);
+      void loadInvitations();
       message.success('One-time activation link created.');
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Could not create the invitation.');
@@ -107,6 +142,23 @@ export default function AdminStylistInvitationsPage() {
           </Card>
         </Col>
       </Row>
+      <Card title={`Imported invitations (${invitations.length})`} style={{ marginTop: 24 }} extra={<Button onClick={() => void loadInvitations()}>Refresh</Button>}>
+        <Table
+          loading={loadingInvitations}
+          dataSource={invitations}
+          rowKey="id"
+          pagination={{ pageSize: 25, showSizeChanger: false }}
+          scroll={{ x: 850 }}
+          columns={[
+            { title: 'Name', dataIndex: 'display_name', key: 'display_name', width: 190 },
+            { title: 'Contact', key: 'contact', width: 220, render: (_: unknown, record: InvitationRow) => <>{record.email || 'No email'}<br />{record.phone || 'No phone'}</> },
+            { title: 'City', key: 'city', width: 150, render: (_: unknown, record: InvitationRow) => record.business_city || record.city || 'Not provided' },
+            { title: 'Salon', dataIndex: 'business_name', key: 'business_name', width: 190, render: (value: string | null) => value || 'Not provided' },
+            { title: 'Status', dataIndex: 'status', key: 'status', width: 110, render: (status: InvitationRow['status']) => <Tag color={status === 'activated' ? 'green' : status === 'expired' ? 'red' : 'blue'}>{status}</Tag> },
+            { title: 'Expires', dataIndex: 'expires_at', key: 'expires_at', width: 130, render: (value: string) => new Date(value).toLocaleDateString('en-GB') },
+          ]}
+        />
+      </Card>
     </div>
   );
 }
