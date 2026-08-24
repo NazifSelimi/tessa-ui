@@ -28,14 +28,6 @@ const { useBreakpoint } = Grid;
 
 const ITEMS_PER_PAGE = 12;
 
-// Small inline list of professional deals to surface on the Shop page.
-// Swap to a real API list later — keep the shape simple on purpose.
-const PRO_DEALS: { id: string; name: string; description: string; savings: string }[] = [
-  { id: 'd1', name: 'Bleach 5 + 1 Free', description: 'Classic salon restock deal', savings: '17% off' },
-  { id: 'd2', name: 'Weekly Color Restock', description: '12 tubes + 2 developers', savings: '13% off' },
-  { id: 'd3', name: 'Salon Stock Bundle', description: 'Backbar shampoo, conditioner, toner', savings: '14% off' },
-];
-
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -172,7 +164,7 @@ const isLoading = isLoadingProducts && !productsData;
     setSearch('');
     setCategory('');
     setBrand('');
-    setPriceRange([0, 1000]);
+    setPriceRange([0, 1000000000]);
     setInStockOnly(false);
     setSortBy('name_asc');
     setCurrentPage(1);
@@ -362,8 +354,8 @@ const handlePageChange = (page: number) => {
       {/* Error Alert */}
       {productsError && (
         <Alert
-          message="Failed to load products"
-          description={`Please make sure the API server is running on ${import.meta.env.VITE_API_URL}`}
+          message={t('shop.loadErrorTitle')}
+          description={t('shop.loadErrorDescription')}
           type="warning"
           showIcon
           closable
@@ -386,38 +378,6 @@ const handlePageChange = (page: number) => {
 
         {/* Main Content */}
         <Col xs={24} sm={24} md={18} lg={19} xl={20}>
-          {/* Professional deals — visible to every viewer; only a marketing hook
-              right now (no cart wiring). Stays at top so stylists see it fast. */}
-          <Card
-            size="small"
-            style={{ marginBottom: 16, background: '#faf5ff', borderColor: '#e9d5ff' }}
-            styles={{ body: { padding: 12 } }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-              <Text strong>Professional Deals</Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>For stylists & salons</Text>
-            </div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-              {PRO_DEALS.map((d) => (
-                <div
-                  key={d.id}
-                  style={{
-                    flex: '0 0 auto',
-                    minWidth: 200,
-                    padding: 10,
-                    background: '#fff',
-                    border: '1px solid #ede9fe',
-                    borderRadius: 8,
-                  }}
-                >
-                  <Tag color="magenta" style={{ marginBottom: 4 }}>{d.savings}</Tag>
-                  <div style={{ fontWeight: 500, lineHeight: 1.3 }}>{d.name}</div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>{d.description}</Text>
-                </div>
-              ))}
-            </div>
-          </Card>
-
           {/* Active filter tags (mobile) - show when filters are applied */}
           {isMobile && activeFiltersCount > 0 && (
             <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
@@ -432,7 +392,7 @@ const handlePageChange = (page: number) => {
           )}
 
           {/* Results Header */}
-          <div style={{ marginBottom: 16 }}>
+          <div className="shop-results-header">
             {/* Desktop: show filter tags inline */}
             {!isMobile && (
               <Title level={4} style={{ marginBottom: 4 }}>
@@ -444,6 +404,15 @@ const handlePageChange = (page: number) => {
             <Text type="secondary">
               {t('home.showing')} {products.length} {t('home.of')} {totalProducts} {t('home.products')}
             </Text>
+            {isMobile && (
+              <Button
+                className="shop-results-header__filters"
+                icon={<FilterOutlined />}
+                onClick={() => setMobileFiltersOpen(true)}
+              >
+                {t('home.filters')}{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}
+              </Button>
+            )}
           </div>
 
           {/* Products Grid */}
@@ -490,20 +459,6 @@ const handlePageChange = (page: number) => {
           )}
         </Col>
       </Row>
-
-      {/* Mobile Floating Filter FAB */}
-      {isMobile && (
-        <button
-          className="filter-fab"
-          onClick={() => setMobileFiltersOpen(true)}
-          aria-label="Open filters"
-        >
-          <FilterOutlined style={{ fontSize: 20 }} />
-          {activeFiltersCount > 0 && (
-            <span className="filter-fab__badge">{activeFiltersCount}</span>
-          )}
-        </button>
-      )}
 
       {/* Mobile Filters Drawer */}
       <MobileFilterDrawer

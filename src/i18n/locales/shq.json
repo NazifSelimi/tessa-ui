@@ -195,6 +195,10 @@
     "of": "nga",
     "products": "produkte"
   },
+  "shop": {
+    "loadErrorTitle": "Nuk mund t'i ngarkonim produktet",
+    "loadErrorDescription": "Kontrolloni lidhjen dhe provoni përsëri."
+  },
   "footer": {
     "tagline": "Produkte premium profesionale për kujdesin e flokëve për stilistë dhe profesionistë të bukurisë.",
     "contactUs": "Na kontaktoni",

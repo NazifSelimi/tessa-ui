@@ -1,5 +1,5 @@
-import { Drawer, Tabs, List, Input, InputNumber, Space, Checkbox, Button, Badge, Typography } from 'antd';
-import { SearchOutlined, FilterOutlined, AppstoreOutlined, TagsOutlined, SortAscendingOutlined } from '@ant-design/icons';
+import { Drawer, Input, InputNumber, Space, Checkbox, Button, Badge, Typography, Select } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
@@ -64,73 +64,8 @@ export default function MobileFilterDrawer(props: FilterProps) {
       }}
       className="mobile-filter-drawer"
     >
-      <Tabs
-        defaultActiveKey="categories"
-        centered
-        style={{ width: '100%' }}
-        items={[
-          {
-            key: 'categories',
-            label: <span><AppstoreOutlined /> {t('product.category')}</span>,
-            children: (
-              <div style={{ padding: '0 16px' }}>
-                <List
-                  loading={props.isLoadingCategories}
-                  dataSource={[{ id: '', name: t('home.allCategories') }, ...props.categories]}
-                  renderItem={(cat) => (
-                    <List.Item
-                      onClick={() => props.onCategoryChange(cat.id ? String(cat.id) : '')}
-                      style={{
-                        cursor: 'pointer',
-                        background: String(cat.id || '') === props.category ? 'var(--color-selection-bg)' : 'transparent',
-                        border: `1px solid ${String(cat.id || '') === props.category ? 'var(--color-selection-border)' : 'transparent'}`,
-                        color: String(cat.id || '') === props.category ? 'var(--color-selection-text)' : 'inherit',
-                        fontWeight: String(cat.id || '') === props.category ? 600 : 400,
-                        padding: '12px 16px',
-                        borderRadius: 8,
-                      }}
-                    >
-                      {cat.name}
-                    </List.Item>
-                  )}
-                />
-              </div>
-            ),
-          },
-          {
-            key: 'brands',
-            label: <span><TagsOutlined /> {t('product.brand')}</span>,
-            children: (
-              <div style={{ padding: '0 16px' }}>
-                <List
-                  loading={props.isLoadingBrands}
-                  dataSource={[{ id: '', name: t('home.allBrands') }, ...props.brands]}
-                  renderItem={(b) => (
-                    <List.Item
-                      onClick={() => props.onBrandChange(b.id ? String(b.id) : '')}
-                      style={{
-                        cursor: 'pointer',
-                        background: String(b.id || '') === props.brand ? 'var(--color-selection-bg)' : 'transparent',
-                        border: `1px solid ${String(b.id || '') === props.brand ? 'var(--color-selection-border)' : 'transparent'}`,
-                        color: String(b.id || '') === props.brand ? 'var(--color-selection-text)' : 'inherit',
-                        fontWeight: String(b.id || '') === props.brand ? 600 : 400,
-                        padding: '12px 16px',
-                        borderRadius: 8,
-                      }}
-                    >
-                      {b.name}
-                    </List.Item>
-                  )}
-                />
-              </div>
-            ),
-          },
-          {
-            key: 'filters',
-            label: <span><FilterOutlined /> {t('home.filters')}</span>,
-            children: (
-              <div style={{ padding: '0 16px' }}>
-                <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <div className="mobile-filter-drawer__body">
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
                   <Input
                     placeholder={t('home.searchProducts')}
                     prefix={<SearchOutlined />}
@@ -139,6 +74,30 @@ export default function MobileFilterDrawer(props: FilterProps) {
                     onBlur={props.onSearchBlur}
                     allowClear
                   />
+                  <div>
+                    <Text strong>{t('product.category')}</Text>
+                    <Select
+                      allowClear
+                      loading={props.isLoadingCategories}
+                      placeholder={t('home.allCategories')}
+                      value={props.category || undefined}
+                      onChange={(value) => props.onCategoryChange(value || '')}
+                      options={props.categories.map((category) => ({ label: category.name, value: String(category.id) }))}
+                      style={{ width: '100%', marginTop: 8 }}
+                    />
+                  </div>
+                  <div>
+                    <Text strong>{t('product.brand')}</Text>
+                    <Select
+                      allowClear
+                      loading={props.isLoadingBrands}
+                      placeholder={t('home.allBrands')}
+                      value={props.brand || undefined}
+                      onChange={(value) => props.onBrandChange(value || '')}
+                      options={props.brands.map((brand) => ({ label: brand.name, value: String(brand.id) }))}
+                      style={{ width: '100%', marginTop: 8 }}
+                    />
+                  </div>
                   <div>
                     <Text strong>{t('home.priceRange')} (MKD)</Text>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
@@ -167,44 +126,22 @@ export default function MobileFilterDrawer(props: FilterProps) {
                   >
                     {t('home.inStockOnly')}
                   </Checkbox>
+                  <div>
+                    <Text strong>{t('home.sortBy')}</Text>
+                    <Select
+                      value={props.sortBy}
+                      onChange={props.onSortChange}
+                      options={props.sortOptions}
+                      style={{ width: '100%', marginTop: 8 }}
+                    />
+                  </div>
                   {props.activeFiltersCount > 0 && (
                     <Button block danger ghost onClick={props.onClearAll}>
                       {t('home.clearFilters')}
                     </Button>
                   )}
-                </Space>
-              </div>
-            ),
-          },
-          {
-            key: 'sort',
-            label: <span><SortAscendingOutlined /> {t('home.sortBy')}</span>,
-            children: (
-              <div style={{ padding: '0 16px' }}>
-                <List
-                  dataSource={props.sortOptions}
-                  renderItem={(opt) => (
-                    <List.Item
-                      onClick={() => props.onSortChange(opt.value)}
-                      style={{
-                        cursor: 'pointer',
-                        background: opt.value === props.sortBy ? 'var(--color-selection-bg)' : 'transparent',
-                        border: `1px solid ${opt.value === props.sortBy ? 'var(--color-selection-border)' : 'transparent'}`,
-                        color: opt.value === props.sortBy ? 'var(--color-selection-text)' : 'inherit',
-                        fontWeight: opt.value === props.sortBy ? 600 : 400,
-                        padding: '12px 16px',
-                        borderRadius: 8,
-                      }}
-                    >
-                      {opt.label}
-                    </List.Item>
-                  )}
-                />
-              </div>
-            ),
-          },
-        ]}
-      />
+        </Space>
+      </div>
       
       <div className="mobile-filter-drawer__footer">
         <Button

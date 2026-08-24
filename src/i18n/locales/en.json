@@ -195,6 +195,10 @@
     "of": "of",
     "products": "products"
   },
+  "shop": {
+    "loadErrorTitle": "We couldn't load the products",
+    "loadErrorDescription": "Check your connection and try again."
+  },
   "footer": {
     "tagline": "Premium professional hair care products for stylists and beauty professionals.",
     "contactUs": "Contact Us",
