@@ -6,6 +6,7 @@ import { useAppDispatch } from '@/app/hooks';
 import { setCredentials } from '@/features/auth/slice';
 import type { User } from '@/types';
 import AuthPageHeader from '@/components/AuthPageHeader';
+import { resolveActivationField } from '@/shared/utils/activationFields';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
 const { Paragraph, Title, Text } = Typography;
@@ -97,15 +98,15 @@ export default function ActivateStylistInvitationPage() {
     try {
       const payload = {
         ...values,
-        email: invitation.email ?? values.email,
-        phone: invitation.phone ?? values.phone,
-        address: invitation.address ?? values.address,
-        city: invitation.city ?? values.city,
-        postal_code: invitation.postal_code ?? values.postal_code,
-        business_name: invitation.business_name ?? values.business_name,
-        business_address: invitation.business_address ?? values.business_address,
-        business_city: invitation.business_city ?? values.business_city,
-        business_phone: invitation.business_phone ?? values.business_phone,
+        email: resolveActivationField(values.email, invitation.email),
+        phone: resolveActivationField(values.phone, invitation.phone),
+        address: resolveActivationField(values.address, invitation.address),
+        city: resolveActivationField(values.city, invitation.city),
+        postal_code: resolveActivationField(values.postal_code, invitation.postal_code),
+        business_name: resolveActivationField(values.business_name, invitation.business_name),
+        business_address: resolveActivationField(values.business_address, invitation.business_address),
+        business_city: resolveActivationField(values.business_city, invitation.business_city),
+        business_phone: resolveActivationField(values.business_phone, invitation.business_phone),
       };
       const response = await fetch(`${API_BASE_URL}/v1/stylist-invitations/${token}/activate`, {
         method: 'POST',
