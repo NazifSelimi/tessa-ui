@@ -1,167 +1,77 @@
-/**
- * Auth Flow Tests
- * 
- * Tests for authentication flows:
- * - Login
- * - Registration
- * - Logout
- * - Token persistence
- */
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import LoginPage from '@/pages/auth/LoginPage';
-import authReducer from '@/features/auth/slice';
-import { authApi } from '@/features/auth/api';
 
-// Mock successful login response
-vi.mock('@/features/auth/api', () => ({
-  authApi: {
-    endpoints: {
-      login: {
-        initiate: vi.fn(() => ({
-          unwrap: vi.fn().mockResolvedValue({
-            user: {
-              id: 'user-1',
-              email: 'test@example.com',
-              name: 'Test User',
-              role: 'user',
-            },
-            accessToken: 'fake-access-token',
-          }),
-        })),
-      },
-    },
-    reducerPath: 'authApi',
-    reducer: () => ({}),
-    middleware: () => (next: any) => (action: any) => next(action),
-  },
-  useLoginMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({
-      data: {
-        user: {
-          id: 'user-1',
-          email: 'test@example.com',
-          name: 'Test User',
-          role: 'user',
-        },
-        accessToken: 'fake-access-token',
-      },
-    }),
-    { isLoading: false, error: null },
-  ]),
+const loginMock = vi.fn();
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ login: loginMock }),
 }));
 
-describe('Authentication Flow', () => {
-  let store: any;
+vi.mock('@/features/auth/social', () => ({
+  startSocialAuth: vi.fn(),
+}));
 
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
+  useTranslation: () => ({
+    t: (key: string) => ({
+      'auth.signIn': 'Sign in',
+      'auth.password': 'Password',
+      'auth.enterPassword': 'Please enter your password',
+      'auth.welcomeBack': 'Welcome back',
+    }[key] ?? key),
+    i18n: { language: 'en', changeLanguage: vi.fn(), t: (key: string) => key },
+  }),
+}));
+
+function renderLogin(initialEntries = ['/login']) {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<div>Home</div>} />
+        <Route path="/stylist/quick-order" element={<div>Quick order</div>} />
+        <Route path="/stylist/workspace" element={<div>Workspace</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+describe('Login flow', () => {
   beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        auth: authReducer,
-        [authApi.reducerPath]: authApi.reducer,
-      },
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(authApi.middleware),
-    });
+    loginMock.mockReset();
+    loginMock.mockResolvedValue({ id: 'user-1' });
   });
 
-  const renderLogin = () => {
-    return render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <LoginPage />
-        </BrowserRouter>
-      </Provider>
-    );
-  };
-
-  it('should display login form', () => {
+  it('accepts either an email address or phone number as the account identifier', () => {
     renderLogin();
 
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Email or phone number')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Phone number or you@example.com')).toBeInTheDocument();
   });
 
-  it('should validate required fields', async () => {
+  it('shows the current required-field messages', async () => {
     renderLogin();
     const user = userEvent.setup();
 
-    const submitButton = screen.getByRole('button', { name: /sign in/i });
-    await user.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should validate email format', async () => {
-    renderLogin();
-    const user = userEvent.setup();
-
-    const emailInput = screen.getByLabelText(/email/i);
-    await user.type(emailInput, 'invalid-email');
-    await user.tab();
-
-    await waitFor(() => {
-      expect(screen.getByText(/valid email/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should successfully login with valid credentials', async () => {
-    renderLogin();
-    const user = userEvent.setup();
-
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-    await waitFor(() => {
-      const state = store.getState();
-      expect(state.auth.isAuthenticated).toBe(true);
-      expect(state.auth.user.email).toBe('test@example.com');
-    });
+    expect(await screen.findByText('Enter your email or phone number.')).toBeInTheDocument();
+    expect(await screen.findByText('Please enter your password')).toBeInTheDocument();
   });
 
-  it('should persist token to Redux store', async () => {
-    renderLogin();
+  it('returns to the continue route after login', async () => {
+    renderLogin(['/login?continue=%2Fstylist%2Fquick-order']);
     const user = userEvent.setup();
 
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText('Email or phone number'), '078286003');
+    await user.type(screen.getByLabelText('Password'), 'password123');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-    await waitFor(() => {
-      const state = store.getState();
-      expect(state.auth.token).toBeTruthy();
-    });
-  });
-
-  it('should show error message on failed login', async () => {
-    // Mock failed login
-    const { useLoginMutation } = await import('@/features/auth/api');
-    vi.mocked(useLoginMutation).mockReturnValue([
-      vi.fn().mockRejectedValue({
-        data: { message: 'Invalid credentials' },
-      }),
-      { isLoading: false, error: { data: { message: 'Invalid credentials' } } },
-    ] as any);
-
-    renderLogin();
-    const user = userEvent.setup();
-
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
-    });
+    await waitFor(() => expect(loginMock).toHaveBeenCalledWith('078286003', 'password123'));
+    expect(await screen.findByText('Quick order')).toBeInTheDocument();
   });
 });

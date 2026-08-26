@@ -83,7 +83,8 @@ export const baseQueryWithReauth: BaseQueryFn<
         api.dispatch(logout());
 
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-          window.location.replace('/login');
+          const continueTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+          window.location.replace(`/login?continue=${encodeURIComponent(continueTo)}`);
         }
 
         // Allow the flag to reset so a future (genuinely new) 401 is handled

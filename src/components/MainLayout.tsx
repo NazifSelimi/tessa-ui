@@ -328,10 +328,13 @@ export default function MainLayout() {
                 {t('footer.contactUs')}
               </Text>
               <Space direction="vertical" size={8}>
-                <Text style={{ color: '#aaa', fontSize: 14 }}>
-                  <PhoneOutlined style={{ marginRight: 8 }} />
-                  <a href={site.contactPhoneHref} style={{ color: 'inherit' }}>{site.contactPhone}</a>
-                </Text>
+                {site.contactPhones.map((phone, index) => (
+                  <Text key={phone.href} style={{ color: '#aaa', fontSize: 14 }}>
+                    {index === 0 && <PhoneOutlined style={{ marginRight: 8 }} />}
+                    {index > 0 && <span style={{ display: 'inline-block', width: 22 }} />}
+                    <a href={phone.href} style={{ color: 'inherit' }}>{phone.label}</a>
+                  </Text>
+                ))}
                 <Text style={{ color: '#aaa', fontSize: 14 }}>
                   <MailOutlined style={{ marginRight: 8 }} />
                   <a href={`mailto:${site.contactEmail}`} style={{ color: 'inherit' }}>{site.contactEmail}</a>

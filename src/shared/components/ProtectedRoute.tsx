@@ -31,7 +31,7 @@ export default function ProtectedRoute({ children, requiredRole, allowIncomplete
 
   if (!token) {
     const continueTo = `${location.pathname}${location.search}${location.hash}`;
-    return <Navigate to="/login" state={{ from: continueTo }} replace />;
+    return <Navigate to={`/login?continue=${encodeURIComponent(continueTo)}`} state={{ from: continueTo }} replace />;
   }
 
   if (requiredRole && currentRole !== requiredRole) {

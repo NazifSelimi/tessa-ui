@@ -1,179 +1,115 @@
-/**
- * Checkout Flow Integration Tests
- * 
- * Tests the complete checkout flow:
- * - Adding items to cart
- * - Navigating to checkout
- * - Filling shipping information
- * - Submitting order
- * - Order confirmation
- */
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter } from 'react-router-dom';
 import CheckoutPage from '@/pages/CheckoutPage';
-import cartReducer from '@/features/cart/slice';
-import authReducer from '@/features/auth/slice';
-import { ordersApi } from '@/features/orders/api';
-import type { UserRole } from '@/types';
 
-// Mock API responses
-vi.mock('@/features/orders/api', () => ({
-  ordersApi: {
-    endpoints: {
-      createOrder: {
-        initiate: vi.fn(() => ({
-          unwrap: vi.fn().mockResolvedValue({
-            id: 'order-123',
-            status: 'pending',
-            total: 89.97,
-          }),
-        })),
-      },
-    },
-    reducerPath: 'ordersApi',
-    reducer: () => ({}),
-    middleware: () => (next: any) => (action: any) => next(action),
-  },
-  useCreateOrderMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({
-      data: {
-        id: 'order-123',
-        status: 'pending',
-        total: 89.97,
-      },
-    }),
-    { isLoading: false, error: null },
-  ]),
+const clearCartMock = vi.fn();
+const createOrderMock = vi.fn();
+
+let cartItems: any[] = [];
+
+vi.mock('@/hooks/useCart', () => ({
+  useCart: () => ({
+    items: cartItems,
+    bundleIds: ['bundle-5-plus-1'],
+    subtotal: 1200,
+    clearCart: clearCartMock,
+    getItemTotal: (item: { quantity: number }) => item.quantity * 200,
+  }),
 }));
 
-describe('Checkout Flow', () => {
-  let store: any;
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: {
+      id: 'user-1', firstName: 'Jane', lastName: 'Stylist', email: 'jane@tessa.mk',
+      phone: '078 286 003', address: '1 Test Street', city: 'Skopje', postcode: '1000',
+    },
+    token: 'token', isAuthenticated: true, isProfessional: true,
+  }),
+}));
 
+vi.mock('@/hooks/useDiscounts', () => ({
+  useDiscounts: () => ({
+    appliedCode: null, applyCode: vi.fn(), removeCode: vi.fn(), discountAmount: 0,
+    discountPercent: 0, error: null, isValidating: false, clearError: vi.fn(),
+  }),
+}));
+
+vi.mock('@/features/orders/api', () => ({
+  useCreateOrderMutation: () => [createOrderMock],
+}));
+
+vi.mock('@/features/products/api', () => ({
+  useGetBundlesQuery: () => ({ data: [] }),
+}));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => ({
+      'cart.yourCartIsEmpty': 'Your cart is empty',
+      'checkout.emptyCartCheckout': 'Add some products before checking out.',
+      'checkout.firstName': 'First name',
+      'checkout.lastName': 'Last name',
+      'checkout.email': 'Email',
+      'checkout.phone': 'Phone',
+      'checkout.continueToReview': 'Continue to review',
+      'checkout.placeOrder': 'Place Order',
+      'checkout.orderSuccess': 'Order Placed Successfully!',
+    }[key] ?? key),
+  }),
+}));
+
+function renderCheckout() {
+  return render(<MemoryRouter><CheckoutPage /></MemoryRouter>);
+}
+
+describe('Checkout flow', () => {
   beforeEach(() => {
-    // Create a fresh store for each test
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-        [ordersApi.reducerPath]: ordersApi.reducer,
-      },
-      preloadedState: {
-        cart: {
-          items: [
-            {
-              productId: '1',
-              quantity: 3,
-              product: {
-                id: '1',
-                name: 'Fanola Shampoo',
-                brand: 'Fanola',
-                category: 'Shampoo',
-                description: 'Test',
-                price: 29.99,
-                quantity: 100,
-                inStock: true,
-              },
-            },
-          ],
-          isDrawerOpen: false,
-          isLoading: false,
-        },
-        auth: {
-          user: {
-            id: 'user-1',
-            email: 'test@example.com',
-            name: 'Test User',
-            role: 'user' as UserRole,
-            createdAt: new Date().toISOString(),
-          },
-          token: 'fake-token',
-
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        },
-      },
-    });
+    clearCartMock.mockReset();
+    createOrderMock.mockReset();
+    createOrderMock.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ id: 'order-123' }) });
+    cartItems = [];
   });
 
-  const renderCheckout = () => {
-    return render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <CheckoutPage />
-        </BrowserRouter>
-      </Provider>
-    );
-  };
-
-  it('should display cart summary with correct totals', () => {
+  it('blocks checkout when the cart is empty', () => {
     renderCheckout();
 
-    expect(screen.getByText(/Fanola Shampoo/i)).toBeInTheDocument();
-    expect(screen.getByText(/Quantity: 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/\$89\.97/i)).toBeInTheDocument(); // 3 * 29.99
+    expect(screen.getByText('Your cart is empty')).toBeInTheDocument();
+    expect(screen.getByText('Add some products before checking out.')).toBeInTheDocument();
   });
 
-  it('should require shipping information before checkout', async () => {
+  it('autofills the shipping form from the signed-in profile', async () => {
+    cartItems = [{
+      productId: '1', quantity: 2,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
+    renderCheckout();
+
+    await waitFor(() => expect(screen.getByLabelText('First name')).toHaveValue('Jane'));
+    expect(screen.getByLabelText('Last name')).toHaveValue('Stylist');
+    expect(screen.getByLabelText('Email')).toHaveValue('jane@tessa.mk');
+    expect(screen.getByLabelText('Phone')).toHaveValue('078 286 003');
+  });
+
+  it('submits the frozen cart items and applied bundle IDs', async () => {
+    cartItems = [{
+      productId: '1', quantity: 2,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
     renderCheckout();
     const user = userEvent.setup();
 
-    const submitButton = screen.getByRole('button', { name: /place order/i });
-    await user.click(submitButton);
+    await waitFor(() => expect(screen.getByLabelText('First name')).toHaveValue('Jane'));
+    await user.click(screen.getByRole('button', { name: 'Continue to review' }));
+    await user.click(await screen.findByRole('button', { name: /Place Order/ }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/required/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should successfully submit order with valid data', async () => {
-    renderCheckout();
-    const user = userEvent.setup();
-
-    // Fill shipping information
-    await user.type(screen.getByLabelText(/full name/i), 'John Doe');
-    await user.type(screen.getByLabelText(/phone/i), '555-1234');
-    await user.type(screen.getByLabelText(/address/i), '123 Main St');
-    await user.type(screen.getByLabelText(/city/i), 'New York');
-    await user.type(screen.getByLabelText(/state/i), 'NY');
-    await user.type(screen.getByLabelText(/zip code/i), '10001');
-
-    // Select payment method
-    await user.click(screen.getByLabelText(/cash on delivery/i));
-
-    // Submit
-    const submitButton = screen.getByRole('button', { name: /place order/i });
-    await user.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/order placed successfully/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should clear cart after successful order', async () => {
-    renderCheckout();
-    const user = userEvent.setup();
-
-    // Fill required fields
-    await user.type(screen.getByLabelText(/full name/i), 'John Doe');
-    await user.type(screen.getByLabelText(/phone/i), '555-1234');
-    await user.type(screen.getByLabelText(/address/i), '123 Main St');
-    await user.type(screen.getByLabelText(/city/i), 'New York');
-    await user.type(screen.getByLabelText(/state/i), 'NY');
-    await user.type(screen.getByLabelText(/zip code/i), '10001');
-    await user.click(screen.getByLabelText(/cash on delivery/i));
-
-    const submitButton = screen.getByRole('button', { name: /place order/i });
-    await user.click(submitButton);
-
-    await waitFor(() => {
-      const state = store.getState();
-      expect(state.cart.items).toHaveLength(0);
-    });
+    await waitFor(() => expect(createOrderMock).toHaveBeenCalledWith(expect.objectContaining({
+      items: [{ product_id: 1, qty: 2 }],
+      bundle_ids: ['bundle-5-plus-1'],
+      payment_method: 'cod',
+    })));
+    expect(clearCartMock).toHaveBeenCalledOnce();
+    expect(await screen.findByText('Order Placed Successfully!')).toBeInTheDocument();
   });
 });

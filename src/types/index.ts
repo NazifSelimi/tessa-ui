@@ -393,6 +393,7 @@ export interface BundleProduct {
   id: string;
   name: string;
   price: number;
+  stylistPrice?: number;
   quantity: number;
   image: string | null;
   isBonus?: boolean;
