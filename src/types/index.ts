@@ -40,6 +40,9 @@ export interface Product {
   translations?: Record<string, string>;
   images?: string[];
   image?: string | null;
+  media?: ProductMediaAsset[] | null;
+  collections?: ProductCollectionMembership[];
+  collectionAssignments?: ProductCollectionAssignment[];
   price?: string | number;
   compareAtPrice?: string | number | null;
   stylistPrice?: string | number;
@@ -47,7 +50,13 @@ export interface Product {
   catalogGuidance?: {
     audience: 'consumer' | 'professional';
     professionalOnly: boolean;
+    consumerRoutineRole: 'cleanse' | 'tone' | 'nourish' | 'protect' | 'repair' | 'define' | 'smooth' | null;
     compatibleWith: string[];
+    professionalGuidance: {
+      compatibleSystems: string[];
+      verificationStatus: 'compatible_system_only';
+      notes: string[];
+    } | null;
   };
   inStock?: boolean;
   quantity?: number;
@@ -60,6 +69,42 @@ export interface Product {
   metaDescription?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ProductMediaAsset {
+  url: string | null;
+  alt: string | null;
+  variant: 'legacy' | 'original' | 'card' | 'detail' | 'transparent_master';
+  background: 'unknown' | 'opaque' | 'transparent';
+  reviewStatus: 'legacy' | 'preserved' | 'ready' | 'needs_review';
+  sortOrder: number;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface ProductCollectionMembership {
+  slug: string;
+  name: string;
+  title: string;
+  mappingStatus: 'confirmed';
+}
+
+export interface ProductCollectionAssignment {
+  slug: string;
+  name: string;
+  mappingStatus: 'confirmed' | 'uncertain';
+  source?: string | null;
+  notes?: string | null;
+}
+
+export interface ProductCollection {
+  slug: string;
+  name: string;
+  title: string;
+  description?: string | null;
+  sortPriority: number;
+  routineRoles: string[];
+  supportedCategoryNames: string[];
+  productCount?: number;
 }
 
 export interface HairProfileOption {
