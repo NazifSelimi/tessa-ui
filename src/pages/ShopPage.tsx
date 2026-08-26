@@ -20,9 +20,11 @@ import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons
 import ProductCard from '@/components/ProductCard';
 import BundleDealRail from '@/components/BundleDealRail';
 import MobileFilterDrawer from '@/components/MobileFilterDrawer';
-import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
+import CollectionDirectory from '@/components/storefront/CollectionDirectory';
+import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useGetProductCollectionsQuery } from '@/features/products/api';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '@/hooks/useDebounce';
+import { buildStorefrontCollectionDirectory } from '@/shared/config/storefrontCollections';
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -50,6 +52,7 @@ export default function ShopPage() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [category, setCategory] = useState(searchParams.get('category') || '');
   const [brand, setBrand] = useState(searchParams.get('brand') || '');
+  const collection = searchParams.get('collection') || '';
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(searchParams.get('min_price')) || 0,
     Number(searchParams.get('max_price')) || 1000000000
@@ -102,16 +105,22 @@ export default function ShopPage() {
     search: searchQuery,
     category: category || undefined,
     brand: brand || undefined,
+    collection: collection || undefined,
     sort: sortBy,
     min_price: debouncedPriceRange[0],
     max_price: debouncedPriceRange[1],
     in_stock: inStockOnly ? 1 : undefined,
-  }), [currentPage, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly]);
+  }), [currentPage, searchQuery, category, brand, collection, sortBy, debouncedPriceRange, inStockOnly]);
 
   // API calls with all filter params - backend handles filtering
   const { data: productsData, isLoading: isLoadingProducts, error: productsError } = useGetProductsQuery(queryParams);
   const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery();
   const { data: brandsData, isLoading: isLoadingBrands } = useGetBrandsQuery();
+  const { data: collectionsData = [] } = useGetProductCollectionsQuery();
+  const storefrontCollections = useMemo(
+    () => buildStorefrontCollectionDirectory(collectionsData),
+    [collectionsData],
+  );
 
 // Extract data from API response
 const products = productsData?.data ?? [];
@@ -122,6 +131,9 @@ const selectedCategoryName = category
   : '';
 const selectedBrandName = brand
   ? brands.find((b) => String(b.id) === brand)?.name ?? brand
+  : '';
+const selectedCollectionName = collection
+  ? collectionsData.find((item) => item.slug === collection)?.name ?? collection
   : '';
 
 // Pagination (already normalized in RTK)
@@ -137,6 +149,7 @@ const isLoading = isLoadingProducts && !productsData;
     searchQuery,
     category,
     brand,
+    collection,
     inStockOnly,
     debouncedPriceRange[0] !== 0 || debouncedPriceRange[1] !== 1000000000
   ].filter(Boolean).length;
@@ -379,12 +392,24 @@ const handlePageChange = (page: number) => {
 
         {/* Main Content */}
         <Col xs={24} sm={24} md={18} lg={19} xl={20}>
-          {!search && !category && !brand && <BundleDealRail />}
+          {!search && !category && !brand && !collection && (
+            <section className="shop-result-entry">
+              <div className="shop-result-entry__head">
+                <div>
+                  <Title level={4} style={{ marginBottom: 4 }}>Start with the result</Title>
+                  <Text type="secondary">Browse the Release 2 storefront by outcome first, then drill into the full catalogue.</Text>
+                </div>
+              </div>
+              <CollectionDirectory items={storefrontCollections} compact />
+            </section>
+          )}
+          {!search && !category && !brand && !collection && <BundleDealRail />}
           {/* Active filter tags (mobile) - show when filters are applied */}
           {isMobile && activeFiltersCount > 0 && (
             <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
               {category && <Tag closable onClose={() => { setCategory(''); updateUrlParam('category', null); }} color="green">{selectedCategoryName}</Tag>}
               {brand && <Tag closable onClose={() => { setBrand(''); updateUrlParam('brand', null); }} color="blue">{selectedBrandName}</Tag>}
+              {collection && <Tag closable onClose={() => updateUrlParam('collection', null)} color="gold">{selectedCollectionName}</Tag>}
               {search && <Tag closable onClose={() => { setSearch(''); updateUrlParam('search', null); }} color="purple">{search}</Tag>}
               {inStockOnly && <Tag closable onClose={() => { setInStockOnly(false); updateUrlParam('in_stock', null); }} color="cyan">{t('home.inStockOnly')}</Tag>}
               <Button type="link" size="small" danger onClick={clearAllFilters} style={{ padding: 0, height: 'auto' }}>
@@ -400,6 +425,7 @@ const handlePageChange = (page: number) => {
               <Title level={4} style={{ marginBottom: 4 }}>
                 {category && <Tag color="green">{selectedCategoryName}</Tag>}
                 {brand && <Tag color="blue">{selectedBrandName}</Tag>}
+                {collection && <Tag color="gold">{selectedCollectionName}</Tag>}
                 {search && <Tag color="purple">{search}</Tag>}
               </Title>
             )}

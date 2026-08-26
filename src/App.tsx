@@ -25,6 +25,7 @@ const AdminLayout = lazy(() => import('./components/AdminLayout'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const ShopPage = lazy(() => import('./pages/ShopPage'));
 const ForProfessionalsPage = lazy(() => import('./pages/ForProfessionalsPage'));
+const CollectionPage = lazy(() => import('./pages/CollectionPage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 const ProductPage = lazy(() => import('./pages/ProductPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
@@ -117,6 +118,7 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/shop" element={<ShopPage />} />
+                <Route path="/collections/:slug" element={<CollectionPage />} />
                 <Route path="/for-professionals" element={<ForProfessionalsPage />} />
                 <Route path="/privacy" element={<LegalPage />} />
                 <Route path="/terms" element={<LegalPage />} />
