@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Typography, Form, Input, Button, Card, Result, message } from 'antd';
-import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { MailOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import AuthPageHeader from '@/components/AuthPageHeader';
@@ -90,11 +90,6 @@ const ForgotPasswordPage: React.FC = () => {
         }}
         styles={{ body: { padding: 32 } }}
       >
-        <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-          <ArrowLeftOutlined />
-          <Text>{t('auth.backToLogin')}</Text>
-        </Link>
-
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Title level={3} style={{ margin: 0, color: '#1a1a2e' }}>{t('auth.resetPassword')}</Title>
           <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>

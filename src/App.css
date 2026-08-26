@@ -517,6 +517,7 @@ a {
   
   .product-card__footer .ant-btn {
     width: 100%;
+    min-height: 44px;
   }
   
   .product-card__name {
@@ -527,6 +528,22 @@ a {
   
   .product-card .ant-card-body {
     padding: var(--spacing-md) !important;
+  }
+
+  .routine-chip {
+    min-height: 48px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .home-section__more,
+  .site-footer a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 }
 
@@ -2733,6 +2750,22 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 .order-summary { background: #fffaf4; }
 
 @media (max-width: 575px) {
+  .auth-page {
+    align-items: flex-start !important;
+    padding: 72px 16px 24px !important;
+  }
+
+  .auth-page .ant-card-body {
+    padding: 24px !important;
+  }
+
+  .auth-page .ant-input-lg,
+  .auth-page .ant-input-affix-wrapper-lg,
+  .auth-page .ant-select-single.ant-select-lg .ant-select-selector,
+  .auth-page .ant-btn-lg {
+    min-height: 44px;
+  }
+
   .home-hero {
     margin-inline: calc(-1 * var(--spacing-md));
     padding: 42px 20px 38px;

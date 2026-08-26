@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Typography,
   Input,
@@ -31,6 +31,7 @@ import {
   Empty,
   Spin,
   Grid,
+  type InputRef,
 } from 'antd';
 import {
   SearchOutlined,
@@ -103,10 +104,13 @@ function QtyInput({ value, onChange, max, onEnter }: QtyInputProps) {
 
 export default function StylistQuickOrderPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { addItem, items: cartItems, itemCount, subtotal } = useCart();
+  const isColorRestock = searchParams.get('restock') === 'colors';
 
   // Search & pagination state
   const [search, setSearch] = useState('');
+  const searchInputRef = useRef<InputRef>(null);
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
 
@@ -143,8 +147,15 @@ export default function StylistQuickOrderPage() {
       page,
       perPage: PER_PAGE,
       search: debouncedSearch || undefined,
+      colorRestock: isColorRestock,
     });
-  }, [debouncedSearch, page, trigger]);
+  }, [debouncedSearch, isColorRestock, page, trigger]);
+
+  useEffect(() => {
+    if (isColorRestock) {
+      searchInputRef.current?.focus();
+    }
+  }, [isColorRestock]);
 
   /* ----- helpers ----- */
   const getQty = (id: string | number) => quantities[id] ?? 1;
@@ -303,10 +314,11 @@ export default function StylistQuickOrderPage() {
         maxWidth: 1400,
         margin: '0 auto',
       }}>
-        <Title level={2} style={{ marginBottom: 8 }}>Quick Order</Title>
+        <Title level={2} style={{ marginBottom: 8 }}>{isColorRestock ? 'Quick color restock' : 'Quick Order'}</Title>
         <Text type="secondary" style={{ fontSize: 16 }}>
-          Search, set quantity, and press <strong>Enter</strong> or click <strong>Add</strong>. Your
-          cart updates instantly.
+          {isColorRestock
+            ? 'Only color products are shown. Start typing to find a shade, then choose the quantity and Add.'
+            : <>Search, set quantity, and press <strong>Enter</strong> or click <strong>Add</strong>. Your cart updates instantly.</>}
         </Text>
       </div>
 
@@ -317,8 +329,9 @@ export default function StylistQuickOrderPage() {
         margin: '0 auto',
       }}>
         <Input
+          ref={searchInputRef}
           size="large"
-          placeholder="Search products by name or brand…"
+          placeholder={isColorRestock ? 'Search color shades…' : 'Search products by name or brand…'}
           prefix={<SearchOutlined style={{ fontSize: 20 }} />}
           allowClear
           value={search}
@@ -326,6 +339,11 @@ export default function StylistQuickOrderPage() {
           style={{ fontSize: 18, height: 56 }}
           autoFocus
         />
+        {isColorRestock && (
+          <Button size="large" style={{ marginTop: 12, minHeight: 48 }} onClick={() => setSearchParams({})}>
+            Show all products
+          </Button>
+        )}
       </div>
 
       {/* Product list */}

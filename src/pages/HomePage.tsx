@@ -5,7 +5,7 @@
  * hook + data-capture funnel), then surfaces real, navigable merchandising:
  *   - Hero with a single primary CTA (quiz)
  *   - Shop by category (filterable → /shop?category=id)
- *   - "Find your routine" hair-type chips (funnel → quiz)
+ *   - "Find your routine" hair-type choices (funnel → quiz)
  *   - Featured products rail (getFeaturedProducts)
  *   - Professional banner (→ /for-professionals)
  *   - Trust strip (delivery, COD, authentic brands)
@@ -31,12 +31,12 @@ import { useGetCategoriesQuery, useGetFeaturedProductsQuery } from '@/features/p
 
 const { Title, Text, Paragraph } = Typography;
 
-/* Hair-type entry points into the quiz. ids/emoji mirror the survey taxonomy. */
+/* Hair-type entry points into the quiz. Keep this calm and text-led on the storefront. */
 const HAIR_TYPE_CHIPS = [
-  { labelKey: 'survey.straight', emoji: '➖' },
-  { labelKey: 'survey.wavy', emoji: '〰️' },
-  { labelKey: 'survey.curly', emoji: '🌀' },
-  { labelKey: 'survey.coily', emoji: '🔄' },
+  { labelKey: 'survey.straight' },
+  { labelKey: 'survey.wavy' },
+  { labelKey: 'survey.curly' },
+  { labelKey: 'survey.coily' },
 ];
 
 function SectionHeading({ title, to, linkLabel }: { title: string; to?: string; linkLabel?: string }) {
@@ -108,8 +108,8 @@ export default function HomePage() {
         <div className="home-routine__chips">
           {HAIR_TYPE_CHIPS.map((c) => (
             <Link key={c.labelKey} to="/hair-survey" className="routine-chip">
-              <span className="routine-chip__emoji">{c.emoji}</span>
               <span>{t(c.labelKey)}</span>
+              <RightOutlined aria-hidden="true" />
             </Link>
           ))}
         </div>

@@ -29,6 +29,7 @@ export const quickOrderApi = baseApi.injectEndpoints({
           page: params?.page ?? 1,
           perPage: params?.perPage ?? 25,
           search: params?.search || undefined,
+          color_restock: params?.colorRestock || undefined,
         },
       }),
       transformResponse: (response: QuickOrderApiResponse) => ({

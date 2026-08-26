@@ -53,11 +53,18 @@ export interface Product {
   quantity?: number;
   featured?: boolean;
   tags?: string[];
+  hairTypeIds?: number[];
+  hairConcernIds?: number[];
   sale?: any;
   metaTitle?: string;
   metaDescription?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface HairProfileOption {
+  id: number;
+  name: string;
 }
 
 export interface Category {
@@ -457,6 +464,7 @@ export interface QuickOrderQueryParams {
   page?: number;
   perPage?: number;
   search?: string;
+  colorRestock?: boolean;
 }
 
 export interface QuickOrderResponse {

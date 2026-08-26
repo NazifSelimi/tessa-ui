@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch, Checkbox } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import { useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
+import { useGetCategoriesQuery, useGetBrandsQuery, useGetHairProfileOptionsQuery } from '@/features/products/api';
 import {
   useGetAllProductsQuery,
   useCreateProductMutation,
@@ -34,6 +34,8 @@ interface ProductFormValues {
   description_en?: string;
   description_mk?: string;
   description_shq?: string;
+  hair_type_ids?: number[];
+  hair_concern_ids?: number[];
 }
 
 /**
@@ -51,6 +53,8 @@ function snapshotFromProduct(product: Product): ProductFormValues {
     description_en: product.translations?.en ?? '',
     description_mk: product.translations?.mk ?? '',
     description_shq: product.translations?.shq ?? '',
+    hair_type_ids: product.hairTypeIds ?? [],
+    hair_concern_ids: product.hairConcernIds ?? [],
   };
 }
 
@@ -103,6 +107,7 @@ export default function AdminProductsPage() {
 
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: brands = [] } = useGetBrandsQuery();
+  const { data: hairProfileOptions } = useGetHairProfileOptionsQuery();
   const { data, isLoading, refetch } = useGetAllProductsQuery(queryParams);
 
   const selectedCategoryName = category
@@ -234,6 +239,16 @@ export default function AdminProductsPage() {
           hasChanges = true;
         }
 
+        const appendProfileIds = (key: 'hair_type_ids' | 'hair_concern_ids') => {
+          const next = [...(values[key] ?? [])].sort((a, b) => a - b);
+          const previous = [...(original[key] ?? [])].sort((a, b) => a - b);
+          if (next.join(',') === previous.join(',')) return;
+          next.forEach((id) => formData.append(`${key}[]`, String(id)));
+          hasChanges = true;
+        };
+        appendProfileIds('hair_type_ids');
+        appendProfileIds('hair_concern_ids');
+
         // Handle image upload — always send if a new file was picked
         if (fileList.length > 0 && fileList[0].originFileObj) {
           const optimizedFile = await convertToWebP(fileList[0].originFileObj as File, 0.82);
@@ -263,6 +278,8 @@ export default function AdminProductsPage() {
         formData.append('translations[en]', values.description_en ?? '');
         formData.append('translations[mk]', values.description_mk ?? '');
         formData.append('translations[shq]', values.description_shq ?? '');
+        (values.hair_type_ids ?? []).forEach((id) => formData.append('hair_type_ids[]', String(id)));
+        (values.hair_concern_ids ?? []).forEach((id) => formData.append('hair_concern_ids[]', String(id)));
 
         // Handle image upload
         if (fileList.length > 0 && fileList[0].originFileObj) {
@@ -645,6 +662,27 @@ export default function AdminProductsPage() {
           </Row>
 
           <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="hair_type_ids"
+                label="Suitable hair types"
+                extra="Used by the hair quiz. Choose every hair type this product genuinely supports."
+              >
+                <Select mode="multiple" allowClear placeholder="Choose hair types" options={hairProfileOptions?.hairTypes.map((item) => ({ value: item.id, label: item.name }))} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="hair_concern_ids"
+                label="Helps with"
+                extra="Used by the hair quiz. Choose the concerns this product addresses."
+              >
+                <Select mode="multiple" allowClear placeholder="Choose concerns" options={hairProfileOptions?.hairConcerns.map((item) => ({ value: item.id, label: item.name }))} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
             <Col span={8}>
               <Form.Item name="price" label="Price (MKD)" rules={[{ required: !isEditing, message: 'Please enter price' }]}>
                 <InputNumber min={0} prefix="MKD" placeholder="0.00" style={{ width: '100%' }} precision={2} />
@@ -691,7 +729,7 @@ export default function AdminProductsPage() {
 
           <Form.Item
             label="Product Image"
-            extra="Images are automatically converted to WebP. Check the box below if you want this upload matched to the catalog pink background. Max 10MB."
+            extra="Images are automatically converted to WebP. Use the warm catalog background only for isolated product packshots; keep extensions and shade-sensitive hair imagery on a neutral background. Max 10MB."
           >
             <Upload {...uploadProps}>
               {fileList.length === 0 && (
@@ -718,7 +756,7 @@ export default function AdminProductsPage() {
               noStyle
             >
               <Checkbox style={{ marginTop: 12 }}>
-                Match existing catalog background for this upload
+                Use warm catalog background for this packshot
               </Checkbox>
             </Form.Item>
           </Form.Item>

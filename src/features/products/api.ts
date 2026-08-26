@@ -11,7 +11,7 @@
  */
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
-import type { Product, Category, Brand, PaginatedResponse, StoreBundle } from '@/types';
+import type { Product, Category, Brand, HairProfileOption, PaginatedResponse, StoreBundle } from '@/types';
 
 // Query params for products list
 export interface ProductsQueryParams {
@@ -85,6 +85,11 @@ export const productsApi = baseApi.injectEndpoints({
       providesTags: [API_TAGS.Brands],
     }),
 
+    getHairProfileOptions: builder.query<{ hairTypes: HairProfileOption[]; hairConcerns: HairProfileOption[] }, void>({
+      query: () => '/v1/hair-profile-options',
+      transformResponse: (response: any) => response.data || { hairTypes: [], hairConcerns: [] },
+    }),
+
     getProductById: builder.query<Product, string>({
       query: (id) => `/v1/products/${id}`,
       transformResponse: (response: any) => response.data,
@@ -116,6 +121,7 @@ export const {
   useGetBundlesQuery,
   useGetCategoriesQuery,
   useGetBrandsQuery,
+  useGetHairProfileOptionsQuery,
   useSearchProductsQuery,
   useLazySearchProductsQuery,
   useGetRelatedProductsQuery,
