@@ -2793,3 +2793,8 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
     max-width: 100%;
   }
 }
+/* Primary mobile actions must remain comfortable targets on touch screens. */
+.ant-btn-lg,
+.ant-btn-primary {
+  min-height: 44px;
+}

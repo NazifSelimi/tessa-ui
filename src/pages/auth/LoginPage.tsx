@@ -46,7 +46,9 @@ const LoginPage: React.FC = () => {
   const location = useLocation();
 
   // Get redirect path from location state or default to home
-  const from = (location.state as { from?: string })?.from || '/';
+  const stateFrom = (location.state as { from?: string })?.from;
+  const queryFrom = new URLSearchParams(location.search).get('continue');
+  const from = (stateFrom || queryFrom || '/').startsWith('/') ? (stateFrom || queryFrom || '/') : '/';
 
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);

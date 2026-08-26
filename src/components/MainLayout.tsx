@@ -22,7 +22,6 @@ import {
   CloseOutlined,
   FacebookOutlined,
   InstagramOutlined,
-  TwitterOutlined,
   MailOutlined,
   PhoneOutlined,
   AppstoreOutlined,
@@ -35,6 +34,7 @@ import { useCart } from '@/hooks/useCart';
 import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
+import { site } from '@/shared/config/site';
 
 // Lazy-load heavy components not needed for initial paint
 const CartDrawer = lazy(() => import('./CartDrawer'));
@@ -330,29 +330,26 @@ export default function MainLayout() {
               <Space direction="vertical" size={8}>
                 <Text style={{ color: '#aaa', fontSize: 14 }}>
                   <PhoneOutlined style={{ marginRight: 8 }} />
-                  {t('footer.phone')}
+                  <a href={site.contactPhoneHref} style={{ color: 'inherit' }}>{site.contactPhone}</a>
                 </Text>
                 <Text style={{ color: '#aaa', fontSize: 14 }}>
                   <MailOutlined style={{ marginRight: 8 }} />
-                  {t('footer.email')}
+                  <a href={`mailto:${site.contactEmail}`} style={{ color: 'inherit' }}>{site.contactEmail}</a>
                 </Text>
                 <Text style={{ color: '#888', fontSize: 13 }}>
-                  {t('footer.deliveryInfo')}
+                  {site.deliverySummary}
                 </Text>
               </Space>
 
               {/* Social Media */}
               <div style={{ marginTop: '16px' }}>
                 <Space size={4}>
-                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Facebook">
+                  {site.social.facebook && <a href={site.social.facebook} target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Facebook">
                     <FacebookOutlined />
-                  </a>
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Instagram">
+                  </a>}
+                  {site.social.instagram && <a href={site.social.instagram} target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Instagram">
                     <InstagramOutlined />
-                  </a>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', fontSize: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 8, transition: 'background 0.2s' }} aria-label="Twitter">
-                    <TwitterOutlined />
-                  </a>
+                  </a>}
                 </Space>
               </div>
             </div>
