@@ -6,9 +6,12 @@ import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { notifyError } from '@/shared/utils/notify';
 import { extractErrorMessage } from '@/shared/utils/error';
+import { useLocation } from 'react-router-dom';
+import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
 
 export default function LanguageSwitcher() {
   const { i18n } = useTranslation();
+  const location = useLocation();
   const { isAuthenticated, updateProfile } = useAuth();
 
   const currentLanguage = useMemo(
@@ -21,13 +24,16 @@ export default function LanguageSwitcher() {
       await i18n.changeLanguage(code);
     }
 
-    if (!isAuthenticated) return;
-
-    try {
-      await updateProfile({ preferred_locale: code as 'en' | 'mk' | 'shq' });
-    } catch (error: unknown) {
-      notifyError(extractErrorMessage(error));
+    if (isAuthenticated) {
+      try {
+        await updateProfile({ preferred_locale: code as 'en' | 'mk' | 'shq' });
+      } catch (error: unknown) {
+        notifyError(extractErrorMessage(error));
+      }
     }
+
+    const targetPath = localizedPath(location.pathname, urlLocaleFromApp(code));
+    window.location.assign(`${targetPath}${location.search}${location.hash}`);
   };
 
   const items = SUPPORTED_LANGUAGES.map(({ code, label, name }) => ({

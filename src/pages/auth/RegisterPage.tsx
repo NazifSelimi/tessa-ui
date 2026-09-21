@@ -198,7 +198,7 @@ const RegisterPage: React.FC = () => {
           >
             <Input
               prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="+1 (555) 000-0000"
+              placeholder="+389 7X XXX XXX"
               size="large"
               autoComplete="tel"
             />

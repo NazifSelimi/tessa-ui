@@ -12,6 +12,8 @@ import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divid
 import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, ArrowLeftOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { PageHeading } from '@/components/storefront/DesignPrimitives';
+import { Headphones, LogOut, Sparkles } from 'lucide-react';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
@@ -24,7 +26,7 @@ const { Title, Text } = Typography;
 export default function AccountPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, currentRole, updateProfile, changePassword, isLoading } = useAuth();
+  const { user, currentRole, updateProfile, changePassword, isLoading, logout } = useAuth();
   const [form] = Form.useForm();
 
   const handleUpdateProfile = async (values: {
@@ -58,23 +60,13 @@ export default function AccountPage() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Button
-        type="text"
-        icon={<ArrowLeftOutlined />}
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: 8, padding: '4px 0' }}
-      >
-        {t('common.back')}
-      </Button>
-      <Title level={2}>{t('account.myAccount')}</Title>
-      <Text type="secondary">
-        {t('account.manageSettings')}
-      </Text>
+    <div className="nl-account-page" style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <PageHeading eyebrow={t('newLook.profile')} title={t('account.myAccount')} description={t('account.manageSettings')} />
+      <section className="nl-account-banner"><div className="nl-account-avatar">{(user?.firstName?.[0] || user?.name?.[0] || 'T').toUpperCase()}{user?.lastName?.[0]?.toUpperCase()}</div><div><span className="nl-eyebrow">{currentRole === 'stylist' ? t('newLook.professionalAccount') : 'MY TESSA'}</span><h2>{user?.name}</h2><p>{user?.email}</p></div></section>
 
       <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className="nl-account-menu">
             <div style={{ textAlign: 'center' }}>
               <Avatar size={80} icon={<UserOutlined />} style={{ marginBottom: 16 }} />
               <Title level={4} style={{ margin: 0 }}>{user?.name || t('account.guestUser')}</Title>
@@ -89,6 +81,9 @@ export default function AccountPage() {
                   {t('auth.myOrders')}
                 </Button>
               </Link>
+              <Link to="/quiz"><Button icon={<Sparkles size={16} />} block>{t('newLook.myHair')}</Button></Link>
+              <Link to="/contact"><Button icon={<Headphones size={16} />} block>{t('newLook.support')}</Button></Link>
+              <Button icon={<LogOut size={16} />} block onClick={() => void logout().then(() => navigate('/'))}>{t('auth.logout')}</Button>
               {(currentRole === 'user' || currentRole === 'guest') && (
                 <Link to="/stylist/request">
                   <Button icon={<ScissorOutlined />} block>

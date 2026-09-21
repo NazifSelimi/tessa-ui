@@ -28,6 +28,9 @@ import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
 import { useGetProductByIdQuery, useGetRelatedProductsQuery } from '@/features/products/api';
+import Seo from '@/shared/components/Seo';
+import { site } from '@/shared/config/site';
+import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -35,7 +38,7 @@ export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const { data: product, isLoading: loading } = useGetProductByIdQuery(id!, { skip: !id });
   const { data: relatedProducts = [] } = useGetRelatedProductsQuery(product?.id as number | string, { skip: !product?.id });
@@ -70,6 +73,12 @@ export default function ProductPage() {
   if (!product) {
     return (
       <div className="empty-state">
+        <Seo
+          title={t('product.notFound')}
+          description={t('product.notFoundDescription')}
+          path={`/product/${id ?? ''}`}
+          noIndex
+        />
         <Title level={4}>{t('product.notFound')}</Title>
         <Text type="secondary" className="empty-state__description">
           {t('product.notFoundDescription')}
@@ -88,9 +97,60 @@ export default function ProductPage() {
   const NO_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="100%" height="100%" fill="%23f5f5f5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif" font-size="18">No image</text></svg>';
   const productImages = product.images?.length ? product.images : (product.image ? [product.image] : []);
   const mainImage = productImages[selectedImage] ?? productImages[0] ?? NO_IMAGE;
+  const brandName = typeof product.brand === 'object' ? product.brand?.name ?? '' : product.brand ?? '';
+  const categoryName = typeof product.category === 'object' ? product.category?.name ?? '' : product.category ?? '';
+  const description = (localizedDescription || `${product.name} ${categoryName} from ${brandName}`)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 180);
+  const productPrice = Number(product.sale?.price ?? product.price ?? 0);
+  const canonicalPath = `/product/${product.id}`;
+  const productUrl = new URL(
+    localizedPath(canonicalPath, urlLocaleFromApp(i18n.resolvedLanguage ?? i18n.language)),
+    `${site.url}/`,
+  ).toString();
 
   return (
     <div>
+      <Seo
+        title={`${product.name}${brandName ? ` – ${brandName}` : ''}`}
+        description={description}
+        path={canonicalPath}
+        image={productImages[0]}
+        type="product"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            description,
+            ...(productImages.length > 0 ? { image: productImages } : {}),
+            ...(brandName ? { brand: { '@type': 'Brand', name: brandName } } : {}),
+            ...(categoryName ? { category: categoryName } : {}),
+            sku: String(product.id),
+            offers: {
+              '@type': 'Offer',
+              url: productUrl,
+              priceCurrency: 'MKD',
+              price: productPrice.toFixed(2),
+              availability: inStock
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+              itemCondition: 'https://schema.org/NewCondition',
+              seller: { '@type': 'Organization', name: site.legalName ?? site.name },
+            },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: t('nav.shop'), item: `${site.url}/shop` },
+              ...(brandName ? [{ '@type': 'ListItem', position: 2, name: brandName }] : []),
+              { '@type': 'ListItem', position: brandName ? 3 : 2, name: product.name, item: productUrl },
+            ],
+          },
+        ]}
+      />
       {/* Back Button */}
       <Button
         type="text"

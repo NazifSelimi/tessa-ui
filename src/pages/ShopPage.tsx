@@ -1,524 +1,78 @@
-/**
- * Shop Page - Product Catalog
- *
- * The full product browsing experience (lives at /shop). Previously this was
- * the home page; the marketing landing now lives at / (HomePage).
- * - Product grid with immediate visibility
- * - Sidebar filters (desktop) / Drawer filters (mobile)
- * - Search and sort functionality
- * - Backend-driven pagination and filtering
- */
-
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { 
-  Row, Col, Input, Select, Checkbox, Card, Typography, 
-  Space, Button, Spin, Empty, Pagination,
-  Badge, Tag, Alert, InputNumber, Grid,
-} from 'antd';
-import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Drawer, Pagination } from 'antd';
+import { ArrowUpRight, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/hooks/useAuth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useGetBrandsQuery, useGetCategoriesQuery, useGetProductCollectionsQuery, useGetProductsQuery } from '@/features/products/api';
 import ProductCard from '@/components/ProductCard';
 import BundleDealRail from '@/components/BundleDealRail';
-import MobileFilterDrawer from '@/components/MobileFilterDrawer';
-import CollectionDirectory from '@/components/storefront/CollectionDirectory';
-import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useGetProductCollectionsQuery } from '@/features/products/api';
-import { useTranslation } from 'react-i18next';
-import { useDebounce } from '@/hooks/useDebounce';
-import { buildStorefrontCollectionDirectory } from '@/shared/config/storefrontCollections';
-
-const { Title, Text } = Typography;
-const { useBreakpoint } = Grid;
-
-const ITEMS_PER_PAGE = 12;
+import { CatalogState, PageHeading } from '@/components/storefront/DesignPrimitives';
+import Seo from '@/shared/components/Seo';
 
 export default function ShopPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const searchInputRef = useRef<any>(null);
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
   const { t } = useTranslation();
-
-  const sortOptions = useMemo(() => [
-    { value: 'name_asc', label: t('home.nameAZ') },
-    { value: 'name_desc', label: t('home.nameZA') },
-    { value: 'price_asc', label: t('home.priceLowHigh') },
-    { value: 'price_desc', label: t('home.priceHighLow') },
-    { value: 'newest', label: t('home.newest') },
-  ], [t]);
-
-  // Filter states from URL
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [category, setCategory] = useState(searchParams.get('category') || '');
-  const [brand, setBrand] = useState(searchParams.get('brand') || '');
-  const collection = searchParams.get('collection') || '';
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    Number(searchParams.get('min_price')) || 0,
-    Number(searchParams.get('max_price')) || 1000000000
-  ]);
-  const [inStockOnly, setInStockOnly] = useState(searchParams.get('in_stock') === 'true');
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'name_asc');
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
-
-  // Debounce search to prevent API spam (only call backend 300ms after user stops typing)
-  const debouncedSearch = useDebounce(search, 300);
-  
-  // Debounce price range to prevent API spam when dragging sliders
-  const debouncedPriceRange = useDebounce(priceRange, 400);
-
-  // Only search if 2+ characters (prevent spam)
-  const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
-
-  // Listen for bottom nav search toggle
+  const { isStylist } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [search, setSearch] = useState(params.get('search') || '');
+  const input = useRef<HTMLInputElement>(null);
+  const searchEdited = useRef(false);
+  const debouncedSearch = useDebounce(search.trim(), 300);
+  const urlSearch = params.get('search') || '';
+  const category = params.get('category') || '';
+  const brand = params.get('brand') || '';
+  const collection = params.get('collection') || '';
+  const page = Math.max(1, Number(params.get('page')) || 1);
+  const sort = params.get('sort') || 'name_asc';
+  const minPrice = params.get('min_price');
+  const maxPrice = params.get('max_price');
+  const inStock = params.get('in_stock') === 'true';
+  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: brands = [] } = useGetBrandsQuery();
+  const { data: collections = [] } = useGetProductCollectionsQuery();
+  const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery({
+    page, perPage: 12, category: category || undefined, brand: brand || undefined,
+    collection: collection || undefined, search: urlSearch || undefined, sort,
+    min_price: minPrice ? Number(minPrice) : undefined,
+    max_price: maxPrice ? Number(maxPrice) : undefined, in_stock: inStock ? 1 : undefined,
+  });
+  useEffect(() => { searchEdited.current = false; setSearch(urlSearch); }, [urlSearch]);
   useEffect(() => {
-    const handleToggleSearch = () => {
-      setMobileSearchOpen((prev) => {
-        const next = !prev;
-        if (next) {
-          // Focus the search input after it opens
-          setTimeout(() => searchInputRef.current?.focus(), 100);
-        }
-        return next;
-      });
-    };
-    window.addEventListener('toggle-mobile-search', handleToggleSearch);
-    return () => window.removeEventListener('toggle-mobile-search', handleToggleSearch);
-  }, []);
-
-  // Close mobile search when switching to desktop
-  useEffect(() => {
-    if (!isMobile) setMobileSearchOpen(false);
-  }, [isMobile]);
-
-  // Scroll to top when search results change
-  useEffect(() => {
-    if (debouncedSearch && debouncedSearch.length >= 2) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Only user edits update the URL; browser Back/Forward remains the source of truth.
+    if (searchEdited.current && debouncedSearch === search.trim() && debouncedSearch !== urlSearch) {
+      setParams(previous => { const next = new URLSearchParams(previous); if (debouncedSearch) next.set('search', debouncedSearch); else next.delete('search'); next.delete('page'); return next; }, { replace: true });
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, search, urlSearch, setParams]);
+  useEffect(() => { if (params.get('focus') === 'search') input.current?.focus(); }, [params]);
 
-  // Memoize query parameters to prevent unnecessary re-fetches
-  const queryParams = useMemo(() => ({
-    page: currentPage,
-    perPage: ITEMS_PER_PAGE,
-    search: searchQuery,
-    category: category || undefined,
-    brand: brand || undefined,
-    collection: collection || undefined,
-    sort: sortBy,
-    min_price: debouncedPriceRange[0],
-    max_price: debouncedPriceRange[1],
-    in_stock: inStockOnly ? 1 : undefined,
-  }), [currentPage, searchQuery, category, brand, collection, sortBy, debouncedPriceRange, inStockOnly]);
+  const update = (key: string, value: string) => setParams(previous => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); if (key !== 'page') next.delete('page'); return next; });
+  const clear = () => { setSearch(''); setParams({}); };
+  const active = [category, brand, collection, minPrice, maxPrice, inStock].filter(Boolean).length;
+  const products = data?.data || [];
+  const total = data?.meta.total || 0;
+  const filters = <div className="nl-filter-fields">
+    <label>{t('product.category')}<select value={category} onChange={e => update('category', e.target.value)}><option value="">{t('home.allCategories')}</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    <label>{t('product.brand')}<select value={brand} onChange={e => update('brand', e.target.value)}><option value="">{t('home.allBrands')}</option>{brands.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    {collections.length > 0 && <label>{t('newLook.collections')}<select value={collection} onChange={e => update('collection', e.target.value)}><option value="">{t('newLook.all')}</option>{collections.map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}</select></label>}
+    <fieldset><legend>{t('home.priceRange')}</legend><div className="nl-price-inputs"><input aria-label={t('newLook.minPrice')} type="number" min="0" placeholder={t('newLook.minPrice')} value={minPrice || ''} onChange={e => update('min_price', e.target.value)} /><span>–</span><input aria-label={t('newLook.maxPrice')} type="number" min="0" placeholder={t('newLook.maxPrice')} value={maxPrice || ''} onChange={e => update('max_price', e.target.value)} /></div></fieldset>
+    <label className="nl-checkbox"><input type="checkbox" checked={inStock} onChange={e => update('in_stock', e.target.checked ? 'true' : '')} />{t('home.inStockOnly')}</label>
+    {(active > 0 || urlSearch) && <button className="nl-button nl-button-secondary" onClick={clear}>{t('home.clearFilters')}<X size={16} /></button>}
+  </div>;
 
-  // API calls with all filter params - backend handles filtering
-  const { data: productsData, isLoading: isLoadingProducts, error: productsError } = useGetProductsQuery(queryParams);
-  const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery();
-  const { data: brandsData, isLoading: isLoadingBrands } = useGetBrandsQuery();
-  const { data: collectionsData = [] } = useGetProductCollectionsQuery();
-  const storefrontCollections = useMemo(
-    () => buildStorefrontCollectionDirectory(collectionsData),
-    [collectionsData],
-  );
-
-// Extract data from API response
-const products = productsData?.data ?? [];
-const categories = categoriesData ?? [];
-const brands = brandsData ?? [];
-const selectedCategoryName = category
-  ? categories.find((c) => String(c.id) === category)?.name ?? category
-  : '';
-const selectedBrandName = brand
-  ? brands.find((b) => String(b.id) === brand)?.name ?? brand
-  : '';
-const selectedCollectionName = collection
-  ? collectionsData.find((item) => item.slug === collection)?.name ?? collection
-  : '';
-
-// Pagination (already normalized in RTK)
-const totalProducts = productsData?.meta?.total ?? 0;
-const backendCurrentPage = productsData?.meta?.current_page ?? 1;
-
-const isLoading = isLoadingProducts && !productsData;
-
-
-
-  // Count active filters
-  const activeFiltersCount = [
-    searchQuery,
-    category,
-    brand,
-    collection,
-    inStockOnly,
-    debouncedPriceRange[0] !== 0 || debouncedPriceRange[1] !== 1000000000
-  ].filter(Boolean).length;
-
-  // URL parameter handlers
-  const updateUrlParam = (key: string, value: string | number | null) => {
-  const params = new URLSearchParams(searchParams.toString());
-
-  if (value !== null && value !== '' && value !== undefined) {
-    params.set(key, String(value));
-  } else {
-    params.delete(key);
-  }
-
-  // Always reset to page 1 when filter changes
-  if (key !== 'page') {
-    params.set('page', '1');
-    setCurrentPage(1);
-  }
-
-  setSearchParams(params);
-};
-
-
-  const clearAllFilters = () => {
-    setSearch('');
-    setCategory('');
-    setBrand('');
-    setPriceRange([0, 1000000000]);
-    setInStockOnly(false);
-    setSortBy('name_asc');
-    setCurrentPage(1);
-    setSearchParams({});
-  };
-
-const handlePageChange = (page: number) => {
-  const params = new URLSearchParams(searchParams.toString());
-  params.set('page', String(page));
-
-  setCurrentPage(page);
-  setSearchParams(params);
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-
-  // Render filters
-  const filterContent = (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
-      {/* Search */}
-      <Input
-        placeholder={t('home.searchProducts')}
-        prefix={<SearchOutlined />}
-        value={search}
-        onChange={(e) => {
-          const value = e.target.value;
-          setSearch(value);
-          // Don't update URL immediately - wait for debounce
-          // updateUrlParam will be handled by useEffect when searchQuery changes
-        }}
-        onBlur={() => {
-          // Update URL when user leaves the search field
-          if (searchQuery) {
-            updateUrlParam('search', searchQuery);
-          } else {
-            updateUrlParam('search', null);
-          }
-        }}
-        allowClear
-      />
-
-      {/* Category Filter */}
-      <div>
-        <Text strong>{t('product.category')}</Text>
-        <Select
-          style={{ width: '100%', marginTop: 8 }}
-          placeholder={t('home.allCategories')}
-          allowClear
-          value={category || undefined}
-          onChange={(value) => {
-            setCategory(value || '');
-            updateUrlParam('category', value || null);
-          }}
-          loading={isLoadingCategories}
-          options={categories.map(cat => ({
-            label: cat.name,
-            value: String(cat.id),
-          }))}
-        />
-      </div>
-
-      {/* Brand Filter */}
-      <div>
-        <Text strong>{t('product.brand')}</Text>
-        <Select
-          style={{ width: '100%', marginTop: 8 }}
-          placeholder={t('home.allBrands')}
-          allowClear
-          value={brand || undefined}
-          onChange={(value) => {
-            setBrand(value || '');
-            updateUrlParam('brand', value || null);
-          }}
-          loading={isLoadingBrands}
-          options={brands.map(b => ({
-            label: b.name,
-            value: String(b.id),
-          }))}
-        />
-      </div>
-
-      {/* Sort */}
-      <div>
-        <Text strong>{t('home.sortBy')}</Text>
-        <Select
-          style={{ width: '100%', marginTop: 8 }}
-          value={sortBy}
-          onChange={(value) => {
-            setSortBy(value);
-            updateUrlParam('sort', value);
-          }}
-          options={sortOptions}
-        />
-      </div>
-
-      {/* Price Range */}
-      <div>
-        <Text strong>{t('home.priceRange')} (MKD)</Text>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
-          <InputNumber
-            placeholder="Min"
-            min={0}
-            value={priceRange[0] || undefined}
-            onChange={(val) => {
-              const newMin = val ?? 0;
-              setPriceRange([newMin, priceRange[1]]);
-            }}
-            onBlur={() => updateUrlParam('min_price', priceRange[0] || null)}
-            style={{ flex: 1, minWidth: 0 }}
-          />
-          <span style={{ flexShrink: 0 }}>–</span>
-          <InputNumber
-            placeholder="Max"
-            min={0}
-            value={priceRange[1] < 1000000000 ? priceRange[1] : undefined}
-            onChange={(val) => {
-              const newMax = val ?? 1000000000;
-              setPriceRange([priceRange[0], newMax]);
-            }}
-            onBlur={() => updateUrlParam('max_price', priceRange[1] < 1000000000 ? priceRange[1] : null)}
-            style={{ flex: 1, minWidth: 0 }}
-          />
-        </div>
-      </div>
-
-      {/* In Stock */}
-      <Checkbox 
-        checked={inStockOnly}
-        onChange={(e) => {
-          setInStockOnly(e.target.checked);
-          updateUrlParam('in_stock', e.target.checked ? 'true' : null);
-        }}
-      >
-        {t('home.inStockOnly')}
-      </Checkbox>
-
-      {/* Clear Filters */}
-      {activeFiltersCount > 0 && (
-        <Button 
-          block 
-          danger 
-          ghost
-          onClick={clearAllFilters}
-        >
-          {t('home.clearFilters')}
-        </Button>
-      )}
-    </Space>
-  );
-
-  return (
-    <div style={{ minHeight: 'calc(100vh - 200px)' }}>
-      {/* Mobile Slide-Down Search Bar */}
-      {mobileSearchOpen && (
-        <div className="mobile-search-bar mobile-search-bar--open">
-          <div className="mobile-search-bar__inner">
-            <Input
-              ref={searchInputRef}
-              placeholder={t('home.searchProducts')}
-              prefix={<SearchOutlined style={{ color: '#999' }} />}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onBlur={() => {
-                if (searchQuery) {
-                  updateUrlParam('search', searchQuery);
-                } else {
-                  updateUrlParam('search', null);
-                }
-              }}
-              allowClear
-              size="large"
-              style={{ fontSize: 16 }}
-            />
-            <Button
-              type="text"
-              shape="circle"
-              icon={<CloseOutlined />}
-              onClick={() => { setMobileSearchOpen(false); }}
-              className="mobile-search-bar__close"
-              aria-label="Close search"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Error Alert */}
-      {productsError && (
-        <Alert
-          message={t('shop.loadErrorTitle')}
-          description={t('shop.loadErrorDescription')}
-          type="warning"
-          showIcon
-          closable
-          style={{ marginBottom: 24 }}
-        />
-      )}
-
-      <Row gutter={[24, 24]}>
-        {/* Desktop Filters Sidebar */}
-        <Col xs={0} sm={0} md={6} lg={5} xl={4}>
-          <Card style={{ position: 'sticky', top: 20 }}>
-            <Space direction="vertical" style={{ width: '100%' }} size="large">
-              <Title level={4}>
-                {t('home.filters')} {activeFiltersCount > 0 && <Badge count={activeFiltersCount} />}
-              </Title>
-              {filterContent}
-            </Space>
-          </Card>
-        </Col>
-
-        {/* Main Content */}
-        <Col xs={24} sm={24} md={18} lg={19} xl={20}>
-          {!search && !category && !brand && !collection && (
-            <section className="shop-result-entry">
-              <div className="shop-result-entry__head">
-                <div>
-                  <Title level={4} style={{ marginBottom: 4 }}>Start with the result</Title>
-                  <Text type="secondary">Browse the Release 2 storefront by outcome first, then drill into the full catalogue.</Text>
-                </div>
-              </div>
-              <CollectionDirectory items={storefrontCollections} compact />
-            </section>
-          )}
-          {!search && !category && !brand && !collection && <BundleDealRail />}
-          {/* Active filter tags (mobile) - show when filters are applied */}
-          {isMobile && activeFiltersCount > 0 && (
-            <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-              {category && <Tag closable onClose={() => { setCategory(''); updateUrlParam('category', null); }} color="green">{selectedCategoryName}</Tag>}
-              {brand && <Tag closable onClose={() => { setBrand(''); updateUrlParam('brand', null); }} color="blue">{selectedBrandName}</Tag>}
-              {collection && <Tag closable onClose={() => updateUrlParam('collection', null)} color="gold">{selectedCollectionName}</Tag>}
-              {search && <Tag closable onClose={() => { setSearch(''); updateUrlParam('search', null); }} color="purple">{search}</Tag>}
-              {inStockOnly && <Tag closable onClose={() => { setInStockOnly(false); updateUrlParam('in_stock', null); }} color="cyan">{t('home.inStockOnly')}</Tag>}
-              <Button type="link" size="small" danger onClick={clearAllFilters} style={{ padding: 0, height: 'auto' }}>
-                {t('home.clearFilters')}
-              </Button>
-            </div>
-          )}
-
-          {/* Results Header */}
-          <div className="shop-results-header">
-            {/* Desktop: show filter tags inline */}
-            {!isMobile && (
-              <Title level={4} style={{ marginBottom: 4 }}>
-                {category && <Tag color="green">{selectedCategoryName}</Tag>}
-                {brand && <Tag color="blue">{selectedBrandName}</Tag>}
-                {collection && <Tag color="gold">{selectedCollectionName}</Tag>}
-                {search && <Tag color="purple">{search}</Tag>}
-              </Title>
-            )}
-            <Text type="secondary">
-              {t('home.showing')} {products.length} {t('home.of')} {totalProducts} {t('home.products')}
-            </Text>
-            {isMobile && (
-              <Button
-                className="shop-results-header__filters"
-                icon={<FilterOutlined />}
-                onClick={() => setMobileFiltersOpen(true)}
-              >
-                {t('home.filters')}{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}
-              </Button>
-            )}
-          </div>
-
-          {/* Products Grid */}
-          {isLoading ? (
-            <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Spin size="large" />
-            </div>
-          ) : products.length > 0 ? (
-            <>
-              <Row gutter={[12, 12]} className="shop-product-grid">
-                {products.map((product, index) => (
-                  <Col key={product.id} xs={12} sm={12} md={8} lg={6}>
-                    <ProductCard product={product} priority={index < 4} />
-                  </Col>
-                ))}
-              </Row>
-
-              {/* Pagination */}
-              {totalProducts > ITEMS_PER_PAGE && (
-                <div style={{ marginTop: 24, textAlign: 'center', paddingBottom: isMobile ? 80 : 0 }}>
-                    <Pagination
-                      current={backendCurrentPage}
-                      total={totalProducts}
-                      pageSize={ITEMS_PER_PAGE}
-                      onChange={handlePageChange}
-                      showSizeChanger={false}
-                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
-                      size="small"
-                    />
-                </div>
-              )}
-            </>
-          ) : (
-            <Empty 
-              description={activeFiltersCount > 0 ? t('home.noProductsFound') : t('home.noProductsFound')}
-              style={{ marginTop: 50 }}
-            >
-              {activeFiltersCount > 0 && (
-                <Button type="primary" onClick={clearAllFilters}>
-                  {t('home.clearFilters')}
-                </Button>
-              )}
-            </Empty>
-          )}
-        </Col>
-      </Row>
-
-      {/* Mobile Filters Drawer */}
-      <MobileFilterDrawer
-        open={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
-        categories={categories}
-        isLoadingCategories={isLoadingCategories}
-        category={category}
-        onCategoryChange={(value) => { setCategory(value); updateUrlParam('category', value || null); }}
-        brands={brands}
-        isLoadingBrands={isLoadingBrands}
-        brand={brand}
-        onBrandChange={(value) => { setBrand(value); updateUrlParam('brand', value || null); }}
-        search={search}
-        onSearchChange={setSearch}
-        onSearchBlur={() => {
-          if (searchQuery) { updateUrlParam('search', searchQuery); }
-          else { updateUrlParam('search', null); }
-        }}
-        priceRange={priceRange}
-        onPriceRangeChange={setPriceRange}
-        onMinPriceBlur={() => updateUrlParam('min_price', priceRange[0] || null)}
-        onMaxPriceBlur={() => updateUrlParam('max_price', priceRange[1] < 1000000000 ? priceRange[1] : null)}
-        inStockOnly={inStockOnly}
-        onInStockChange={(checked) => { setInStockOnly(checked); updateUrlParam('in_stock', checked ? 'true' : null); }}
-        sortBy={sortBy}
-        sortOptions={sortOptions}
-        onSortChange={(value) => { setSortBy(value); updateUrlParam('sort', value); }}
-        activeFiltersCount={activeFiltersCount}
-        totalProducts={totalProducts}
-        onClearAll={clearAllFilters}
-      />
-    </div>
-  );
+  return <>
+    <Seo title={t('seo.shopTitle')} description={t('seo.shopDescription')} path="/shop" noIndex={Boolean(urlSearch)} />
+    <PageHeading eyebrow={t('newLook.products')} title={isStylist ? t('newLook.products') : t('newLook.hairRituals')} />
+    <div className="nl-shop-toolbar"><form className="nl-search" role="search" onSubmit={e => { e.preventDefault(); update('search', search.trim()); }}><Search size={20} /><input ref={input} value={search} onChange={e => { searchEdited.current = true; setSearch(e.target.value); }} placeholder={t('home.searchProducts')} aria-label={t('home.searchProducts')} />{search && <button type="button" aria-label={t('home.clearFilters')} onClick={() => { setSearch(''); update('search', ''); }}><X size={18} /></button>}</form><button className="nl-filter-toggle nl-button nl-button-secondary" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={18} />{t('home.filters')}{active > 0 && ` (${active})`}</button></div>
+    <div className="nl-filter-pills" aria-label={t('newLook.categories')}><button aria-pressed={!category} onClick={() => update('category', '')}>{t('newLook.all')}</button>{categories.map(item => <button key={item.id} aria-pressed={category === String(item.id)} onClick={() => update('category', String(item.id))}>{item.name}</button>)}</div>
+    <div className="nl-catalog-layout"><aside className="nl-catalog-aside"><span className="nl-eyebrow">{t('home.filters')}</span>{filters}<div className="nl-help-card"><Sparkles size={22} /><h3>{t('newLook.needHelp')}</h3><p>{t('newLook.helpCopy')}</p><Link to={isStylist ? '/contact' : '/quiz'}>{isStylist ? t('newLook.support') : t('newLook.takeQuiz')}<ArrowUpRight size={15} /></Link></div></aside><div className="nl-catalog-main">
+      {!isStylist && !urlSearch && !active && <section className="nl-shop-feature"><div><span className="nl-eyebrow">{t('newLook.professionalCare')}</span><h2>{t('newLook.shopFeatureTitle')}<br /><i>{t('newLook.shopFeatureAccent')}</i></h2><Link to="/quiz">{t('newLook.discoverRoutine')}<ArrowUpRight size={17} /></Link></div><div className="nl-feature-orbit" aria-hidden="true"><Sparkles size={48} /></div></section>}
+      <div className="nl-catalog-meta"><span role="status">{t('newLook.productCount', { count: total })}{isFetching && !isLoading ? ` · ${t('common.loading')}` : ''}</span><label><span className="nl-sr-only">{t('newLook.sort')}</span><select value={sort} onChange={e => update('sort', e.target.value)}>{[['name_asc', 'nameAZ'], ['name_desc', 'nameZA'], ['price_asc', 'priceLowHigh'], ['price_desc', 'priceHighLow'], ['newest', 'newest']].map(([value, key]) => <option key={value} value={value}>{t(`home.${key}`)}</option>)}</select></label></div>
+      {error ? <CatalogState error={error} retry={() => void refetch()} /> : isLoading ? <CatalogState loading /> : products.length ? <div className="nl-product-grid" aria-busy={isFetching}>{products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}</div> : <CatalogState />}
+      {total > 12 && <div className="nl-pagination"><Pagination current={page} total={total} pageSize={12} showSizeChanger={false} onChange={value => { update('page', String(value)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} /></div>}
+    </div></div>
+    {!urlSearch && !active && <section className="nl-section"><BundleDealRail /></section>}
+    <Drawer title={t('home.filters')} open={filtersOpen} onClose={() => setFiltersOpen(false)} placement="right" width="min(360px, 100vw)"><div className="tessa-design nl-filter-drawer">{filters}<button className="nl-button nl-button-dark" onClick={() => setFiltersOpen(false)}>{t('newLook.showResults')}<ArrowUpRight size={16} /></button></div></Drawer>
+  </>;
 }

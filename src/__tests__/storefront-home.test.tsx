@@ -1,66 +1,43 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import HomePage from '@/pages/HomePage';
+import en from '@/i18n/locales/en.json';
 
-const mockUseGetProductCollectionsQuery = vi.fn();
-const mockUseGetProductsQuery = vi.fn();
+const productsQuery = vi.fn();
+const auth = { user: null, isStylist: false };
+vi.mock('@/features/products/api', () => ({ useGetProductsQuery: (...args: unknown[]) => productsQuery(...args) }));
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => auth }));
+vi.mock('@/components/ProductCard', () => ({ default: ({ product }: { product: { name: string } }) => <article>{product.name}</article> }));
+vi.mock('@/shared/components/Seo', () => ({ default: () => null }));
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key.split('.').reduce<unknown>((value, part) => value && typeof value === 'object' ? (value as Record<string, unknown>)[part] : undefined, en) || key }) }));
 
-vi.mock('@/features/products/api', () => ({
-  useGetProductCollectionsQuery: () => mockUseGetProductCollectionsQuery(),
-  useGetProductsQuery: () => mockUseGetProductsQuery(),
-}));
+function renderHome() {
+  return render(<MemoryRouter><Routes><Route path="/" element={<HomePage />} /><Route path="/stylist/workspace" element={<div>Professional workspace</div>} /></Routes></MemoryRouter>);
+}
 
-describe('Release 2 storefront home', () => {
-  it('renders the result-led hero and all six collection entry points', () => {
-    mockUseGetProductCollectionsQuery.mockReturnValue({
-      data: [
-        {
-          slug: 'blonde-and-tone',
-          name: 'Blonde and Tone',
-          title: 'Blonde and Tone',
-          description: 'Tone brassiness, maintain brightness, and support blonde routines with verified Fanola-family products.',
-          sortPriority: 10,
-          routineRoles: ['cleanse', 'tone', 'nourish', 'protect'],
-          supportedCategoryNames: ['Shampoo', 'Mask'],
-          productCount: 4,
-        },
-      ],
-      isLoading: false,
-    });
-    mockUseGetProductsQuery.mockReturnValue({
-      data: {
-        data: [
-          {
-            id: '1',
-            name: 'Wonder No Yellow Shampoo',
-            image: 'https://example.com/shampoo.png',
-            catalogGuidance: { professionalOnly: false, consumerRoutineRole: 'cleanse' },
-          },
-          {
-            id: '2',
-            name: 'Wonder No Yellow Mask',
-            image: 'https://example.com/mask.png',
-            catalogGuidance: { professionalOnly: false, consumerRoutineRole: 'nourish' },
-          },
-        ],
-      },
-      isLoading: false,
-    });
-
-    render(
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('Real hair results first. The routine that protects them second.')).toBeInTheDocument();
-    expect(screen.getByText('Approved Tessa blonde result image goes here.')).toBeInTheDocument();
-    expect(screen.getByText('Blonde and Tone')).toBeInTheDocument();
-    expect(screen.getByText('Repair')).toBeInTheDocument();
-    expect(screen.getByText('Curls')).toBeInTheDocument();
-    expect(screen.getByText('Smooth and Anti-frizz')).toBeInTheDocument();
-    expect(screen.getByText('Colour')).toBeInTheDocument();
-    expect(screen.getByText('Extensions and Tools')).toBeInTheDocument();
+describe('New storefront home', () => {
+  beforeEach(() => { auth.isStylist = false; productsQuery.mockReturnValue({ data: { data: [{ id: 1, name: 'Daily shampoo' }, { id: 2, name: 'Salon color', stylistOnly: true }] } }); });
+  it('keeps all six collection routes and the real quiz entry point', () => {
+    renderHome();
+    expect(screen.getByRole('heading', { name: /Hair that feels/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Discover your ritual' })).toHaveAttribute('href', '/quiz');
+    for (const slug of ['repair', 'blonde-and-tone', 'curls', 'smooth-and-anti-frizz', 'colour', 'extensions-and-tools']) {
+      expect(document.querySelector(`a[href="/collections/${slug}"]`)).not.toBeNull();
+    }
+    expect(screen.getByText('Daily shampoo')).toBeInTheDocument();
+    expect(screen.queryByText('Salon color')).not.toBeInTheDocument();
+  });
+  it('sends signed-in stylists to their workspace and skips the consumer query', () => {
+    auth.isStylist = true;
+    renderHome();
+    expect(screen.getByText('Professional workspace')).toBeInTheDocument();
+    expect(productsQuery).toHaveBeenLastCalledWith({ perPage: 8 }, { skip: true });
+  });
+  it('shows an actionable failure instead of pretending the catalog is empty', () => {
+    productsQuery.mockReturnValue({ error: { status: 500 }, refetch: vi.fn() });
+    renderHome();
+    expect(screen.getByRole('alert')).toHaveTextContent('Check your connection and try again.');
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 });

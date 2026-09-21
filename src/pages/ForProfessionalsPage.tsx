@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import Seo from '@/shared/components/Seo';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -44,6 +45,11 @@ export default function ForProfessionalsPage() {
 
   return (
     <div className="for-pros">
+      <Seo
+        title={t('seo.professionalsTitle')}
+        description={t('seo.professionalsDescription')}
+        path="/for-professionals"
+      />
       {/* Hero */}
       <section className="for-pros__hero">
         <span className="for-pros__eyebrow">{t('forPros.eyebrow')}</span>

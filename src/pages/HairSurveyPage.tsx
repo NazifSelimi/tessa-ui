@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { useGetRecommendationsMutation } from '@/features/recommendations/api';
 import { saveHairProfile } from '@/shared/utils/hairProfile';
 import type { RecommendationPayload } from '@/types';
+import Seo from '@/shared/components/Seo';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -274,6 +275,11 @@ export default function HairSurveyPage() {
   /* ----- render ----- */
   return (
     <main className="hair-quiz">
+      <Seo
+        title={t('seo.quizTitle')}
+        description={t('seo.quizDescription')}
+        path="/quiz"
+      />
       <header className="hair-quiz__header">
         <div className="hair-quiz__mark"><ExperimentOutlined /></div>
         <Title level={2}>{t('survey.hairCareSurvey')}</Title>

@@ -13,6 +13,8 @@ import {
   type StorefrontCollectionDirectoryItem,
 } from '@/shared/config/storefrontCollections';
 import type { Product } from '@/types';
+import Seo from '@/shared/components/Seo';
+import { site } from '@/shared/config/site';
 
 const { Title, Paragraph, Text } = Typography;
 const MAX_COLLECTION_PRODUCTS = 120;
@@ -135,6 +137,12 @@ export default function CollectionPage() {
   if (!collection) {
     return (
       <div className="collection-page">
+        <Seo
+          title="Collection not found"
+          description="The requested Tessa Hair Care collection could not be found."
+          path={`/collections/${slug ?? ''}`}
+          noIndex
+        />
         <div className="collection-shell">
           <Empty
             description="This collection route is not part of the approved storefront set."
@@ -151,6 +159,32 @@ export default function CollectionPage() {
 
   return (
     <div className="collection-page">
+      <Seo
+        title={collection.title}
+        description={collection.description}
+        path={`/collections/${collection.slug}`}
+        image={heroProducts[0]?.image}
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: collection.title,
+            description: collection.description,
+            url: `${site.url}/collections/${collection.slug}`,
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: collection.title,
+            itemListElement: consumerProducts.slice(0, 24).map((product, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              url: `${site.url}/product/${product.id}`,
+              name: product.name,
+            })),
+          },
+        ]}
+      />
       <div className="collection-shell">
         <section
           className="collection-hero"

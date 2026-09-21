@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { CatalogState } from './storefront/DesignPrimitives';
 import { Button, Tag, Typography, message } from 'antd';
 import { GiftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useGetBundlesQuery } from '@/features/products/api';
@@ -24,12 +26,14 @@ function bundlePrice(bundle: StoreBundle, isProfessional: boolean) {
   return total;
 }
 
-export default function BundleDealRail() {
-  const { data: bundles = [] } = useGetBundlesQuery();
+export default function BundleDealRail({ showEmpty = false }: { showEmpty?: boolean }) {
+  const { t } = useTranslation();
+  const { data: bundles = [], isLoading, error, refetch } = useGetBundlesQuery();
   const { addItem, applyBundle } = useCart();
   const { isProfessional } = useAuth();
 
-  if (!bundles.length) return null;
+  if (showEmpty && (isLoading || error)) return <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />;
+  if (!bundles.length) return showEmpty ? <p className="nl-no-offers">{t('newLook.noOffers')}</p> : null;
 
   const addBundle = (bundle: StoreBundle) => {
     bundle.products.forEach((product) => addItem({

@@ -15,6 +15,10 @@ const secondaryPhoneLabel = readEnv('VITE_SITE_PHONE_SECONDARY') ?? '042 333 003
 const secondaryPhoneHref = ensureHref(readEnv('VITE_SITE_PHONE_SECONDARY_HREF'), 'tel:+38942333003');
 
 export const site = {
+  name: 'Tessa Hair Care',
+  url: readEnv('VITE_SITE_URL') ?? 'https://tessa.mk',
+  legalName: readEnv('VITE_SITE_LEGAL_NAME'),
+  address: readEnv('VITE_SITE_ADDRESS'),
   contactEmail: readEnv('VITE_SITE_CONTACT_EMAIL') ?? 'tessa@tessa.mk',
   contactPhones: [
     { label: primaryPhoneLabel, href: primaryPhoneHref },

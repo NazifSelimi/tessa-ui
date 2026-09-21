@@ -1,216 +1,32 @@
-'use client';
-
-import type { MouseEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Typography, Table, Tag, Button, Space, Spin, Empty, Card, Alert, Grid } from 'antd';
-import { EyeOutlined, RightOutlined, ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Pagination } from 'antd';
+import { ArrowUpRight, Package, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGetOrdersQuery } from '@/features/orders/api';
 import { useReorder } from '@/hooks/useReorder';
 import { formatPrice } from '@/shared/utils/formatPrice';
-import type { Order } from '@/types';
-
-const { Title, Text } = Typography;
-const { useBreakpoint } = Grid;
-
-const statusColors: Record<string, string> = {
-  pending: 'orange',
-  confirmed: 'blue',
-  processing: 'cyan',
-  shipped: 'purple',
-  delivered: 'green',
-  cancelled: 'red',
-};
+import { OrderStatusBadge, PaymentStatusBadge } from '@/components/StatusBadge';
+import { CatalogState, PageHeading } from '@/components/storefront/DesignPrimitives';
+import Seo from '@/shared/components/Seo';
 
 export default function OrdersPage() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { data: ordersData, isLoading, error } = useGetOrdersQuery();
-  const orders = ordersData?.data || [];
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  const { t, i18n } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const page = Math.max(1, Number(params.get('page')) || 1);
+  const { data, isLoading, error, refetch } = useGetOrdersQuery({ page });
   const { reorder, isReordering } = useReorder();
-
-  const handleReorder = (e: MouseEvent, order: Order) => {
-    e.preventDefault();
-    e.stopPropagation();
-    void reorder(order);
-  };
-
-  const columns = [
-    {
-      title: t('orders.orderId'),
-      dataIndex: 'id',
-      key: 'id',
-      render: (id: string) => <Text strong>{id}</Text>,
-    },
-    {
-      title: t('orders.date'),
-      dataIndex: 'createdAt',
-      key: 'date',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: t('orders.items'),
-      dataIndex: 'items',
-      key: 'items',
-      render: (items: Order['items']) => t('orders.itemCount', { count: items?.length ?? 0 }),
-    },
-    {
-      title: t('orders.total'),
-      dataIndex: 'total',
-      key: 'total',
-      render: (total: number) => <Text strong>{formatPrice(total)}</Text>,
-    },
-    {
-      title: t('orders.status'),
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: any) => {
-        const s = typeof status === 'string' ? status : String(status ?? '');
-        return (
-          <Tag color={statusColors[s] || 'default'}>
-            {s.toUpperCase()}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: t('orders.paymentStatus'),
-      dataIndex: 'paymentStatus',
-      key: 'paymentStatus',
-      render: (status: any) => {
-        const s = typeof status === 'string' ? status : String(status ?? '');
-        return (
-          <Tag color={s === 'paid' ? 'green' : 'orange'}>
-            {s.toUpperCase()}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: '',
-      key: 'actions',
-      render: (_: unknown, record: Order) => (
-        <Space>
-          <Button
-            type="text"
-            icon={<ReloadOutlined />}
-            loading={isReordering}
-            onClick={(e) => handleReorder(e, record)}
-          >
-            {t('reorder.orderAgain')}
-          </Button>
-          <Link to={`/account/orders/${record.id}`}>
-            <Button type="text" icon={<EyeOutlined />}>
-              {t('orders.view')}
-            </Button>
-          </Link>
-        </Space>
-      ),
-    },
-  ];
-
-  /* Mobile card for a single order */
-  const OrderCard = ({ order }: { order: Order }) => {
-    const s = typeof order.status === 'string' ? order.status : String(order.status ?? '');
-    const ps = typeof order.paymentStatus === 'string' ? order.paymentStatus : String(order.paymentStatus ?? '');
-    return (
-      <Link to={`/account/orders/${order.id}`}>
-        <Card
-          size="small"
-          hoverable
-          style={{ marginBottom: 12, borderRadius: 12 }}
-          styles={{ body: { padding: '14px 16px' } }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text strong style={{ fontSize: 15 }}>{t('orders.order')} #{order.id}</Text>
-            <RightOutlined style={{ color: '#999', fontSize: 12 }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              {new Date(order.createdAt).toLocaleDateString()} · {t('orders.itemCount', { count: order.items?.length ?? 0 })}
-            </Text>
-            <Text strong style={{ fontSize: 15 }}>{formatPrice(order.total)}</Text>
-          </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <Tag color={statusColors[s] || 'default'} style={{ margin: 0 }}>
-                {s.toUpperCase()}
-              </Tag>
-              <Tag color={ps === 'paid' ? 'green' : 'orange'} style={{ margin: 0 }}>
-                {ps.toUpperCase()}
-              </Tag>
-            </div>
-            <Button
-              size="small"
-              icon={<ReloadOutlined />}
-              loading={isReordering}
-              onClick={(e) => handleReorder(e, order)}
-            >
-              {t('reorder.orderAgain')}
-            </Button>
-          </div>
-        </Card>
-      </Link>
-    );
-  };
-
-  return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <div>
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate(-1)}
-            style={{ marginBottom: 8, padding: '4px 0' }}
-          >
-            {t('common.back')}
-          </Button>
-          <Title level={2}>{t('orders.myOrders')}</Title>
-          <Text type="secondary">{t('orders.viewTrackHistory')}</Text>
-        </div>
-
-        {error && (
-          <Alert
-            message={t('orders.errorLoading')}
-            description={t('orders.errorDescription')}
-            type="error"
-            showIcon
-            closable
-          />
-        )}
-
-        {isLoading ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <Spin size="large" />
-          </div>
-        ) : orders.length === 0 ? (
-          <Card>
-            <Empty description={t('orders.noOrdersYet')}>
-              <Link to="/">
-                <Button type="primary">{t('orders.startShopping')}</Button>
-              </Link>
-            </Empty>
-          </Card>
-        ) : isMobile ? (
-          /* Mobile: Card-based layout */
-          <div>
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </div>
-        ) : (
-          /* Desktop: Table layout */
-          <Table
-            dataSource={orders}
-            columns={columns}
-            rowKey="id"
-            pagination={{ pageSize: 10 }}
-          />
-        )}
-      </Space>
-    </div>
-  );
+  const orders = data?.data || [];
+  return <div className="nl-orders-page">
+    <Seo title={t('orders.myOrders')} description={t('orders.viewTrackHistory')} noIndex />
+    <PageHeading eyebrow={t('newLook.orders')} title={t('orders.myOrders')} description={t('orders.viewTrackHistory')} />
+    {error ? <CatalogState error={error} retry={() => void refetch()} /> : isLoading ? <CatalogState loading /> : !orders.length ? <div className="nl-empty-orders nl-card"><Package size={34} /><h2>{t('orders.noOrdersYet')}</h2><Link className="nl-button" to="/shop">{t('orders.startShopping')}<ArrowUpRight size={17} /></Link></div> : <>
+      <div className="nl-order-list">{orders.map(order => <article key={order.id} className="nl-order-card nl-card">
+        <div><span className="nl-eyebrow">{t('orders.order')}</span><Link to={`/account/orders/${order.id}`}><h2>#{order.id}</h2></Link><p>{new Date(order.createdAt).toLocaleDateString(i18n.language === 'shq' ? 'sq' : i18n.language)} · {t('orders.itemCount', { count: order.items?.length || 0 })}</p></div>
+        <div className="nl-order-status"><OrderStatusBadge status={order.status} /><PaymentStatusBadge status={order.paymentStatus} /></div>
+        <strong className="nl-order-total">{formatPrice(order.total)}</strong>
+        <div className="nl-order-actions"><button className="nl-button" disabled={isReordering || !order.items?.length} onClick={() => void reorder(order)}><RotateCcw size={16} />{isReordering ? t('common.loading') : t('reorder.orderAgain')}</button><Link className="nl-order-details" to={`/account/orders/${order.id}`}>{t('orders.view')}<ArrowUpRight size={16} /></Link></div>
+      </article>)}</div>
+      {data && data.meta.last_page > 1 && <div className="nl-pagination"><Pagination current={page} total={data.meta.total} pageSize={data.meta.per_page} showSizeChanger={false} onChange={value => setParams({ page: String(value) })} /></div>}
+    </>}
+  </div>;
 }

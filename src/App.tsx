@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store, persistor } from './store';
 import { PersistGate } from 'redux-persist/integration/react';
@@ -10,6 +10,7 @@ import { useAppSelector } from '@/app/hooks';
 import { useGetCurrentUserQuery } from '@/features/auth/api';
 import { baseApi, API_TAGS } from '@/api/baseApi';
 import i18n, { isSupportedLocale, type Locale } from '@/i18n';
+import { urlLocaleFromPathname } from '@/i18n/routing';
 
 // Eagerly loaded components (no antd dependency)
 import LoadingScreen from './components/LoadingScreen';
@@ -59,6 +60,11 @@ const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
 const StylistQuickOrderPage = lazy(() => import('./pages/stylist/StylistQuickOrderPage'));
 // Design Lab — isolated /design-lab route for evaluating Shop/ordering concepts
 const DesignLabPage = lazy(() => import('./pages/design-lab/DesignLabPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+const localePrefix = typeof window !== 'undefined'
+  ? urlLocaleFromPathname(window.location.pathname)
+  : null;
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -66,6 +72,11 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
+}
+
+function LegacyProductRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={id ? `/product/${id}` : '/shop'} replace />;
 }
 
 function AuthBootstrap() {
@@ -102,8 +113,9 @@ function App() {
     <>
       <ErrorBoundary>
         <Provider store={store}>
-          <PersistGate loading={<div style={{ padding: '20px' }}>Loading...</div>} persistor={persistor}>
+          <PersistGate loading={<LoadingScreen />} persistor={persistor}>
             <Router
+              basename={localePrefix ? `/${localePrefix}` : undefined}
               future={{
                 v7_startTransition: true,
                 v7_relativeSplatPath: true,
@@ -122,7 +134,11 @@ function App() {
                 <Route path="/for-professionals" element={<ForProfessionalsPage />} />
                 <Route path="/privacy" element={<LegalPage />} />
                 <Route path="/terms" element={<LegalPage />} />
+                <Route path="/returns" element={<LegalPage />} />
+                <Route path="/delivery" element={<LegalPage />} />
+                <Route path="/contact" element={<LegalPage />} />
                 <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/product/show-product/:id" element={<LegacyProductRedirect />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/hair-survey" element={<HairSurveyPage />} />
@@ -171,6 +187,8 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+              <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole="stylist"><StylistWorkspacePage /></ProtectedRoute>} />
+
                 {/* Stylist quick-order – stylist role required */}
                 <Route path="/stylist/quick-order" element={
                   <ProtectedRoute requiredRole="stylist">
@@ -194,7 +212,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/stylist/activate/:token" element={<ActivateStylistInvitationPage />} />
-              <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole="stylist"><StylistWorkspacePage /></ProtectedRoute>} />
+
 
               {/* Admin routes – layout + pages are lazy-loaded */}
               <Route element={
@@ -216,7 +234,7 @@ function App() {
               </Route>
 
               {/* Catch-all */}
-              <Route path="*" element={<Navigate to="/" replace />}  />
+              <Route path="*" element={<NotFoundPage />}  />
             </Routes>
               </AntdProvider>
             </Suspense>
