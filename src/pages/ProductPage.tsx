@@ -31,6 +31,7 @@ import { useGetProductByIdQuery, useGetRelatedProductsQuery } from '@/features/p
 import Seo from '@/shared/components/Seo';
 import { site } from '@/shared/config/site';
 import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
+import type { ProductMediaAsset } from '@/types';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -44,6 +45,7 @@ export default function ProductPage() {
   const { data: relatedProducts = [] } = useGetRelatedProductsQuery(product?.id as number | string, { skip: !product?.id });
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
   const localizedDescription = useLocalizedDescription(product ?? null);
 
   // Handle add to cart
@@ -95,8 +97,15 @@ export default function ProductPage() {
 
   // Resolve the product image URL
   const NO_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="100%" height="100%" fill="%23f5f5f5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif" font-size="18">No image</text></svg>';
-  const productImages = product.images?.length ? product.images : (product.image ? [product.image] : []);
-  const mainImage = productImages[selectedImage] ?? productImages[0] ?? NO_IMAGE;
+  const media = product.media ?? [];
+  const detailMedia = media.filter((asset) => asset.url && asset.variant !== 'card' && asset.variant !== 'transparent_master');
+  const nonOriginalMedia = media.filter((asset) => asset.url && asset.variant !== 'original');
+  const legacyMedia = (product.images?.length ? product.images : (product.image ? [product.image] : []))
+    .filter(Boolean)
+    .map((url) => ({ url, alt: product.name, variant: 'legacy' } as Pick<ProductMediaAsset, 'url' | 'alt' | 'variant'>));
+  const productImages = detailMedia.length ? detailMedia : (nonOriginalMedia.length ? nonOriginalMedia : legacyMedia);
+  const selectedAsset = productImages[selectedImage] ?? productImages[0];
+  const mainImage = selectedAsset?.url ?? NO_IMAGE;
   const brandName = typeof product.brand === 'object' ? product.brand?.name ?? '' : product.brand ?? '';
   const categoryName = typeof product.category === 'object' ? product.category?.name ?? '' : product.category ?? '';
   const description = (localizedDescription || `${product.name} ${categoryName} from ${brandName}`)
@@ -116,7 +125,7 @@ export default function ProductPage() {
         title={`${product.name}${brandName ? ` – ${brandName}` : ''}`}
         description={description}
         path={canonicalPath}
-        image={productImages[0]}
+        image={productImages[0]?.url}
         type="product"
         structuredData={[
           {
@@ -124,7 +133,7 @@ export default function ProductPage() {
             '@type': 'Product',
             name: product.name,
             description,
-            ...(productImages.length > 0 ? { image: productImages } : {}),
+            ...(productImages.length > 0 ? { image: productImages.map((asset) => asset.url).filter(Boolean) } : {}),
             ...(brandName ? { brand: { '@type': 'Brand', name: brandName } } : {}),
             ...(categoryName ? { category: categoryName } : {}),
             sku: String(product.id),
@@ -175,17 +184,18 @@ export default function ProductPage() {
         {/* Product Images */}
         <div className="product-detail__gallery">
           {/* Main Image */}
-          <div className="product-detail__main-image">
+          <button className="product-detail__main-image" type="button" onClick={() => setIsZoomed(Boolean(selectedAsset))} aria-label={`Zoom ${product.name} image`}>
             <img
               src={mainImage}
-              alt={product.name}
+              alt={selectedAsset?.alt || product.name}
+              fetchPriority="high"
             />
-          </div>
+          </button>
           
           {/* Thumbnail Gallery */}
           {productImages.length > 1 && (
             <div className="product-detail__thumbnails">
-              {productImages.map((img, idx) => (
+              {productImages.map((asset, idx) => (
                 <div
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
@@ -196,8 +206,8 @@ export default function ProductPage() {
                   aria-label={`View image ${idx + 1}`}
                 >
                   <img
-                    src={img || NO_IMAGE}
-                    alt={`${product.name} ${idx + 1}`}
+                    src={asset.url || NO_IMAGE}
+                    alt={asset.alt || `${product.name} ${idx + 1}`}
                     loading="lazy"
                   />
                 </div>
@@ -351,6 +361,12 @@ export default function ProductPage() {
           />
         </div>
       </div>
+      {isZoomed && selectedAsset && (
+        <div className="product-image-lightbox" role="dialog" aria-modal="true" aria-label={`${product.name} enlarged image`} onClick={() => setIsZoomed(false)}>
+          <button type="button" className="product-image-lightbox__close" onClick={() => setIsZoomed(false)} aria-label="Close image">×</button>
+          <img src={selectedAsset.url || NO_IMAGE} alt={selectedAsset.alt || product.name} onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
