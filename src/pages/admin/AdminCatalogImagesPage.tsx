@@ -64,7 +64,7 @@ export default function AdminCatalogImagesPage() {
         <Card loading={loading}>
           <Row gutter={8}>
             <Col span={12}><Typography.Text type="secondary">Current</Typography.Text><img src={candidate.current_image_url ?? '/placeholder.svg'} alt={`Current ${candidate.current_name}`} style={{ width: '100%', height: 180, objectFit: 'contain', background: '#fafafa' }} /></Col>
-            <Col span={12}><Typography.Text type="secondary">Candidate</Typography.Text><img src={candidate.preview_url ?? candidate.source_image_url} alt={`Candidate ${candidate.current_name}`} style={{ width: '100%', height: 180, objectFit: 'contain', background: '#fafafa' }} /></Col>
+            <Col span={12}><Typography.Text type="secondary">Candidate</Typography.Text><a href={candidate.source_image_url} target="_blank" rel="noreferrer" title="Open original source image"><img src={candidate.preview_url ?? candidate.source_image_url} alt={`Candidate ${candidate.current_name}`} style={{ width: '100%', height: 180, objectFit: 'contain', background: '#fafafa', cursor: 'pointer' }} /></a></Col>
           </Row>
           <Typography.Text strong>{candidate.current_name}</Typography.Text><br />
           <Typography.Text type="secondary">{candidate.brand} · {candidate.category} · {candidate.width ?? '?'}×{candidate.height ?? '?'}</Typography.Text><br />
