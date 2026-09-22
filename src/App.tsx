@@ -50,6 +50,7 @@ const AdminDistributorsPage = lazy(() => import('./pages/admin/AdminDistributors
 const AdminStylistRequestsPage = lazy(() => import('./pages/admin/AdminStylistRequestsPage'));
 const AdminStylistInvitationsPage = lazy(() => import('./pages/admin/AdminStylistInvitationsPage'));
 const AdminBundlesPage = lazy(() => import('./pages/admin/AdminBundlesPage'));
+const AdminCatalogImagesPage = lazy(() => import('./pages/admin/AdminCatalogImagesPage'));
 const StylistWorkspacePage = lazy(() => import('./pages/stylist/StylistWorkspacePage'));
 const DistributorPortalPage = lazy(() => import('./pages/distributor/DistributorPortalPage'));
 const DistributorProductsPage = lazy(() => import('./pages/distributor/DistributorProductsPage'));
@@ -231,6 +232,7 @@ function App() {
                 <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
                 <Route path="/admin/stylist-invitations" element={<AdminStylistInvitationsPage />} />
                 <Route path="/admin/bundles" element={<AdminBundlesPage />} />
+                <Route path="/admin/catalog-images" element={<AdminCatalogImagesPage />} />
               </Route>
 
               {/* Catch-all */}
