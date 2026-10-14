@@ -27,18 +27,21 @@ import {
   ArrowLeftOutlined,
   SafetyCertificateOutlined,
   TruckOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import ShippingProgress from '@/components/ShippingProgress';
 import { shippingForSubtotal } from '@/shared/constants/shipping';
+import { useAuth } from '@/hooks/useAuth';
 
 const { Title, Text, Paragraph } = Typography;
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isStylist } = useAuth();
   const { items, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
 
   const handleQuantityChange = (productId: string | number, quantity: number | null) => {
@@ -99,6 +102,7 @@ const CartPage: React.FC = () => {
           <Title level={2} style={{ margin: 0 }}>{t('cart.shoppingCart')}</Title>
           <Text type="secondary">{items.length} {items.length === 1 ? t('cart.item') : t('cart.items')}</Text>
         </div>
+        {isStylist && <Link to="/stylist/quick-order" style={{ display: 'inline-flex', marginTop: 12 }}><Button icon={<SearchOutlined />}>Search and add products</Button></Link>}
       </div>
 
       <Row gutter={[24, 24]}>

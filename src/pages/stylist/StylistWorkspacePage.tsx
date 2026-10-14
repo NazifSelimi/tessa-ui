@@ -23,7 +23,7 @@ export default function StylistWorkspacePage() {
   const { reorder, isReordering } = useReorder();
   const shortcuts = [
     { to: '/stylist/quick-order', icon: Zap, title: t('nav.quickOrder'), copy: t('newLook.quickCopy') },
-    { to: '/shop', icon: Package, title: t('newLook.products'), copy: t('newLook.catalogCopy') },
+    { to: '/shop?view=consumer', icon: Package, title: 'View Tessa Store', copy: 'Browse the customer-facing Tessa store layout.' },
     { to: '/account/orders', icon: RotateCcw, title: t('newLook.buyAgain'), copy: t('newLook.reorderCopy') },
     { to: '#salon-offers', icon: Sparkles, title: t('newLook.offers'), copy: t('newLook.offersCopy') },
   ];
