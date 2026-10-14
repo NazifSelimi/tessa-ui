@@ -6,12 +6,13 @@ import { useGetProductsQuery } from '@/features/products/api';
 import ProductCard from '@/components/ProductCard';
 import { CatalogState, PageHeading, ProductImage, SectionHeading } from '@/components/storefront/DesignPrimitives';
 import ContentBlocks from '@/components/storefront/ContentBlocks';
+import HomePageEditor from '@/components/storefront/HomePageEditor';
 import Seo from '@/shared/components/Seo';
 import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const { user, isStylist } = useAuth();
+  const { user, isStylist, isAdmin } = useAuth();
   const { data, isLoading, error, refetch } = useGetProductsQuery({ perPage: 8 }, { skip: isStylist });
   const { data: contentBlocks = [] } = useGetPublishedContentBlocksQuery('home', { skip: isStylist });
   const products = (data?.data || []).filter(product => !product.stylistOnly && !product.catalogGuidance?.professionalOnly);
@@ -37,5 +38,6 @@ export default function HomePage() {
       {products.length ? <div className="nl-product-grid">{products.slice(0, 4).map(product => <ProductCard key={product.id} product={product} />)}</div> : <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />}
     </section>
     <section className="nl-professional-invite"><Sparkles size={24} /><div><span className="nl-eyebrow">TESSA PROFESSIONAL</span><h2>{t('newLook.salonTitle')}</h2><p>{t('newLook.salonCopy')}</p></div><Link className="nl-button nl-button-secondary" to="/for-professionals">{t('nav.forProfessionals')}<ArrowUpRight size={17} /></Link></section>
+    {isAdmin && <HomePageEditor />}
   </>;
 }

@@ -36,6 +36,7 @@ const kindOptions: Array<{ value: ContentBlockKind; label: string }> = [
   { value: 'grid', label: 'Card grid (products, bundles, guides)' },
   { value: 'rich_text', label: 'Rich text section' },
   { value: 'cta', label: 'Call to action' },
+  { value: 'bundle_rail', label: 'Bundle offers rail' },
 ];
 
 function nullIfEmpty(value?: string): string | null {
