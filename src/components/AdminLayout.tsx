@@ -28,6 +28,7 @@ import {
   CloseOutlined,
   QrcodeOutlined,
   PictureOutlined,
+  LayoutOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from './Logo';
@@ -46,6 +47,7 @@ const pageTitles: Record<string, string> = {
   '/admin/coupons': 'Coupons',
   '/admin/distributors': 'Distributors',
   '/admin/bundles': 'Offers & Bundles',
+  '/admin/content-blocks': 'Editable Sections',
   '/admin/catalog-images': 'Image Review',
 };
 
@@ -78,6 +80,7 @@ const pendingCount = 0;
     { key: '/admin/stylist-invitations', icon: <QrcodeOutlined />, label: <Link to="/admin/stylist-invitations">Stylist Invitations</Link> },
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
+    { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
   ], [pendingCount]);

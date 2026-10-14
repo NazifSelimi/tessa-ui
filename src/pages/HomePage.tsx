@@ -5,12 +5,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGetProductsQuery } from '@/features/products/api';
 import ProductCard from '@/components/ProductCard';
 import { CatalogState, PageHeading, ProductImage, SectionHeading } from '@/components/storefront/DesignPrimitives';
+import ContentBlocks from '@/components/storefront/ContentBlocks';
 import Seo from '@/shared/components/Seo';
+import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 
 export default function HomePage() {
   const { t } = useTranslation();
   const { user, isStylist } = useAuth();
   const { data, isLoading, error, refetch } = useGetProductsQuery({ perPage: 8 }, { skip: isStylist });
+  const { data: contentBlocks = [] } = useGetPublishedContentBlocksQuery('home', { skip: isStylist });
   const products = (data?.data || []).filter(product => !product.stylistOnly && !product.catalogGuidance?.professionalOnly);
   const hero = products.find(product => product.image || product.images?.length);
   const concerns = ['repair', 'blonde-and-tone', 'curls', 'smooth-and-anti-frizz'];
@@ -24,6 +27,7 @@ export default function HomePage() {
       <div className="nl-hero-copy"><span className="nl-eyebrow">{t('newLook.heroEyebrow')}</span><h2>{t('newLook.heroTitle')}<br /><i>{t('newLook.heroAccent')}</i></h2><p>{t('newLook.heroCopy')}</p><Link className="nl-button nl-button-dark" to="/quiz">{t('newLook.discoverRoutine')}<ArrowUpRight size={18} /></Link></div>
       <div className="nl-hero-art"><div className="nl-art-orbit" />{hero ? <ProductImage product={hero} priority /> : <div className="nl-hero-monogram" aria-hidden="true">t<span>care, beautifully.</span></div>}<span className="nl-art-caption">TESSA / HAIR RITUALS</span><Sparkles className="nl-art-sparkle" size={28} aria-hidden="true" /></div>
     </section>
+    <ContentBlocks blocks={contentBlocks} />
     <section className="nl-section">
       <SectionHeading eyebrow={t('newLook.yourHair')} title={t('newLook.whereToStart')} to="/quiz" action={t('newLook.takeQuiz')} />
       <div className="nl-concern-grid">{concerns.map((slug, i) => <Link key={slug} to={`/collections/${slug}`} className={`nl-concern nl-concern-${i + 1}`}><span className="nl-concern-art" aria-hidden="true" /><strong>{t(`newLook.concerns.${slug}`)}</strong><small>{t('newLook.exploreCare')}<ArrowUpRight size={15} /></small></Link>)}</div>
