@@ -14,7 +14,7 @@ export default function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
 
   return <>
     {blocks.map((block) => block.kind === 'bundle_rail'
-      ? <BundleDealRail key={block.id} showEmpty />
+      ? <BundleDealRail key={block.id} showEmpty bundleIds={block.items.map((item) => item.bundleId).filter((id): id is string => Boolean(id))} />
       : <section key={block.id} className={block.kind === 'hero' ? 'nl-professional-invite' : 'nl-section'}>
       {block.imageUrl && <img src={block.imageUrl} alt="" style={{ width: block.kind === 'hero' ? 180 : '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 12 }} />}
       <div style={{ width: '100%' }}>

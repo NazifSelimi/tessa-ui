@@ -4,6 +4,9 @@ import { Drawer, Pagination } from 'antd';
 import { ArrowUpRight, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import ContentBlocks from '@/components/storefront/ContentBlocks';
+import HomePageEditor from '@/components/storefront/HomePageEditor';
+import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetBrandsQuery, useGetCategoriesQuery, useGetProductCollectionsQuery, useGetProductsQuery } from '@/features/products/api';
 import ProductCard from '@/components/ProductCard';
@@ -13,7 +16,8 @@ import Seo from '@/shared/components/Seo';
 
 export default function ShopPage() {
   const { t } = useTranslation();
-  const { isStylist } = useAuth();
+  const { isStylist, isAdmin } = useAuth();
+  const { data: contentBlocks = [] } = useGetPublishedContentBlocksQuery('shop', { skip: isStylist });
   const [params, setParams] = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [search, setSearch] = useState(params.get('search') || '');
@@ -73,6 +77,8 @@ export default function ShopPage() {
       {total > 12 && <div className="nl-pagination"><Pagination current={page} total={total} pageSize={12} showSizeChanger={false} onChange={value => { update('page', String(value)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} /></div>}
     </div></div>
     {!urlSearch && !active && <section className="nl-section"><BundleDealRail /></section>}
+    {!urlSearch && !active && <ContentBlocks blocks={contentBlocks} />}
+    {isAdmin && <HomePageEditor page="shop" pageLabel="Shop page" />}
     <Drawer title={t('home.filters')} open={filtersOpen} onClose={() => setFiltersOpen(false)} placement="right" width="min(360px, 100vw)"><div className="tessa-design nl-filter-drawer">{filters}<button className="nl-button nl-button-dark" onClick={() => setFiltersOpen(false)}>{t('newLook.showResults')}<ArrowUpRight size={16} /></button></div></Drawer>
   </>;
 }

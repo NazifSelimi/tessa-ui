@@ -22,13 +22,17 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import ContentBlocks from '@/components/storefront/ContentBlocks';
+import HomePageEditor from '@/components/storefront/HomePageEditor';
+import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 import Seo from '@/shared/components/Seo';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function ForProfessionalsPage() {
   const { t } = useTranslation();
-  const { isAuthenticated, isStylist } = useAuth();
+  const { isAuthenticated, isStylist, isAdmin } = useAuth();
+  const { data: contentBlocks = [] } = useGetPublishedContentBlocksQuery('professionals');
 
   const benefits = [
     { icon: <TagsOutlined />, titleKey: 'forPros.benefitPricingTitle', descKey: 'forPros.benefitPricingDesc' },
@@ -93,6 +97,8 @@ export default function ForProfessionalsPage() {
           </Link>
         </div>
       </section>
+      <ContentBlocks blocks={contentBlocks} />
+      {isAdmin && <HomePageEditor page="professionals" pageLabel="Professionals page" />}
     </div>
   );
 }

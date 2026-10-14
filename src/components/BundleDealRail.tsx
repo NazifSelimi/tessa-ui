@@ -26,14 +26,16 @@ function bundlePrice(bundle: StoreBundle, isProfessional: boolean) {
   return total;
 }
 
-export default function BundleDealRail({ showEmpty = false }: { showEmpty?: boolean }) {
+export default function BundleDealRail({ showEmpty = false, bundleIds }: { showEmpty?: boolean; bundleIds?: string[] }) {
   const { t } = useTranslation();
   const { data: bundles = [], isLoading, error, refetch } = useGetBundlesQuery();
   const { addItem, applyBundle } = useCart();
   const { isProfessional } = useAuth();
 
+  const visibleBundles = bundleIds?.length ? bundles.filter((bundle) => bundleIds.includes(String(bundle.id))) : bundles;
+
   if (showEmpty && (isLoading || error)) return <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />;
-  if (!bundles.length) return showEmpty ? <p className="nl-no-offers">{t('newLook.noOffers')}</p> : null;
+  if (!visibleBundles.length) return showEmpty ? <p className="nl-no-offers">{t('newLook.noOffers')}</p> : null;
 
   const addBundle = (bundle: StoreBundle) => {
     bundle.products.forEach((product) => addItem({
@@ -51,7 +53,7 @@ export default function BundleDealRail({ showEmpty = false }: { showEmpty?: bool
         <Text type="secondary">Salon restocks, routines, and limited bundles.</Text>
       </div>
       <div className="bundle-deal-rail__scroller">
-        {bundles.map((bundle) => {
+        {visibleBundles.map((bundle) => {
           const regular = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
           const price = bundlePrice(bundle, isProfessional);
           return <article className="bundle-deal-card" key={bundle.id}>
