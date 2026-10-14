@@ -7,6 +7,7 @@ import {
   type ContentBlockPayload,
   useCreateContentBlockMutation,
   useDeleteContentBlockMutation,
+  useGetAdminBundlesQuery,
   useGetContentBlocksQuery,
   useUpdateContentBlockMutation,
 } from '@/features/admin/api';
@@ -23,6 +24,7 @@ type FormValues = {
   action_label?: string;
   action_url?: string;
   items?: Array<{ title?: string; body?: string; imageUrl?: string; actionLabel?: string; actionUrl?: string }>;
+  bundle_ids?: string[];
   is_published: boolean;
   sort_order: number;
 };
@@ -38,8 +40,14 @@ const choices: Array<{ value: ContentBlockKind; label: string; help: string }> =
 const empty = (sortOrder: number): FormValues => ({ kind: 'bundle_rail', is_published: false, sort_order: sortOrder, items: [] });
 const nullable = (value?: string) => value?.trim() || null;
 
-export default function HomePageEditor() {
+type PageEditorProps = {
+  page?: string;
+  pageLabel?: string;
+};
+
+export default function HomePageEditor({ page = 'home', pageLabel = 'Homepage' }: PageEditorProps) {
   const { data: allBlocks = [], isLoading } = useGetContentBlocksQuery();
+  const { data: bundles = [] } = useGetAdminBundlesQuery();
   const [createBlock] = useCreateContentBlockMutation();
   const [updateBlock] = useUpdateContentBlockMutation();
   const [deleteBlock] = useDeleteContentBlockMutation();
@@ -47,7 +55,7 @@ export default function HomePageEditor() {
   const [editing, setEditing] = useState<ContentBlock | null>(null);
   const [form] = Form.useForm<FormValues>();
   const kind = Form.useWatch('kind', form);
-  const blocks = useMemo(() => allBlocks.filter((block) => block.page === 'home').sort((a, b) => a.sortOrder - b.sortOrder), [allBlocks]);
+  const blocks = useMemo(() => allBlocks.filter((block) => block.page === page).sort((a, b) => a.sortOrder - b.sortOrder), [allBlocks, page]);
 
   const openEditor = (block?: ContentBlock) => {
     setEditing(block ?? null);
@@ -60,6 +68,7 @@ export default function HomePageEditor() {
       action_label: block.actionLabel ?? undefined,
       action_url: block.actionUrl ?? undefined,
       items: block.items,
+      bundle_ids: block.items.map((item) => item.bundleId).filter((id): id is string => Boolean(id)),
       is_published: block.isPublished,
       sort_order: block.sortOrder,
     } : empty((blocks.at(-1)?.sortOrder ?? 0) + 10));
@@ -68,8 +77,8 @@ export default function HomePageEditor() {
 
   const save = async (values: FormValues) => {
     const payload: ContentBlockPayload = {
-      key: editing?.key ?? `home.${Date.now()}`,
-      page: 'home',
+      key: editing?.key ?? `${page}.${Date.now()}`,
+      page,
       section: 'after-hero',
       kind: values.kind,
       eyebrow: nullable(values.eyebrow),
@@ -78,14 +87,16 @@ export default function HomePageEditor() {
       image_url: nullable(values.image_url),
       action_label: nullable(values.action_label),
       action_url: nullable(values.action_url),
-      items: values.items ?? [],
+      items: values.kind === 'bundle_rail'
+        ? (values.bundle_ids ?? []).map((bundleId) => ({ bundleId }))
+        : values.items ?? [],
       is_published: values.is_published,
       sort_order: values.sort_order,
     };
     try {
       if (editing) await updateBlock({ id: editing.id, data: payload }).unwrap();
       else await createBlock(payload).unwrap();
-      message.success(editing ? 'Homepage section updated' : 'Homepage section added');
+      message.success(editing ? `${pageLabel} section updated` : `${pageLabel} section added`);
       setOpen(false);
     } catch (error) {
       message.error(extractErrorMessage(error));
@@ -96,12 +107,12 @@ export default function HomePageEditor() {
     <Button type="primary" icon={<EditOutlined />} onClick={() => setOpen(true)} style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, boxShadow: '0 6px 20px rgba(0,0,0,.2)' }}>
       Edit this page
     </Button>
-    <Drawer title="Homepage editor" width={620} open={open} onClose={() => setOpen(false)}>
+    <Drawer title={`${pageLabel} editor`} width={620} open={open} onClose={() => setOpen(false)}>
       {!editing && <>
         <Space direction="vertical" size={3} style={{ marginBottom: 18 }}><Title level={4} style={{ margin: 0 }}>Sections on this page</Title><Text type="secondary">Add offers, bundles, campaign sections, and guidance exactly where customers see them.</Text></Space>
-        <Button type="primary" block icon={<PlusOutlined />} onClick={() => openEditor()}>Add a homepage section</Button>
+        <Button type="primary" block icon={<PlusOutlined />} onClick={() => openEditor()}>Add a section to this page</Button>
         <Space direction="vertical" style={{ width: '100%', marginTop: 18 }}>
-          {isLoading ? <Text>Loading sections…</Text> : blocks.length === 0 ? <Empty description="No custom homepage sections yet." /> : blocks.map((block) => <Space key={block.id} style={{ display: 'flex', justifyContent: 'space-between', border: '1px solid #f0f0f0', borderRadius: 8, padding: 12 }}><span><Text strong>{block.title || choices.find((choice) => choice.value === block.kind)?.label}</Text><br /><Text type="secondary">{block.isPublished ? 'Live' : 'Draft'} · {block.kind.replace('_', ' ')}</Text></span><Space><Button icon={<EditOutlined />} onClick={() => openEditor(block)}>Edit</Button><Popconfirm title="Remove this homepage section?" onConfirm={() => deleteBlock(block.id).unwrap().then(() => message.success('Section removed')).catch((error) => message.error(extractErrorMessage(error)))}><Button danger icon={<DeleteOutlined />} /></Popconfirm></Space></Space>)}
+          {isLoading ? <Text>Loading sections…</Text> : blocks.length === 0 ? <Empty description={`No custom ${pageLabel.toLowerCase()} sections yet.`} /> : blocks.map((block) => <Space key={block.id} style={{ display: 'flex', justifyContent: 'space-between', border: '1px solid #f0f0f0', borderRadius: 8, padding: 12 }}><span><Text strong>{block.title || choices.find((choice) => choice.value === block.kind)?.label}</Text><br /><Text type="secondary">{block.isPublished ? 'Live' : 'Draft'} · {block.kind.replace('_', ' ')}</Text></span><Space><Button icon={<EditOutlined />} onClick={() => openEditor(block)}>Edit</Button><Popconfirm title={`Remove this ${pageLabel.toLowerCase()} section?`} onConfirm={() => deleteBlock(block.id).unwrap().then(() => message.success('Section removed')).catch((error) => message.error(extractErrorMessage(error)))}><Button danger icon={<DeleteOutlined />} /></Popconfirm></Space></Space>)}
         </Space>
       </>}
       {editing !== null || form.getFieldValue('kind') ? <Form form={form} layout="vertical" onFinish={save} style={{ marginTop: editing ? 0 : 20 }}>
@@ -115,8 +126,9 @@ export default function HomePageEditor() {
           <Form.Item name="image_url" label="Image link (optional)"><Input placeholder="https://…" /></Form.Item>
           <Space style={{ display: 'flex' }}><Form.Item name="action_label" label="Button text" style={{ flex: 1 }}><Input placeholder="Shop now" /></Form.Item><Form.Item name="action_url" label="Button link" style={{ flex: 1 }}><Input placeholder="/shop" /></Form.Item></Space>
         </>}
+        {kind === 'bundle_rail' && <Form.Item name="bundle_ids" label="Offers to show"><Select mode="multiple" allowClear placeholder="Leave empty to show every active offer" options={bundles.map((bundle) => ({ value: String(bundle.id), label: bundle.name }))} /><Text type="secondary">Choose only the offers you want in this page section, or leave it empty to show all live offers.</Text></Form.Item>}
         {kind === 'grid' && <Form.List name="items">{(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }}><Text strong>Cards</Text>{fields.map((field) => <Space key={field.key} direction="vertical" style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, width: '100%' }}><Form.Item {...field} name={[field.name, 'title']} label="Card title"><Input /></Form.Item><Form.Item {...field} name={[field.name, 'body']} label="Card text"><Input.TextArea rows={2} /></Form.Item><Space style={{ display: 'flex' }}><Form.Item {...field} name={[field.name, 'actionLabel']} label="Button" style={{ flex: 1 }}><Input /></Form.Item><Form.Item {...field} name={[field.name, 'actionUrl']} label="Link" style={{ flex: 1 }}><Input placeholder="/shop" /></Form.Item></Space><Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(field.name)}>Remove card</Button></Space>)}<Button type="dashed" icon={<PlusOutlined />} onClick={() => add({})}>Add card</Button></Space>}</Form.List>}
-        <Space style={{ display: 'flex', marginTop: 18 }}><Form.Item name="sort_order" label="Display order"><InputNumber min={0} /></Form.Item><Form.Item name="is_published" label="Show this on the homepage" valuePropName="checked"><Switch checkedChildren={<EyeOutlined />} /></Form.Item></Space>
+        <Space style={{ display: 'flex', marginTop: 18 }}><Form.Item name="sort_order" label="Display order"><InputNumber min={0} /></Form.Item><Form.Item name="is_published" label={`Show this on ${pageLabel.toLowerCase()}`} valuePropName="checked"><Switch checkedChildren={<EyeOutlined />} /></Form.Item></Space>
         <Button type="primary" htmlType="submit" block size="large">{editing ? 'Save changes' : 'Add section'}</Button>
       </Form> : null}
     </Drawer>

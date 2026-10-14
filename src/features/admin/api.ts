@@ -122,6 +122,7 @@ export type ContentBlockItem = {
   imageUrl?: string;
   actionLabel?: string;
   actionUrl?: string;
+  bundleId?: string;
 };
 
 export type ContentBlock = {
