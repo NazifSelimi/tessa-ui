@@ -81,7 +81,7 @@ export default function AdminOrdersPage() {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
-      render: (items: Order['items']) => `${items?.length ?? 0} item(s)`,
+      render: (items: Order['items']) => !items?.length ? '—' : <Space direction="vertical" size={0}>{items.slice(0, 3).map((item) => <Text key={item.productId} style={{ fontSize: 12 }}>{item.quantity}× {item.productName}<Text type="secondary">{(item.brandName || item.categoryName) ? ` · ${[item.brandName, item.categoryName].filter(Boolean).join(' · ')}` : ''}</Text></Text>)}{items.length > 3 && <Text type="secondary" style={{ fontSize: 12 }}>+{items.length - 3} more</Text>}</Space>,
     },
     {
       title: 'Total',
