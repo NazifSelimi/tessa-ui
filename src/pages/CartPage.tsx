@@ -5,7 +5,7 @@
  * Mobile-responsive with card-based layout on small screens.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Typography,
@@ -13,6 +13,7 @@ import {
   Card,
   Empty,
   InputNumber,
+  Input,
   Space,
   Divider,
   Row,
@@ -35,6 +36,8 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 import ShippingProgress from '@/components/ShippingProgress';
 import { shippingForSubtotal } from '@/shared/constants/shipping';
 import { useAuth } from '@/hooks/useAuth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useGetQuickOrderProductsQuery } from '@/features/quickorder/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -42,7 +45,13 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isStylist } = useAuth();
-  const { items, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
+  const { items, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
+  const [quickSearch, setQuickSearch] = useState('');
+  const debouncedQuickSearch = useDebounce(quickSearch.trim(), 250);
+  const { data: quickProducts, isFetching: isSearchingQuickProducts } = useGetQuickOrderProductsQuery(
+    { search: debouncedQuickSearch, perPage: 8 },
+    { skip: !isStylist || debouncedQuickSearch.length < 2 },
+  );
 
   const handleQuantityChange = (productId: string | number, quantity: number | null) => {
     if (quantity && quantity > 0) {
@@ -104,6 +113,23 @@ const CartPage: React.FC = () => {
         </div>
         {isStylist && <Link to="/stylist/quick-order" style={{ display: 'inline-flex', marginTop: 12 }}><Button icon={<SearchOutlined />}>Search and add products</Button></Link>}
       </div>
+
+      {isStylist && <Card size="small" title="Add products to this order" style={{ marginBottom: 20 }} extra={<Link to="/stylist/quick-order">Open full Quick Order</Link>}>
+        <Input prefix={<SearchOutlined />} allowClear value={quickSearch} onChange={(event) => setQuickSearch(event.target.value)} placeholder="Search products, colours, or brands…" />
+        {debouncedQuickSearch.length >= 2 && <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+          {isSearchingQuickProducts ? <Text type="secondary">Searching catalogue…</Text> : !quickProducts?.data.length ? <Text type="secondary">No matching products.</Text> : quickProducts.data.map((product) => <div key={product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+            <Space><Image src={product.thumbnail || '/placeholder.svg'} preview={false} width={38} height={38} style={{ objectFit: 'contain' }} fallback="/placeholder.svg" /><span><Text strong>{product.name}</Text><br /><Text type="secondary">{formatPrice(product.stylistPrice)} · {product.stock} in stock</Text></span></Space>
+            <Button size="small" disabled={product.stock < 1} onClick={() => {
+              const existingItem = items.find((item) => String(item.productId) === product.id);
+              if (existingItem) {
+                updateQuantity(product.id, existingItem.quantity + 1);
+                return;
+              }
+              addItem({ id: product.id, name: product.name, brand: null, category: null, description: '', price: product.price, stylistPrice: product.stylistPrice, image: product.thumbnail, inStock: product.stock > 0, quantity: product.stock });
+            }}>Add</Button>
+          </div>)}
+        </div>}
+      </Card>}
 
       <Row gutter={[24, 24]}>
         {/* Cart Items - Mobile Card Layout */}
