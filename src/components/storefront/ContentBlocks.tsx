@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { ContentBlock } from '@/features/admin/api';
+import BundleDealRail from '@/components/BundleDealRail';
 
 function BlockLink({ to, children }: { to?: string | null; children: React.ReactNode }) {
   if (!to) return <>{children}</>;
@@ -12,7 +13,9 @@ export default function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
   if (!blocks.length) return null;
 
   return <>
-    {blocks.map((block) => <section key={block.id} className={block.kind === 'hero' ? 'nl-professional-invite' : 'nl-section'}>
+    {blocks.map((block) => block.kind === 'bundle_rail'
+      ? <BundleDealRail key={block.id} showEmpty />
+      : <section key={block.id} className={block.kind === 'hero' ? 'nl-professional-invite' : 'nl-section'}>
       {block.imageUrl && <img src={block.imageUrl} alt="" style={{ width: block.kind === 'hero' ? 180 : '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 12 }} />}
       <div style={{ width: '100%' }}>
         {block.eyebrow && <span className="nl-eyebrow">{block.eyebrow}</span>}

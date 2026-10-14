@@ -114,7 +114,7 @@ type BundlePayload = {
   products: Array<{ product_id: string | number; quantity: number; bonus_quantity?: number }>;
 };
 
-export type ContentBlockKind = 'hero' | 'grid' | 'rich_text' | 'cta';
+export type ContentBlockKind = 'hero' | 'grid' | 'rich_text' | 'cta' | 'bundle_rail';
 
 export type ContentBlockItem = {
   title?: string;
