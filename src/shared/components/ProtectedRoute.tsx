@@ -7,7 +7,7 @@ import type { UserRole } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  requiredRole?: UserRole | UserRole[];
   allowIncompleteProfile?: boolean;
 }
 
@@ -34,7 +34,9 @@ export default function ProtectedRoute({ children, requiredRole, allowIncomplete
     return <Navigate to={`/login?continue=${encodeURIComponent(continueTo)}`} state={{ from: continueTo }} replace />;
   }
 
-  if (requiredRole && currentRole !== requiredRole) {
+  const allowedRoles = requiredRole ? (Array.isArray(requiredRole) ? requiredRole : [requiredRole]) : [];
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(currentRole)) {
     return <Navigate to="/" replace />;
   }
 

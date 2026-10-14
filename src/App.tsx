@@ -50,6 +50,7 @@ const AdminDistributorsPage = lazy(() => import('./pages/admin/AdminDistributors
 const AdminStylistRequestsPage = lazy(() => import('./pages/admin/AdminStylistRequestsPage'));
 const AdminStylistInvitationsPage = lazy(() => import('./pages/admin/AdminStylistInvitationsPage'));
 const AdminBundlesPage = lazy(() => import('./pages/admin/AdminBundlesPage'));
+const AdminContentBlocksPage = lazy(() => import('./pages/admin/AdminContentBlocksPage'));
 const AdminCatalogImagesPage = lazy(() => import('./pages/admin/AdminCatalogImagesPage'));
 const StylistWorkspacePage = lazy(() => import('./pages/stylist/StylistWorkspacePage'));
 const DistributorPortalPage = lazy(() => import('./pages/distributor/DistributorPortalPage'));
@@ -188,11 +189,11 @@ function App() {
                   </ProtectedRoute>
                 } />
 
-              <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole="stylist"><StylistWorkspacePage /></ProtectedRoute>} />
+              <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole={['stylist', 'admin']}><StylistWorkspacePage /></ProtectedRoute>} />
 
                 {/* Stylist quick-order – stylist role required */}
                 <Route path="/stylist/quick-order" element={
-                  <ProtectedRoute requiredRole="stylist">
+                  <ProtectedRoute requiredRole={['stylist', 'admin']}>
                     <StylistQuickOrderPage />
                   </ProtectedRoute>
                 } />
@@ -232,6 +233,7 @@ function App() {
                 <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
                 <Route path="/admin/stylist-invitations" element={<AdminStylistInvitationsPage />} />
                 <Route path="/admin/bundles" element={<AdminBundlesPage />} />
+                <Route path="/admin/content-blocks" element={<AdminContentBlocksPage />} />
                 <Route path="/admin/catalog-images" element={<AdminCatalogImagesPage />} />
               </Route>
 

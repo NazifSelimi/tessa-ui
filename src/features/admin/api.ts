@@ -114,6 +114,50 @@ type BundlePayload = {
   products: Array<{ product_id: string | number; quantity: number; bonus_quantity?: number }>;
 };
 
+export type ContentBlockKind = 'hero' | 'grid' | 'rich_text' | 'cta';
+
+export type ContentBlockItem = {
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  actionLabel?: string;
+  actionUrl?: string;
+};
+
+export type ContentBlock = {
+  id: string;
+  key: string;
+  page: string;
+  section: string;
+  kind: ContentBlockKind;
+  eyebrow?: string | null;
+  title?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+  actionLabel?: string | null;
+  actionUrl?: string | null;
+  items: ContentBlockItem[];
+  isPublished: boolean;
+  sortOrder: number;
+  updatedAt?: string | null;
+};
+
+export type ContentBlockPayload = {
+  key: string;
+  page: string;
+  section: string;
+  kind: ContentBlockKind;
+  eyebrow?: string | null;
+  title?: string | null;
+  body?: string | null;
+  image_url?: string | null;
+  action_label?: string | null;
+  action_url?: string | null;
+  items?: ContentBlockItem[];
+  is_published?: boolean;
+  sort_order?: number;
+};
+
 export const adminApi = baseApi.injectEndpoints({
   overrideExisting: false,
   endpoints: (builder) => ({
@@ -509,6 +553,37 @@ export const adminApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/v1/admin/bundles/${id}`, method: 'DELETE' }),
       invalidatesTags: [API_TAGS.Bundles],
     }),
+
+    // ==================== EDITABLE STOREFRONT CONTENT ====================
+
+    getContentBlocks: builder.query<ContentBlock[], void>({
+      query: () => '/v1/admin/content-blocks',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    getPublishedContentBlocks: builder.query<ContentBlock[], string | void>({
+      query: (page) => ({ url: '/v1/content-blocks', params: page ? { page } : {} }),
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    createContentBlock: builder.mutation<ContentBlock, ContentBlockPayload>({
+      query: (body) => ({ url: '/v1/admin/content-blocks', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    updateContentBlock: builder.mutation<ContentBlock, { id: string; data: ContentBlockPayload }>({
+      query: ({ id, data }) => ({ url: `/v1/admin/content-blocks/${id}`, method: 'PUT', body: data }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    deleteContentBlock: builder.mutation<void, string>({
+      query: (id) => ({ url: `/v1/admin/content-blocks/${id}`, method: 'DELETE' }),
+      invalidatesTags: [API_TAGS.ContentBlocks],
+    }),
   }),
 });
 
@@ -549,4 +624,9 @@ export const {
   useCreateBundleMutation,
   useUpdateBundleMutation,
   useDeleteBundleMutation,
+  useGetContentBlocksQuery,
+  useGetPublishedContentBlocksQuery,
+  useCreateContentBlockMutation,
+  useUpdateContentBlockMutation,
+  useDeleteContentBlockMutation,
 } = adminApi;
