@@ -21,12 +21,14 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const consumerStorePreview = isStylist && location.pathname === '/shop' && new URLSearchParams(location.search).get('view') === 'consumer';
+  const professionalShell = isStylist && !consumerStorePreview;
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
   useEffect(() => { setSearch(new URLSearchParams(location.search).get('search') || ''); }, [location.search]);
 
-  const home = isStylist ? '/stylist/workspace' : '/';
-  const navigation = isStylist ? [
+  const home = professionalShell ? '/stylist/workspace' : '/';
+  const navigation = professionalShell ? [
     { to: home, label: t('newLook.home'), icon: Home },
     { to: '/shop', label: t('newLook.products'), icon: Package },
     { to: '/stylist/quick-order', label: t('nav.quickOrder'), icon: Zap },
@@ -66,12 +68,12 @@ export default function MainLayout() {
   ];
 
   return <ConfigProvider theme={{ token: { colorPrimary: '#9b5364', colorText: '#242124', colorBgContainer: '#ffffff', colorBorder: '#e8e2dc', borderRadius: 12, fontFamily: "'Manrope', 'DM Sans', sans-serif" }, components: { Button: { primaryColor: '#ffffff', controlHeight: 44 }, Card: { borderRadiusLG: 18 }, Input: { controlHeight: 44 }, Select: { controlHeight: 44 } } }}>
-    <div className={`tessa-design ${isStylist ? 'nl-professional' : 'nl-consumer'}`}>
+    <div className={`tessa-design ${professionalShell ? 'nl-professional' : 'nl-consumer'}`}>
       <a className="nl-skip-link" href="#page-content">{t('newLook.skipContent')}</a>
-      {isStylist && <aside className="nl-sidebar">{sidebar}</aside>}
+      {professionalShell && <aside className="nl-sidebar">{sidebar}</aside>}
       <div className="nl-main-area">
         <header className="nl-topbar">
-          {isStylist ? <>
+          {professionalShell ? <>
             <button className="nl-menu-toggle nl-icon-button" onClick={() => setMenuOpen(true)} aria-label={t('nav.openMenu')} aria-expanded={menuOpen}><Menu size={22} /></button>
             <Link className="nl-mobile-logo" to={home} aria-label="Tessa"><Logo height={26} /></Link>
             <form className="nl-top-search nl-search" role="search" onSubmit={e => { e.preventDefault(); navigate(`/shop${search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ''}`); }}>
@@ -83,11 +85,11 @@ export default function MainLayout() {
             <nav className="nl-desktop-nav" aria-label={t('newLook.navigation')}>{navigation.slice(0, 3).map(({ to, label }) => <NavLink key={to} to={to} end={to === '/'}>{label}</NavLink>)}</nav>
           </>}
           <div className="nl-top-actions">
-            {!isStylist && <Link className="nl-audience-link" to="/for-professionals"><UserRoundCheck size={17} />{t('nav.forProfessionals')}</Link>}
+            {!professionalShell && <Link className="nl-audience-link" to="/for-professionals"><UserRoundCheck size={17} />{t('nav.forProfessionals')}</Link>}
             <LanguageSwitcher />
-            {!isStylist && <Link className="nl-icon-button" to="/shop?focus=search" aria-label={t('newLook.search')}><Search size={21} /></Link>}
-            <Link to="/cart" className={isStylist ? 'nl-cart-button' : 'nl-icon-button nl-cart-icon'} aria-label={`${t('cart.shoppingCart')} (${itemCount})`}><ShoppingBag size={20} />{(isStylist || itemCount > 0) && <em>{itemCount}</em>}{isStylist && <b>{formatPrice(subtotal)}</b>}</Link>
-            {!isStylist && <Dropdown menu={{ items: accountItems }} trigger={['click']}><button className="nl-icon-button nl-account-button" aria-label={t('auth.account')}><UserRound size={20} /></button></Dropdown>}
+            {!professionalShell && <Link className="nl-icon-button" to="/shop?focus=search" aria-label={t('newLook.search')}><Search size={21} /></Link>}
+            <Link to="/cart" className={professionalShell ? 'nl-cart-button' : 'nl-icon-button nl-cart-icon'} aria-label={`${t('cart.shoppingCart')} (${itemCount})`}><ShoppingBag size={20} />{(professionalShell || itemCount > 0) && <em>{itemCount}</em>}{professionalShell && <b>{formatPrice(subtotal)}</b>}</Link>
+            {!professionalShell && <Dropdown menu={{ items: accountItems }} trigger={['click']}><button className="nl-icon-button nl-account-button" aria-label={t('auth.account')}><UserRound size={20} /></button></Dropdown>}
           </div>
         </header>
         <main id="page-content" className="nl-content" tabIndex={-1}><Outlet /></main>
@@ -99,7 +101,7 @@ export default function MainLayout() {
         </footer>
       </div>
       <nav className="nl-mobile-nav" aria-label={t('newLook.mobileNavigation')}>{navLinks()}</nav>
-      {isStylist && <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} placement="left" width={280} title={t('newLook.navigation')}><div className="tessa-design nl-drawer-sidebar">{sidebar}</div></Drawer>}
+      {professionalShell && <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} placement="left" width={280} title={t('newLook.navigation')}><div className="tessa-design nl-drawer-sidebar">{sidebar}</div></Drawer>}
       <Suspense fallback={null}><CartDrawer /></Suspense>
     </div>
   </ConfigProvider>;
