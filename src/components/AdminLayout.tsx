@@ -29,6 +29,7 @@ import {
   QrcodeOutlined,
   PictureOutlined,
   AuditOutlined,
+  ExperimentOutlined,
   LayoutOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -85,6 +86,7 @@ const pendingCount = 0;
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
     { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Catalogue Review</Link> },
+    { key: '/admin/hair-quiz', icon: <ExperimentOutlined />, label: <Link to="/admin/hair-quiz">Hair Quiz</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
   ], [pendingCount]);
   const [collapsed, setCollapsed] = useState(false);
