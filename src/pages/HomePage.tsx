@@ -8,15 +8,20 @@ import { CatalogState, PageHeading, ProductImage, SectionHeading } from '@/compo
 import ContentBlocks from '@/components/storefront/ContentBlocks';
 import HomePageEditor from '@/components/storefront/HomePageEditor';
 import Seo from '@/shared/components/Seo';
+import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 
 export default function HomePage() {
   const { t } = useTranslation();
   const { user, isStylist, isAdmin } = useAuth();
-  const { data, isLoading, error, refetch } = useGetProductsQuery({ perPage: 8 }, { skip: isStylist });
+  // In-stock only, so the home page shows buyable products with real photos.
+  const { data, isLoading, error, refetch } = useGetProductsQuery({ perPage: 12, in_stock: 1 }, { skip: isStylist });
   const { data: contentBlocks = [] } = useGetPublishedContentBlocksQuery('home', { skip: isStylist });
-  const products = (data?.data || []).filter(product => !product.stylistOnly && !product.catalogGuidance?.professionalOnly);
-  const hero = products.find(product => product.image || product.images?.length);
+  // Catalogue duplicates share a name (e.g. two "Botugen 1000ml" rows); show each once.
+  const products = (data?.data || [])
+    .filter(product => !product.stylistOnly && !product.catalogGuidance?.professionalOnly && storefrontImageUrl(product))
+    .filter((product, index, list) => list.findIndex(other => other.name.trim().toLowerCase() === product.name.trim().toLowerCase()) === index);
+  const hero = products[0];
   const concerns = ['repair', 'blonde-and-tone', 'curls', 'smooth-and-anti-frizz'];
 
   if (isStylist) return <Navigate to="/stylist/workspace" replace />;
