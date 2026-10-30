@@ -1,9 +1,15 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { validateBuildApiUrl } from './scripts/validate-build-env'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command, mode }) => {
+  if (command === 'build') {
+    const env = loadEnv(mode, process.cwd(), 'VITE_')
+    validateBuildApiUrl(process.env.VITE_API_URL ?? env.VITE_API_URL, mode)
+  }
+  return {
   plugins: [react()],
   resolve: {
     alias: {
@@ -22,4 +28,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

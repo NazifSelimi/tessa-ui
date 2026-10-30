@@ -31,6 +31,8 @@ import uiReducer from '@/features/ui/slice';
 
 // Canonical API instance
 import { baseApi } from '@/api/baseApi';
+import { createSessionCacheMiddleware } from './sessionCacheMiddleware';
+import { createCartPersistConfig } from './cartPersistence';
 
 // Import feature API files so their injectEndpoints() calls execute at startup.
 // The imported modules don't add new reducers; they register endpoints on baseApi.
@@ -44,11 +46,7 @@ import '@/features/recommendations/api';
 import '@/features/quickorder/api';
 
 // Persist configuration for cart
-const cartPersistConfig = {
-  key: 'tessa_cart',
-  storage,
-  whitelist: ['items'], // Only persist items, not drawer state
-};
+const cartPersistConfig = createCartPersistConfig(storage);
 
 // Persist configuration for auth
 const authPersistConfig = {
@@ -79,7 +77,7 @@ export const store = configureStore({
         // Ignore redux-persist actions
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(baseApi.middleware),
+    }).concat(createSessionCacheMiddleware(baseApi.util.resetApiState), baseApi.middleware),
   devTools: import.meta.env.DEV,
 });
 
