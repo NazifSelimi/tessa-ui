@@ -10,7 +10,7 @@
  * - Related products
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Row, Col, Typography, Button, InputNumber, Space, 
@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons';
 import PriceDisplay from '@/components/PriceDisplay';
 import ProductCard from '@/components/ProductCard';
+import ShadePicker from '@/components/ShadePicker';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,13 @@ export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const localizedDescription = useLocalizedDescription(product ?? null);
+
+  // Switching shade keeps this page mounted; start the new product fresh.
+  useEffect(() => {
+    setSelectedImage(0);
+    setQuantity(1);
+    setIsZoomed(false);
+  }, [id]);
 
   // Handle add to cart
   const handleAddToCart = () => {
@@ -239,6 +247,10 @@ export default function ProductPage() {
           </Space>
 
           <Divider style={{ margin: 'var(--spacing-lg) 0' }} />
+
+          {product.shades && product.shades.length > 1 && (
+            <ShadePicker currentId={product.id} shades={product.shades} />
+          )}
 
           {/* Price Display */}
           <div style={{ marginBottom: 'var(--spacing-xl)' }}>

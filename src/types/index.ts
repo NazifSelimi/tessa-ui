@@ -65,6 +65,12 @@ export interface Product {
   };
   inStock?: boolean;
   quantity?: number;
+  /** Colour lines: this product's shade and the other shades of its line (product page only). */
+  shadeCode?: string | null;
+  shadeName?: string | null;
+  swatch?: string | null;
+  shadeFamily?: { id: string; name: string } | null;
+  shades?: ProductShade[];
   featured?: boolean;
   tags?: string[];
   hairTypeIds?: number[];
@@ -74,6 +80,15 @@ export interface Product {
   metaDescription?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ProductShade {
+  id: string;
+  name: string;
+  shadeCode: string | null;
+  shadeName: string | null;
+  swatch: string | null;
+  inStock: boolean;
 }
 
 export interface ProductMediaAsset {
