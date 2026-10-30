@@ -113,9 +113,9 @@
 .nl-product-badge, .nl-stock-badge { position: absolute; top: 12px; left: 12px; font-size: 9px; font-weight: 700; padding: 4px 9px; border-radius: 20px; background: #fffdf8ed; color: #7b5362; }
 .nl-stock-badge { top: auto; bottom: 12px; background: #fff; color: #6b625e; }
 .nl-product-info { padding: 17px 16px 8px; flex: 1; }
-.nl-product-info > small { text-transform: uppercase; font-size: 9px; letter-spacing: .12em; color: #8c727a; }
+.nl-product-info > small { display: block; text-transform: uppercase; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: #9b5364; }
 .nl-product-info h3 { margin: 6px 0; font-size: 14px; line-height: 1.45; font-family: var(--font-family); font-weight: 800; overflow-wrap: anywhere; }
-.nl-product-info > span { display: block; font-size: 10px; color: #817974; margin-bottom: 10px; }
+.nl-product-info > .nl-product-category { display: block; width: fit-content; max-width: 100%; font-size: 12px; font-weight: 700; line-height: 1.3; color: #7d3f4e; background: #f6e9ec; border-radius: 99px; padding: 4px 10px; margin-bottom: 10px; overflow-wrap: anywhere; }
 .nl-product-info .price-display { min-height: 25px; flex-wrap: wrap; gap: 6px; }
 .tessa-design .price-display__current { color: var(--nl-ink); font-size: 14px !important; font-weight: 800; }
 .tessa-design .price-display__current--stylist { color: #9b5364; }
@@ -283,7 +283,8 @@
   .nl-product-art { height: 185px; }
   .nl-product-info { padding: 13px 12px 5px; }
   .nl-product-info h3 { font-size: 12px; }
-  .nl-product-info > small { font-size: 8px; }
+  .nl-product-info > small { font-size: 10.5px; }
+  .nl-product-info > .nl-product-category { font-size: 10.5px; padding: 3px 8px; }
   .nl-product-action { padding: 8px 11px 12px; }
   .nl-add-button { font-size: 10px !important; padding: 8px 3px; }
   .nl-professional-invite { padding: 25px 22px; gap: 12px; }

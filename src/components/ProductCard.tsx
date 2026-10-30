@@ -24,7 +24,7 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, pr
       {product.featured && <span className="nl-product-badge">{t('product.featured')}</span>}
       {!inStock && <span className="nl-stock-badge">{t('product.outOfStock')}</span>}
     </Link>
-    <div className="nl-product-info"><small>{brand || 'Tessa'}</small><Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link><span>{category}</span><PriceDisplay product={product} /></div>
+    <div className="nl-product-info"><small>{brand || 'Tessa'}</small><Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link>{category && <span className="nl-product-category">{category}</span>}<PriceDisplay product={product} /></div>
     {showQuickAdd && <div className="nl-product-action">{quantity > 0 ? <div className="nl-quantity">
       <button onClick={() => updateQuantity(product.id, quantity - 1)} aria-label={t('newLook.decrease', { name: product.name })}><Minus size={16} /></button>
       <output aria-live="polite" aria-label={t('newLook.quantity', { name: product.name })}>{quantity}</output>
