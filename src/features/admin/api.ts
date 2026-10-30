@@ -42,6 +42,7 @@ interface AdminStylistRequestsQueryParams {
 }
 
 interface AdminUsersQueryParams {
+  sort?: string;
   page?: number;
   per_page?: number;
   search?: string;

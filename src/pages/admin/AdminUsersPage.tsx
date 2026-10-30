@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Typography, Table, Tag, Select, Input, Space, Card, Button, Popconfirm, Modal, Form, Descriptions, App } from 'antd';
+import { Typography, Table, Tag, Select, Input, Space, Card, Button, Popconfirm, Modal, Form, Descriptions, App, Alert } from 'antd';
 import { SearchOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { 
   useGetAllUsersQuery, 
@@ -25,7 +25,6 @@ const roleOptions = [
   { value: 'all', label: 'All Roles' },
   { value: 'user', label: 'User' },
   { value: 'stylist', label: 'Stylist' },
-  { value: 'distributor', label: 'Distributor' },
   { value: 'admin', label: 'Admin' },
 ];
 
@@ -38,16 +37,18 @@ export default function AdminUsersPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [form] = Form.useForm();
-  const perPage = 20;
+  const [perPage, setPerPage] = useState(20);
+  const [sort, setSort] = useState('newest');
 
   const debouncedSearch = useDebounce(search, 300);
 
   // Only search if 2+ characters
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
 
-  const { data, isLoading } = useGetAllUsersQuery({
+  const { data, isFetching, error, refetch } = useGetAllUsersQuery({
     page,
     per_page: perPage,
+    sort,
     search: searchQuery,
     role: (roleFilter === 'all' || roleFilter === 'guest' || roleFilter === 'distributor') ? undefined : roleFilter,
   });
@@ -117,7 +118,7 @@ export default function AdminUsersPage() {
       key: 'user',
       render: (_: unknown, record: User) => (
         <div>
-          <Text strong>{[record.firstName, record.lastName].filter(Boolean).join(' ') || '—'}</Text>
+          <Button type="link" style={{ padding: 0 }} onClick={(e) => { e.stopPropagation(); handleView(record); }}>{[record.firstName, record.lastName].filter(Boolean).join(' ') || '—'}</Button>
           <br />
           <Text type="secondary">{record.email}</Text>
         </div>
@@ -134,19 +135,7 @@ export default function AdminUsersPage() {
       dataIndex: 'role',
       key: 'role',
       render: (role: UserRole, record: User) => (
-        <Select
-          value={role}
-          onChange={(val) => handleRoleChange(record.id, val)}
-          onClick={(e) => e.stopPropagation()}
-          style={{ width: 120 }}
-          size="small"
-        >
-          {roleOptions.filter(o => o.value !== 'all').map(opt => (
-            <Select.Option key={opt.value} value={opt.value}>
-              <Tag color={roleColors[opt.value as UserRole]}>{opt.label}</Tag>
-            </Select.Option>
-          ))}
-        </Select>
+        <Tag color={roleColors[role]}>{role === 'user' ? 'Customer' : role}</Tag>
       ),
     },
     {
@@ -198,35 +187,39 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Users</Title>
           <Text type="secondary">{data?.meta?.total || 0} registered users</Text>
         </div>
-        <Space>
+        <Space wrap>
           <Input
-            placeholder="Search users (min 2 chars)..."
+            placeholder="Name, email or phone…"
             prefix={<SearchOutlined />}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{ width: 200 }}
             allowClear
           />
           <Select
             value={roleFilter}
-            onChange={setRoleFilter}
+            onChange={(value) => { setRoleFilter(value); setPage(1); }}
             options={roleOptions}
             style={{ width: 130 }}
           />
+          <Select aria-label="Sort users" value={sort} style={{ width: 180 }} onChange={value => { setSort(value); setPage(1); }} options={[{ value: 'newest', label: 'Newest first' }, { value: 'oldest', label: 'Oldest first' }, { value: 'name_asc', label: 'Name A–Z' }, { value: 'name_desc', label: 'Name Z–A' }, { value: 'email_asc', label: 'Email A–Z' }]} />
+          <Button onClick={() => refetch()}>Refresh</Button>
         </Space>
       </div>
 
+      {error && <Alert type="error" message="Users could not be loaded. Check your connection and retry." action={<Button onClick={() => refetch()}>Retry</Button>} />}
       <Card>
         <Table
           dataSource={data?.data || []}
           columns={columns}
           rowKey="id"
-          loading={isLoading}
+          loading={isFetching}
+          scroll={{ x: 800 }}
           onRow={(record) => ({
             onClick: () => handleView(record),
             style: { cursor: 'pointer' },
@@ -235,8 +228,9 @@ export default function AdminUsersPage() {
             current: page,
             pageSize: perPage,
             total: data?.meta?.total || 0,
-            onChange: setPage,
-            showSizeChanger: false,
+            onChange: (nextPage, size) => { setPage(size !== perPage ? 1 : nextPage); setPerPage(size); },
+            showSizeChanger: true,
+            pageSizeOptions: [20, 50, 100],
             showTotal: (total) => `Total ${total} users`,
           }}
         />
@@ -251,6 +245,7 @@ export default function AdminUsersPage() {
           setSelectedUser(null);
         }}
         footer={[
+          <Button key="edit" type="primary" onClick={() => { if (selectedUser) { setViewModalOpen(false); handleEdit(selectedUser); } }}>Edit user</Button>,
           <Button key="close" onClick={() => setViewModalOpen(false)}>
             Close
           </Button>

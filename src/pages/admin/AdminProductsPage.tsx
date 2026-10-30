@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch, Checkbox } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
@@ -383,8 +384,9 @@ export default function AdminProductsPage() {
       key: 'actions',
       render: (_: unknown, record: Product) => (
         <Space onClick={(e) => e.stopPropagation()}>
-          <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+          <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
+          <Link to={`/admin/catalog-images?product=${record.id}`}>Images</Link>
+          <Button type="text" aria-label={`Delete ${record.name}`} danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
         </Space>
       ),
     },

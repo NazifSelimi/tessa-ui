@@ -28,6 +28,7 @@ import {
   CloseOutlined,
   QrcodeOutlined,
   PictureOutlined,
+  AuditOutlined,
   LayoutOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +50,7 @@ const pageTitles: Record<string, string> = {
   '/admin/bundles': 'Offers & Bundles',
   '/admin/content-blocks': 'Editable Sections',
   '/admin/catalog-images': 'Image Review',
+  '/admin/catalogue-review': 'Catalogue Review',
 };
 
 export default function AdminLayout() {
@@ -82,6 +84,7 @@ const pendingCount = 0;
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
+    { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Catalogue Review</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
   ], [pendingCount]);
   const [collapsed, setCollapsed] = useState(false);
