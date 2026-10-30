@@ -136,7 +136,7 @@ async function fetchProducts(apiBase) {
   const timer = setTimeout(() => controller.abort(), 7000);
 
   try {
-    const response = await fetch(`${absoluteApiBase.replace(/\/$/, '')}/v1/products?perPage=500&sort=name_asc`, {
+    const response = await fetch(`${absoluteApiBase.replace(/\/$/, '')}/v1/products?perPage=500&sort=name_asc&shades=all`, {
       headers: { Accept: 'application/json', 'Accept-Language': 'mk' },
       signal: controller.signal,
     });

@@ -123,6 +123,11 @@
 .nl-product-action { padding: 10px 16px 16px; }
 .nl-add-button { min-height: 44px; width: 100%; border: 1px solid #eadfe2; border-radius: 10px; background: #fbf4f6; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px !important; color: #804353; font-weight: 800 !important; }
 .nl-add-button:hover { background: #f4e2e8; }
+.nl-choose-shade { text-decoration: none; }
+.nl-shade-summary { display: flex; align-items: center; gap: 4px; margin: 0 0 10px; min-width: 0; }
+.nl-shade-summary img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; border: 1px solid #fff; box-shadow: 0 0 0 1px #eadfe2; flex: 0 0 auto; }
+.nl-shade-summary img + img { margin-left: -8px; }
+.nl-shade-summary span { margin-left: 4px; font-size: 12px; font-weight: 700; color: #7d3f4e; white-space: nowrap; }
 .nl-quantity { display: flex; justify-content: space-between; align-items: center; border: 1px solid #e6dce0; border-radius: 10px; min-height: 44px; overflow: hidden; }
 .nl-quantity button { border: 0; background: transparent; width: 44px; height: 44px; display: grid; place-items: center; }
 .nl-quantity output { font-weight: 800; }
@@ -445,3 +450,7 @@
 }
 .nl-search:focus-within { outline: 2px solid #9b5364; outline-offset: 2px; }
 .tessa-design .nl-search input:focus-visible { outline: none; }
+@media (max-width: 640px) {
+  .nl-shade-summary img:nth-of-type(n + 4) { display: none; }
+  .nl-shade-summary span { font-size: 11px; }
+}

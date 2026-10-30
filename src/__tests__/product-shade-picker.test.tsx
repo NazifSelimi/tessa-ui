@@ -40,3 +40,22 @@ describe('shade picker', () => {
     expect(container.innerHTML).toBe('');
   });
 });
+
+describe('colour line shop card', () => {
+  it('shows the line name and shade count and links to the shade picker instead of adding to cart', async () => {
+    vi.doMock('@/hooks/useCart', () => ({ useCart: () => ({ addItem: vi.fn(), getCartItem: () => undefined, updateQuantity: vi.fn() }) }));
+    vi.doMock('@/components/PriceDisplay', () => ({ default: () => null }));
+    vi.doMock('@/components/storefront/DesignPrimitives', () => ({ ProductImage: () => null }));
+    const { default: ProductCard } = await import('@/components/ProductCard');
+
+    render(<MemoryRouter><ProductCard product={{
+      id: '1', name: '1.0 - Black 100ml', brand: { id: '1', name: 'Fanola' }, category: { id: '2', name: 'Hair Color' }, description: '',
+      inStock: true, shadeCount: 107, shadePreview: ['https://img.test/a.jpg'], shadeFamily: { id: '1', name: 'Fanola Colouring Cream' },
+    }} /></MemoryRouter>);
+
+    expect(screen.getByRole('heading', { name: 'Fanola Colouring Cream' })).toBeTruthy();
+    expect(screen.getByText('product.shadeCount 107')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'product.chooseShade' }).getAttribute('href')).toBe('/product/1');
+    expect(screen.queryByRole('button', { name: /product.addToCart/ })).toBeNull();
+  });
+});

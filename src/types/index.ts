@@ -71,6 +71,9 @@ export interface Product {
   swatch?: string | null;
   shadeFamily?: { id: string; name: string } | null;
   shades?: ProductShade[];
+  /** Shop cards only: this card stands for a colour line with this many shades. */
+  shadeCount?: number;
+  shadePreview?: string[];
   featured?: boolean;
   tags?: string[];
   hairTypeIds?: number[];
