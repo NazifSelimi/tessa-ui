@@ -32,6 +32,7 @@ import Seo from '@/shared/components/Seo';
 import { site } from '@/shared/config/site';
 import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
 import type { ProductMediaAsset } from '@/types';
+import { isPendingPlaceholderUrl, storefrontBrandName, storefrontCategoryName } from '@/shared/utils/storefrontCatalog';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -97,18 +98,18 @@ export default function ProductPage() {
 
   // Resolve the product image URL
   const NO_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="100%" height="100%" fill="%23f5f5f5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif" font-size="18">No image</text></svg>';
-  const media = product.media ?? [];
+  const media = (product.media ?? []).filter((asset) => !isPendingPlaceholderUrl(asset.url));
   const detailMedia = media.filter((asset) => asset.url && asset.variant !== 'card' && asset.variant !== 'transparent_master');
   const nonOriginalMedia = media.filter((asset) => asset.url && asset.variant !== 'original');
   const legacyMedia = (product.images?.length ? product.images : (product.image ? [product.image] : []))
-    .filter(Boolean)
+    .filter((url) => Boolean(url) && !isPendingPlaceholderUrl(url))
     .map((url) => ({ url, alt: product.name, variant: 'legacy' } as Pick<ProductMediaAsset, 'url' | 'alt' | 'variant'>));
   const productImages = detailMedia.length ? detailMedia : (nonOriginalMedia.length ? nonOriginalMedia : legacyMedia);
   const selectedAsset = productImages[selectedImage] ?? productImages[0];
   const mainImage = selectedAsset?.url ?? NO_IMAGE;
-  const brandName = typeof product.brand === 'object' ? product.brand?.name ?? '' : product.brand ?? '';
-  const categoryName = typeof product.category === 'object' ? product.category?.name ?? '' : product.category ?? '';
-  const description = (localizedDescription || `${product.name} ${categoryName} from ${brandName}`)
+  const brandName = storefrontBrandName(product);
+  const categoryName = storefrontCategoryName(product);
+  const description = (localizedDescription || `${product.name}${categoryName ? ` ${categoryName}` : ''}${brandName ? ` from ${brandName}` : ''}`)
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 180);
@@ -175,7 +176,7 @@ export default function ProductPage() {
         style={{ marginBottom: 'var(--spacing-xl)' }}
         items={[
           { title: <Link to="/shop">{t('nav.shop')}</Link> },
-          { title: typeof product.brand === 'object' ? product.brand?.name : product.brand },
+          ...(brandName ? [{ title: brandName }] : []),
           { title: product.name },
         ]}
       />
@@ -219,9 +220,9 @@ export default function ProductPage() {
         {/* Product Info */}
         <div className="product-detail__info">
           {/* Brand */}
-          <Text className="product-detail__brand">
-            {typeof product.brand === 'object' ? product.brand?.name : product.brand}
-          </Text>
+          {brandName && <Text className="product-detail__brand">
+            {brandName}
+          </Text>}
           
           {/* Title */}
           <Title level={2} className="product-detail__title">
@@ -231,7 +232,7 @@ export default function ProductPage() {
           {/* Tags */}
           <Space style={{ marginBottom: 'var(--spacing-lg)' }}>
             {product.featured && <Tag color="gold">Featured</Tag>}
-            <Tag>{(typeof product.category === 'object' ? (product.category?.name ?? '') : (product.category ?? '')).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Tag>
+            {categoryName && <Tag>{categoryName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Tag>}
           </Space>
 
           <Divider style={{ margin: 'var(--spacing-lg) 0' }} />
@@ -336,9 +337,9 @@ export default function ProductPage() {
                 children: (
                   <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 24px' }}>
                     <Text type="secondary">{t('product.brand')}</Text>
-                    <Text strong>{typeof product.brand === 'object' ? product.brand?.name : product.brand}</Text>
+                    <Text strong>{brandName || '—'}</Text>
                     <Text type="secondary">{t('product.category')}</Text>
-                    <Text strong>{typeof product.category === 'object' ? product.category?.name : product.category}</Text>
+                    <Text strong>{categoryName || '—'}</Text>
                     <Text type="secondary">{t('product.availability')}</Text>
                     <Text strong style={{ color: inStock ? 'var(--color-success)' : 'var(--color-error)' }}>
                       {inStock ? t('product.inStock') : t('product.outOfStock')}

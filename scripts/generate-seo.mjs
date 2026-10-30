@@ -244,10 +244,13 @@ for (const product of products) {
   for (const locale of urlLocales) {
     const labels = labelsByLocale[locale];
     const appLocale = appLocaleByUrl[locale];
-    const brand = typeof product.brand === 'object' ? product.brand?.name : product.brand;
-    const category = typeof product.category === 'object' ? product.category?.name : product.category;
+    // Same storefront rules as src/shared/utils/storefrontCatalog.ts: hide importer fallbacks.
+    const rawBrand = typeof product.brand === 'object' ? product.brand?.name : product.brand;
+    const rawCategory = typeof product.category === 'object' ? product.category?.name : product.category;
+    const brand = rawBrand && rawBrand.trim().toLowerCase() !== 'supplier catalogue' ? rawBrand : '';
+    const category = rawCategory && rawCategory.trim().toLowerCase() !== 'catalogue review' ? rawCategory : '';
     const description = (product.translations?.[appLocale] || product.description || `${product.name} ${category || ''} ${brand || ''}`).replace(/\s+/g, ' ').trim();
-    const image = product.image || product.images?.[0];
+    const image = [product.image, ...(product.images ?? [])].find(url => url && !url.includes('/catalog-placeholders/'));
     const price = Number(product.sale?.price ?? product.price ?? 0).toFixed(2);
     const routePath = `/product/${product.id}`;
     const productUrl = absoluteUrl(localizedPath(routePath, locale));

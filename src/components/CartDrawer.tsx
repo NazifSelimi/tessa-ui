@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import ShippingProgress from './ShippingProgress';
+import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 
 const { Text } = Typography;
 
@@ -136,7 +137,7 @@ export default function CartDrawer() {
           {items.map((item, index) => {
             const price = getItemPrice(item);
             const total = getItemTotal(item);
-            const imageUrl = (item.product.images && item.product.images[0]) || item.product.image || '/placeholder.svg';
+            const imageUrl = storefrontImageUrl(item.product) || '/placeholder.svg';
             
             return (
               <div key={`${item.productId}`}>
@@ -163,7 +164,7 @@ export default function CartDrawer() {
                       {item.product.name}
                     </Text>
                     <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
-                      {typeof item.product.brand === 'object' ? item.product.brand?.name : item.product.brand}
+                      {storefrontBrandName(item.product)}
                     </Text>
                     
                     {/* Price & Quantity Row */}

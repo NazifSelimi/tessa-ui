@@ -36,6 +36,7 @@ import {
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -412,7 +413,7 @@ export default function CheckoutPage() {
                       className="checkout-item"
                     >
                       <Image
-                        src={item.product.images?.[0] || item.product.image || '/placeholder.svg'}
+                        src={storefrontImageUrl(item.product) || '/placeholder.svg'}
                         alt={item.product.name}
                         width={60}
                         height={60}
@@ -468,7 +469,7 @@ export default function CheckoutPage() {
                   className="order-summary__item"
                 >
                   <Image
-                    src={item.product.images?.[0] || item.product.image || '/placeholder.svg'}
+                    src={storefrontImageUrl(item.product) || '/placeholder.svg'}
                     alt={item.product.name}
                     width={48}
                     height={48}

@@ -10,6 +10,7 @@ import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetBrandsQuery, useGetCategoriesQuery, useGetProductCollectionsQuery, useGetProductsQuery } from '@/features/products/api';
 import ProductCard from '@/components/ProductCard';
+import { visibleBrands, visibleCategories } from '@/shared/utils/storefrontCatalog';
 import BundleDealRail from '@/components/BundleDealRail';
 import { CatalogState, PageHeading } from '@/components/storefront/DesignPrimitives';
 import Seo from '@/shared/components/Seo';
@@ -33,8 +34,10 @@ export default function ShopPage() {
   const minPrice = params.get('min_price');
   const maxPrice = params.get('max_price');
   const inStock = params.get('in_stock') === 'true';
-  const { data: categories = [] } = useGetCategoriesQuery();
-  const { data: brands = [] } = useGetBrandsQuery();
+  const { data: allCategories = [] } = useGetCategoriesQuery();
+  const categories = visibleCategories(allCategories);
+  const { data: allBrands = [] } = useGetBrandsQuery();
+  const brands = visibleBrands(allBrands);
   const { data: collections = [] } = useGetProductCollectionsQuery();
   const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery({
     page, perPage: 12, category: category || undefined, brand: brand || undefined,

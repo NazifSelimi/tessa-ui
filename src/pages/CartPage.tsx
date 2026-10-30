@@ -39,6 +39,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetQuickOrderProductsQuery } from '@/features/quickorder/api';
 import { Check, Plus } from 'lucide-react';
+import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -145,7 +146,7 @@ const CartPage: React.FC = () => {
                 <React.Fragment key={`${item.productId}`}>
                   <div className="cart-item">
                     <Image
-                      src={item.product.images?.[0] || item.product.image || '/placeholder.svg'}
+                      src={storefrontImageUrl(item.product) || '/placeholder.svg'}
                       alt={item.product.name}
                       width={80}
                       height={80}
@@ -163,7 +164,7 @@ const CartPage: React.FC = () => {
                           <Text strong className="cart-item__name">{item.product.name}</Text>
                         </Link>
                         <Text type="secondary" className="cart-item__meta">
-                          {typeof item.product.brand === 'object' ? item.product.brand?.name : item.product.brand}
+                          {storefrontBrandName(item.product)}
                         </Text>
                         <Text className="cart-item__unit-price">
                           {formatPrice(getItemPrice(item))} {t('cart.each')}

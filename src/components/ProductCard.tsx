@@ -4,6 +4,7 @@ import { Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import PriceDisplay from './PriceDisplay';
+import { storefrontBrandName, storefrontCategoryName } from '@/shared/utils/storefrontCatalog';
 import { ProductImage } from './storefront/DesignPrimitives';
 import type { Product } from '@/types';
 
@@ -15,8 +16,8 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, pr
   const quantity = getCartItem(product.id)?.quantity || 0;
   const inStock = typeof product.inStock === 'boolean' ? product.inStock : (product.quantity ?? 0) > 0;
   const atLimit = typeof product.quantity === 'number' && quantity >= product.quantity;
-  const brand = typeof product.brand === 'object' ? product.brand?.name : product.brand;
-  const category = typeof product.category === 'object' ? product.category?.name : product.category;
+  const brand = storefrontBrandName(product);
+  const category = storefrontCategoryName(product);
 
   return <article className="nl-product-card">
     <Link to={`/product/${product.id}`} className="nl-product-art" aria-label={product.name}>
@@ -24,7 +25,7 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, pr
       {product.featured && <span className="nl-product-badge">{t('product.featured')}</span>}
       {!inStock && <span className="nl-stock-badge">{t('product.outOfStock')}</span>}
     </Link>
-    <div className="nl-product-info"><small>{brand || 'Tessa'}</small><Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link>{category && <span className="nl-product-category">{category}</span>}<PriceDisplay product={product} /></div>
+    <div className="nl-product-info">{brand && <small>{brand}</small>}<Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link>{category && <span className="nl-product-category">{category}</span>}<PriceDisplay product={product} /></div>
     {showQuickAdd && <div className="nl-product-action">{quantity > 0 ? <div className="nl-quantity">
       <button onClick={() => updateQuantity(product.id, quantity - 1)} aria-label={t('newLook.decrease', { name: product.name })}><Minus size={16} /></button>
       <output aria-live="polite" aria-label={t('newLook.quantity', { name: product.name })}>{quantity}</output>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, ChevronRight, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Product } from '@/types';
+import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 
 export function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description?: string; action?: ReactNode }) {
   return <div className="nl-page-heading"><div><span className="nl-eyebrow">TESSA / {eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{action}</div>;
@@ -13,7 +14,7 @@ export function SectionHeading({ eyebrow, title, to, action }: { eyebrow?: strin
 }
 
 export function ProductImage({ product, priority = false }: { product: Product; priority?: boolean }) {
-  return <img src={product.image || product.images?.[0] || '/placeholder.svg'} alt={product.name} loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} onError={e => { if (!e.currentTarget.src.endsWith('/placeholder.svg')) e.currentTarget.src = '/placeholder.svg'; }} />;
+  return <img src={storefrontImageUrl(product) || '/placeholder.svg'} alt={product.name} loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} onError={e => { if (!e.currentTarget.src.endsWith('/placeholder.svg')) e.currentTarget.src = '/placeholder.svg'; }} />;
 }
 
 export function CatalogState({ loading, error, retry }: { loading?: boolean; error?: unknown; retry?: () => void }) {
