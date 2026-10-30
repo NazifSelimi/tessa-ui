@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch, Checkbox } from 'antd';
+import { Typography, Table, Button, Tag, Input, Space, Card, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch, Checkbox, Tooltip } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetCategoriesQuery, useGetBrandsQuery, useGetHairProfileOptionsQuery } from '@/features/products/api';
@@ -13,7 +13,7 @@ import {
   useDeleteProductMutation,
   useUpdateProductStockMutation,
 } from '@/features/admin/api';
-import type { Product } from '@/types';
+import type { Product, ProductReviewReason } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { convertToWebP } from '@/shared/utils/imageUtils';
@@ -21,6 +21,11 @@ import { convertToWebP } from '@/shared/utils/imageUtils';
 const { Title, Text } = Typography;
 const ITEMS_PER_PAGE = 20;
 const DEFAULT_MAX_PRICE = 1000000000;
+const REVIEW_REASON_LABELS: Record<ProductReviewReason, string> = {
+  no_photo: 'a real photo',
+  no_brand: 'a real brand',
+  no_category: 'a real category',
+};
 
 /** The fields the backend actually accepts (matching controller validation). */
 interface ProductFormValues {
@@ -67,6 +72,7 @@ export default function AdminProductsPage() {
   const [brand, setBrand] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, DEFAULT_MAX_PRICE]);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<'' | 'in_review' | 'ready'>('');
   const [sortBy, setSortBy] = useState('name_asc');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -82,6 +88,7 @@ export default function AdminProductsPage() {
     category.length > 0 ||
     brand.length > 0 ||
     inStockOnly ||
+    reviewFilter !== '' ||
     priceRange[0] !== 0 ||
     priceRange[1] !== DEFAULT_MAX_PRICE ||
     sortBy !== 'name_asc';
@@ -104,7 +111,8 @@ export default function AdminProductsPage() {
     min_price: debouncedPriceRange[0],
     max_price: debouncedPriceRange[1],
     in_stock: inStockOnly ? 1 : undefined,
-  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly]);
+    review: reviewFilter || undefined,
+  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly, reviewFilter]);
 
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: brands = [] } = useGetBrandsQuery();
@@ -122,6 +130,7 @@ export default function AdminProductsPage() {
     category,
     brand,
     inStockOnly,
+    reviewFilter,
     hasPriceFilter,
   ].filter(Boolean).length;
 
@@ -172,6 +181,7 @@ export default function AdminProductsPage() {
     setBrand('');
     setPriceRange([0, DEFAULT_MAX_PRICE]);
     setInStockOnly(false);
+    setReviewFilter('');
     setSortBy('name_asc');
     setPage(1);
   }, []);
@@ -375,9 +385,18 @@ export default function AdminProductsPage() {
       title: 'Access',
       key: 'access',
       render: (_: unknown, record: Product) =>
-        record.stylistOnly
-          ? <Tag color="purple">STYLIST ONLY</Tag>
-          : <Tag>ALL USERS</Tag>,
+        record.inReview
+          ? (
+            <Tooltip title={`Hidden from customers and stylists until it has ${(record.reviewReasons ?? []).map((reason) => REVIEW_REASON_LABELS[reason]).join(', ')}.`}>
+              <Tag color="orange">IN REVIEW · ADMIN ONLY</Tag>
+              <div style={{ fontSize: 12, color: '#b45309', marginTop: 4 }}>
+                {(record.reviewReasons ?? []).map((reason) => REVIEW_REASON_LABELS[reason]).join(' · ')}
+              </div>
+            </Tooltip>
+          )
+          : record.stylistOnly
+            ? <Tag color="purple">STYLIST ONLY</Tag>
+            : <Tag>ALL USERS</Tag>,
     },
     {
       title: 'Actions',
@@ -516,7 +535,23 @@ export default function AdminProductsPage() {
         </Row>
 
         <Row gutter={[16, 16]} style={{ marginTop: 8 }}>
-          <Col xs={24} md={12}>
+          <Col xs={24} md={6}>
+            <Select
+              style={{ width: '100%' }}
+              value={reviewFilter}
+              onChange={(value) => {
+                setReviewFilter(value);
+                setPage(1);
+              }}
+              options={[
+                { value: '', label: 'All products' },
+                { value: 'in_review', label: 'In review (admin only)' },
+                { value: 'ready', label: 'Ready for sale' },
+              ]}
+            />
+          </Col>
+
+          <Col xs={24} md={6}>
             <Checkbox
               checked={inStockOnly}
               onChange={(event) => {
@@ -583,6 +618,18 @@ export default function AdminProductsPage() {
                 }}
               >
                 {`Price ${debouncedPriceRange[0] > 0 ? formatPrice(debouncedPriceRange[0]) : 'Any'} - ${debouncedPriceRange[1] < DEFAULT_MAX_PRICE ? formatPrice(debouncedPriceRange[1]) : 'Any'}`}
+              </Tag>
+            )}
+            {reviewFilter && (
+              <Tag
+                closable
+                color="orange"
+                onClose={() => {
+                  setReviewFilter('');
+                  setPage(1);
+                }}
+              >
+                {reviewFilter === 'in_review' ? 'In review' : 'Ready for sale'}
               </Tag>
             )}
             {inStockOnly && (

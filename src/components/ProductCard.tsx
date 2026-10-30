@@ -24,6 +24,7 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, pr
       <ProductImage product={product} priority={priority} />
       {product.featured && <span className="nl-product-badge">{t('product.featured')}</span>}
       {!inStock && <span className="nl-stock-badge">{t('product.outOfStock')}</span>}
+      {product.inReview && <span className="nl-review-badge">{t('product.inReview')}</span>}
     </Link>
     <div className="nl-product-info">{brand && <small>{brand}</small>}<Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link>{category && <span className="nl-product-category">{category}</span>}<PriceDisplay product={product} /></div>
     {showQuickAdd && <div className="nl-product-action">{quantity > 0 ? <div className="nl-quantity">

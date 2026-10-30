@@ -182,6 +182,9 @@ export default function ProductPage() {
       />
 
       <div className="product-detail">
+        {product.inReview && (
+          <p className="product-detail__review-note" role="status">{t('product.inReview')}</p>
+        )}
         {/* Product Images */}
         <div className="product-detail__gallery">
           {/* Main Image */}

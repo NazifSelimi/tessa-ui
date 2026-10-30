@@ -99,6 +99,7 @@
     "addToCart": "Shto në shportë",
     "add": "Shto",
     "outOfStock": "Nuk ka në stok",
+    "inReview": "Në shqyrtim · vetëm admin",
     "featured": "Të veçanta",
     "inStock": "Në stok",
     "description": "Përshkrimi",

@@ -99,6 +99,7 @@
     "addToCart": "Add to Cart",
     "add": "Add",
     "outOfStock": "Out of Stock",
+    "inReview": "In review · admin only",
     "featured": "Featured",
     "inStock": "In Stock",
     "description": "Description",

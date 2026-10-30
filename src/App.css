@@ -886,6 +886,16 @@ a {
   }
 }
 
+.product-detail__review-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #b45309;
+  color: #fff;
+  font-weight: 700;
+}
+
 .product-detail__gallery {
   display: flex;
   flex-direction: column;

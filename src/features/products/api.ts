@@ -26,6 +26,7 @@ export interface ProductsQueryParams {
   min_price?: number;
   max_price?: number;
   in_stock?: number;
+  review?: 'in_review' | 'ready';
   sortBy?: 'name' | 'price' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }

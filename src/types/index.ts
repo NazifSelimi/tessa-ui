@@ -29,6 +29,8 @@ export interface User {
 
 // ==================== PRODUCTS ====================
 
+export type ProductReviewReason = 'no_photo' | 'no_brand' | 'no_category';
+
 export interface Product {
   id: string | number;
   name: string;
@@ -47,6 +49,9 @@ export interface Product {
   compareAtPrice?: string | number | null;
   stylistPrice?: string | number;
   stylistOnly?: boolean;
+  /** Admin-only: the product lacks a real photo, brand or category and is hidden from everyone else. */
+  inReview?: boolean | null;
+  reviewReasons?: ProductReviewReason[] | null;
   catalogGuidance?: {
     audience: 'consumer' | 'professional';
     professionalOnly: boolean;
