@@ -54,7 +54,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, bundleIds, subtotal, clearCart, getItemTotal } = useCart();
   const { user, token, isAuthenticated, isProfessional } = useAuth();
-  const { appliedCode, applyCode, removeCode, discountAmount, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
+  const { appliedCode, applyCode, removeCode, getDiscountForSubtotal, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
   const { data: activeBundles = [] } = useGetBundlesQuery();
   const { t } = useTranslation();
@@ -112,6 +112,7 @@ export default function CheckoutPage() {
       return discount + Math.min(regular, saving);
     }, 0);
   }, [activeBundles, bundleIds, getItemTotal, items]);
+  const discountAmount = getDiscountForSubtotal(Math.max(0, subtotal - bundleDiscount));
   const total = subtotal - discountAmount - bundleDiscount + shippingCost;
 
   // Empty cart check
@@ -167,7 +168,7 @@ export default function CheckoutPage() {
     
     clearError();
     
-    const success = await applyCode(discountInput.trim(), subtotal);
+    const success = await applyCode(discountInput.trim(), Math.max(0, subtotal - bundleDiscount));
     
     if (success) {
       message.success(t('checkout.discountApplied'));
@@ -591,7 +592,7 @@ export default function CheckoutPage() {
             {/* Free Shipping Progress */}
             {shippingCost > 0 && (
               <Alert
-                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(3000 - subtotal + discountAmount) })}`}
+                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(3000 - subtotal) })}`}
                 type="info"
                 showIcon
                 style={{ marginTop: 'var(--spacing-lg)' }}

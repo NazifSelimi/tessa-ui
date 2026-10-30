@@ -7,11 +7,13 @@
 
 import { useState, useCallback } from 'react';
 import { useValidateCouponMutation } from '@/features/coupons/api';
+import { couponDiscount } from '@/shared/utils/checkoutPricing';
 
 interface DiscountState {
   appliedCode: string | null;
   discountAmount: number;
   discountPercent: number;
+  couponValue: number;
   error: string | null;
   isValidating: boolean;
 }
@@ -21,6 +23,7 @@ export function useDiscounts() {
     appliedCode: null,
     discountAmount: 0,
     discountPercent: 0,
+    couponValue: 0,
     error: null,
     isValidating: false,
   });
@@ -73,6 +76,7 @@ export function useDiscounts() {
         appliedCode: trimmedCode,
         discountAmount,
         discountPercent,
+        couponValue: Number(coupon?.value ?? 0),
         error: null,
         isValidating: false,
       });
@@ -93,6 +97,7 @@ export function useDiscounts() {
       appliedCode: null,
       discountAmount: 0,
       discountPercent: 0,
+      couponValue: 0,
       error: null,
       isValidating: false,
     });
@@ -107,6 +112,7 @@ export function useDiscounts() {
 
   return {
     appliedCode: discountState.appliedCode,
+    getDiscountForSubtotal: (subtotal: number) => discountState.appliedCode ? couponDiscount(subtotal, discountState.couponValue, discountState.discountPercent > 0) : 0,
     applyCode,
     removeCode,
     discountAmount: discountState.discountAmount,
