@@ -31,7 +31,7 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('@/hooks/useDiscounts', () => ({
   useDiscounts: () => ({
-    appliedCode: null, applyCode: vi.fn(), removeCode: vi.fn(), discountAmount: 0,
+    appliedCode: null, applyCode: vi.fn(), removeCode: vi.fn(), discountAmount: 0, getDiscountForSubtotal: () => 0,
     discountPercent: 0, error: null, isValidating: false, clearError: vi.fn(),
   }),
 }));

@@ -53,6 +53,7 @@
     "enterPassword": "Ве молиме внесете ја вашата лозинка",
     "rememberMe": "Запомни ме",
     "welcomeBack": "Добредојдовте назад!",
+    "sessionExpired": "Вашата сесија истече. Ве молиме најавете се повторно.",
     "orContinueWith": "ИЛИ ПРОДОЛЖЕТЕ СО",
     "continueWithGoogle": "Продолжи со Google",
     "continueWithFacebook": "Продолжи со Facebook",

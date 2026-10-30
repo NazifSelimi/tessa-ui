@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   Form,
   Input,
@@ -41,14 +41,16 @@ const LoginPage: React.FC = () => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, token, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get redirect path from location state or default to home
   const stateFrom = (location.state as { from?: string })?.from;
   const queryFrom = new URLSearchParams(location.search).get('continue');
-  const from = (stateFrom || queryFrom || '/').startsWith('/') ? (stateFrom || queryFrom || '/') : '/';
+  const requested = stateFrom || queryFrom || '/';
+  // In-app paths only: '//host' would be read by the browser as another site.
+  const from = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);
@@ -73,6 +75,11 @@ const LoginPage: React.FC = () => {
   const handleFacebookComingSoon = () => {
     message.info(t('auth.facebookSoon'));
   };
+
+  // Already signed in (e.g. back button or an old bookmark): don't offer a second login.
+  if (token && user) {
+    return <Navigate to={from} replace />;
+  }
 
   return (
     <div className="auth-page" style={{

@@ -122,16 +122,11 @@ const authSlice = createSlice({
 
     // Get current user
     builder
-      .addMatcher(authApi.endpoints.getCurrentUser.matchPending, (state) => {
-        state.isLoading = true;
-      })
+      // Refreshing the profile is background work: it must not put login forms or
+      // route guards into a loading state while a persisted session is shown.
       .addMatcher(authApi.endpoints.getCurrentUser.matchFulfilled, (state, action) => {
         state.user = action.payload;
         state.isAuthenticated = true;
-        state.isLoading = false;
-      })
-      .addMatcher(authApi.endpoints.getCurrentUser.matchRejected, (state) => {
-        state.isLoading = false;
       });
 
     // Update profile
@@ -164,7 +159,8 @@ export const {
 // Selectors
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectToken = (state: { auth: AuthState }) => state.auth.token;
-export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
+// The persisted token is the one signal for "signed in"; isAuthenticated is not persisted.
+export const selectIsAuthenticated = (state: { auth: AuthState }) => Boolean(state.auth.token);
 export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLoading;
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error;
 export const selectCurrentRole = (state: { auth: AuthState }) =>

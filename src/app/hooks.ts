@@ -25,7 +25,7 @@ export const useUser = () => useAppSelector((state) => state.auth.user);
 export const useCurrentRole = () => useAppSelector((state) => 
   state.auth.user?.role || 'guest'
 );
-export const useIsAuthenticated = () => useAppSelector((state) => state.auth.isAuthenticated);
+export const useIsAuthenticated = () => useAppSelector((state) => Boolean(state.auth.token));
 export const useAuthLoading = () => useAppSelector((state) => state.auth.isLoading);
 
 // Cart selectors

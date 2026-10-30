@@ -7,7 +7,7 @@
  *
  * Provides a configured base query with:
  * - Authentication token injection (Bearer token — NO cookies)
- * - 401 handling with logout + redirect
+ * - 401 handling: clear the session and tell the user (route guards redirect)
  * - 500-level error logging
  */
 
@@ -16,11 +16,11 @@ import type { RootState } from '@/store/index';
 import { logout } from '@/features/auth/slice';
 import { logWarn, logError } from '@/shared/utils/logger';
 import i18n from '@/i18n';
+import { notification } from 'antd';
 
 /**
- * Module-level flag to prevent multiple concurrent 401 responses from each
- * dispatching logout() and triggering window.location.replace('/login').
- * Resets after 3 s so a genuinely new session-expiry is still handled.
+ * Module-level flag so concurrent 401 responses produce one logout and one
+ * notice. Resets after 3 s so a genuinely new session-expiry is still handled.
  */
 let _isHandling401 = false;
 
@@ -82,10 +82,9 @@ export const baseQueryWithReauth: BaseQueryFn<
         });
         api.dispatch(logout());
 
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-          const continueTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-          window.location.replace(`/login?continue=${encodeURIComponent(continueTo)}`);
-        }
+        // No hard redirect: public pages stay put as a guest, and ProtectedRoute
+        // sends protected pages to the locale-aware /login?continue=... route.
+        notification.info({ key: 'session-expired', message: i18n.t('auth.sessionExpired'), placement: 'topRight' });
 
         // Allow the flag to reset so a future (genuinely new) 401 is handled
         setTimeout(() => { _isHandling401 = false; }, 3000);

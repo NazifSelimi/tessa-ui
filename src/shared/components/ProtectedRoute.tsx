@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
-import { selectToken, selectCurrentRole, selectAuthLoading, selectUser } from '@/features/auth/slice';
+import { selectToken, selectCurrentRole, selectUser } from '@/features/auth/slice';
 import { isProfileComplete } from '@/features/auth/profile';
 import LoadingScreen from '@/components/LoadingScreen';
 import type { UserRole } from '@/types';
@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 
 /**
  * Route guard component.
- * - Auth loading → show LoadingScreen
+ * - Token present but profile not loaded yet → show LoadingScreen
  * - No token → redirect to /login
  * - Token present but role doesn't match requiredRole → redirect to /
  * - Otherwise render children
@@ -22,16 +22,15 @@ export default function ProtectedRoute({ children, requiredRole, allowIncomplete
   const location = useLocation();
   const token = useAppSelector(selectToken);
   const currentRole = useAppSelector(selectCurrentRole);
-  const isLoading = useAppSelector(selectAuthLoading);
   const user = useAppSelector(selectUser);
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
 
   if (!token) {
     const continueTo = `${location.pathname}${location.search}${location.hash}`;
     return <Navigate to={`/login?continue=${encodeURIComponent(continueTo)}`} state={{ from: continueTo }} replace />;
+  }
+
+  if (!user) {
+    return <LoadingScreen />;
   }
 
   const allowedRoles = requiredRole ? (Array.isArray(requiredRole) ? requiredRole : [requiredRole]) : [];

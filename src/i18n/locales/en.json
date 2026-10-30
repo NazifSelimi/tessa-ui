@@ -53,6 +53,7 @@
     "enterPassword": "Please enter your password",
     "rememberMe": "Remember me",
     "welcomeBack": "Welcome back!",
+    "sessionExpired": "Your session has expired. Please sign in again.",
     "orContinueWith": "OR CONTINUE WITH",
     "continueWithGoogle": "Continue with Google",
     "continueWithFacebook": "Continue with Facebook",
