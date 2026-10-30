@@ -3672,6 +3672,7 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 }
 
 .shade-picker__row {
+  position: relative;
   display: flex;
   gap: var(--spacing-sm);
   overflow-x: auto;
