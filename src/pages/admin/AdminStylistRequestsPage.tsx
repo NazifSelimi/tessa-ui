@@ -16,6 +16,7 @@ import {
   useRejectStylistRequestMutation,
 } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import SendMessageButtons from '@/features/admin/SendMessageButtons';
 
 const { Title, Text } = Typography;
 
@@ -181,6 +182,14 @@ export default function AdminStylistRequestsPage() {
                   Reject
                 </Button>
               </>
+            )}
+            {status !== 'pending' && (
+              <SendMessageButtons
+                phone={record.saloonPhone}
+                template={status === 'approved'
+                  ? { kind: 'stylistApproved', name: record.userName }
+                  : { kind: 'stylistRejected', name: record.userName, reason: record.rejectionReason }}
+              />
             )}
           </Space>
         );

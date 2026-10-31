@@ -20,6 +20,8 @@ export const site = {
   legalName: readEnv('VITE_SITE_LEGAL_NAME'),
   address: readEnv('VITE_SITE_ADDRESS'),
   contactEmail: readEnv('VITE_SITE_CONTACT_EMAIL') ?? 'tessa@tessa.mk',
+  // Business number on Viber and WhatsApp (international, digits only).
+  chatPhone: (readEnv('VITE_SITE_CHAT_PHONE') ?? '38978286332').replace(/\D/g, ''),
   contactPhones: [
     { label: primaryPhoneLabel, href: primaryPhoneHref },
     { label: secondaryPhoneLabel, href: secondaryPhoneHref },

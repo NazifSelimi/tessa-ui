@@ -10,6 +10,7 @@ import { site } from '@/shared/config/site';
 import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import './storefront/new-look.css';
+import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
 
 const CartDrawer = lazy(() => import('./CartDrawer'));
 
@@ -95,7 +96,7 @@ export default function MainLayout() {
         <main id="page-content" className="nl-content" tabIndex={-1}><Outlet /></main>
         <footer className="nl-footer">
           <div><Logo height={28} /><p>{t('footer.tagline')}</p></div>
-          <div className="nl-footer-contact"><Link to="/contact">{t('footer.contactUs')}</Link>{site.contactPhones.map(phone => <a key={phone.href} href={phone.href}>{phone.label}</a>)}<a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a></div>
+          <div className="nl-footer-contact"><Link to="/contact">{t('footer.contactUs')}</Link>{site.contactPhones.map(phone => <a key={phone.href} href={phone.href}>{phone.label}</a>)}<a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a><span className="nl-footer-chat"><a href={viberUrl(site.chatPhone)} aria-label={t('footer.chatViber')}>Viber</a><a href={whatsappUrl(site.chatPhone)} target="_blank" rel="noopener noreferrer" aria-label={t('footer.chatWhatsapp')}>WhatsApp</a></span></div>
           <div className="nl-footer-links">{['privacy', 'terms', 'returns', 'delivery'].map((path, i) => <Link to={`/${path}`} key={path}>{t(`footer.${['privacyPolicy', 'termsOfService', 'returns', 'delivery'][i]}`)}</Link>)}</div>
           <small>© {new Date().getFullYear()} Tessa Hair Care<span className="nl-social-links">{site.social.facebook && <a href={site.social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook"><Facebook size={18} /></a>}{site.social.instagram && <a href={site.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram size={18} /></a>}</span></small>
         </footer>
