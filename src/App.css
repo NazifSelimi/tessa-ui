@@ -3642,7 +3642,7 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 }
 
 /* Shade picker (colour lines) */
-/* Let the shade row scroll inside the column instead of widening the page. */
+/* Let the shade panel shrink inside the column instead of widening the page. */
 .product-detail > * {
   min-width: 0;
 }
@@ -3656,7 +3656,7 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   justify-content: space-between;
   align-items: baseline;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .shade-picker__all {
@@ -3671,62 +3671,128 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   white-space: nowrap;
 }
 
-.shade-picker__row {
-  position: relative;
+.shade-picker__body {
   display: flex;
-  gap: var(--spacing-sm);
-  overflow-x: auto;
-  padding: 2px 2px var(--spacing-sm);
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
 }
 
-.shade-tile {
-  flex: 0 0 auto;
-  width: 68px;
+.shade-picker__preview {
+  flex: 0 0 132px;
+  margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text);
-  text-decoration: none;
-  transition: border-color var(--transition-fast);
+  gap: 6px;
+  position: sticky;
+  top: 0;
 }
 
-.shade-tile:hover {
-  border-color: var(--color-border);
+.shade-picker__preview-code {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   color: var(--color-text);
 }
 
-.shade-picker .shade-tile.shade-tile--active {
-  border: 2px solid var(--color-primary);
-  padding: 3px;
-}
-
-.shade-tile__swatch {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-sm, 6px);
+.shade-picker__preview-swatch {
+  width: 132px;
+  height: 132px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-background-alt);
+  box-shadow: 0 6px 18px rgb(36 33 36 / 10%);
 }
 
-.shade-tile__swatch img {
+.shade-picker__preview-swatch img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.shade-tile--out .shade-tile__swatch img {
+.shade-picker__preview-name {
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.shade-picker__groups {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 2px 4px 2px 2px;
+  scrollbar-width: thin;
+}
+
+.shade-group + .shade-group {
+  margin-top: var(--spacing-md);
+}
+
+.shade-group__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.shade-group__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 6px;
+}
+
+.shade-dot {
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.shade-dot:hover {
+  color: var(--color-text);
+}
+
+.shade-dot__swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-background-alt);
+  box-shadow: 0 0 0 1px var(--color-border-light);
+  transition: box-shadow var(--transition-fast);
+}
+
+.shade-dot__swatch img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Without a dot texture, zoom into the hair ribbon so the dot shows the shade, not the background. */
+.shade-dot__swatch img.is-ribbon {
+  transform: scale(2.1);
+}
+
+.shade-dot:hover .shade-dot__swatch {
+  box-shadow: 0 0 0 1px var(--color-border), 0 0 0 3px var(--color-surface), 0 0 0 4px var(--color-border);
+}
+
+.shade-picker .shade-dot.shade-dot--active .shade-dot__swatch {
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+}
+
+.shade-dot--out .shade-dot__swatch img {
   opacity: 0.4;
 }
 
-.shade-tile--out .shade-tile__swatch::after {
+.shade-dot--out .shade-dot__swatch::after {
   content: '';
   position: absolute;
   inset: 50% -10%;
@@ -3735,43 +3801,44 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   transform: rotate(-45deg);
 }
 
-.shade-tile__code {
-  font-size: 12px;
+.shade-dot__code {
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
-  text-align: center;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.shade-picker__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: var(--spacing-md);
+.shade-dot--active .shade-dot__code {
+  font-weight: 800;
+}
+
+.shade-picker__modal-groups {
   max-height: 60vh;
   overflow-y: auto;
 }
 
-.shade-picker__grid-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+.shade-picker__modal-groups .shade-dot {
+  width: 56px;
 }
 
-.shade-picker__name {
-  font-size: 11px;
-  line-height: 1.25;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
+@media (max-width: 480px) {
+  .shade-picker__body {
+    gap: var(--spacing-md);
+  }
 
-.shade-picker__grid .shade-tile {
-  width: 100%;
-}
+  .shade-picker__preview {
+    flex-basis: 92px;
+  }
 
-.shade-picker__grid .shade-tile__code {
-  white-space: normal;
+  .shade-picker__preview-swatch {
+    width: 92px;
+    height: 92px;
+  }
+
+  .shade-picker__preview-code {
+    font-size: 15px;
+  }
 }

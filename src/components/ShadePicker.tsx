@@ -1,6 +1,7 @@
 /**
- * Shade picker for a colour line (product family): a row of hair-swatch tiles
- * plus an "All shades" grid. Each shade is its own product, so picking one
+ * Shade picker for a colour line (product family): a large preview of the
+ * selected shade next to round swatches grouped by tone, plus an "All
+ * shades" view with search. Each shade is its own product, so picking one
  * opens that product's page.
  */
 
@@ -10,6 +11,7 @@ import { Input, Modal, Typography } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ProductShade } from '@/types';
+import { groupShades } from '@/shared/utils/shadeGroups';
 
 const { Text } = Typography;
 
@@ -20,25 +22,64 @@ interface ShadePickerProps {
 
 const shadeLabel = (shade: ProductShade) => shade.shadeCode || shade.shadeName || shade.name;
 
-function ShadeTile({ shade, active, onPick }: { shade: ProductShade; active: boolean; onPick?: () => void }) {
+/** Generated swatches have a full-bleed texture for round dots next to the ribbon image ({id}.jpg -> {id}-dot.jpg). */
+const dotUrl = (swatch: string) => swatch.replace(/(\/swatches\/silk\/\d+)\.jpg$/, '$1-dot.jpg');
+const shadeTitle = (shade: ProductShade) => [shade.shadeCode, shade.shadeName].filter(Boolean).join(' – ') || shade.name;
+
+function ShadeDot({ shade, active, onPick }: { shade: ProductShade; active: boolean; onPick?: () => void }) {
   const { t } = useTranslation();
-  const title = [shade.shadeCode, shade.shadeName].filter(Boolean).join(' – ') || shade.name;
+  const title = shadeTitle(shade);
 
   return (
     <Link
       to={`/product/${shade.id}`}
       replace
       onClick={onPick}
-      className={`shade-tile${active ? ' shade-tile--active' : ''}${shade.inStock ? '' : ' shade-tile--out'}`}
+      className={`shade-dot${active ? ' shade-dot--active' : ''}${shade.inStock ? '' : ' shade-dot--out'}`}
       aria-current={active ? 'true' : undefined}
+      aria-label={shade.inStock ? title : `${title} · ${t('product.outOfStock')}`}
       title={shade.inStock ? title : `${title} · ${t('product.outOfStock')}`}
       data-shade-id={shade.id}
     >
-      <span className="shade-tile__swatch">
-        {shade.swatch ? <img src={shade.swatch} alt="" loading="lazy" /> : null}
+      <span className="shade-dot__swatch">
+        {shade.swatch ? (
+          <img
+            src={dotUrl(shade.swatch)}
+            className={dotUrl(shade.swatch) === shade.swatch ? 'is-ribbon' : undefined}
+            alt=""
+            loading="lazy"
+            onError={(event) => {
+              // No dot texture: zoom into the ribbon image instead.
+              const img = event.currentTarget;
+              if (shade.swatch && img.src !== shade.swatch) { img.src = shade.swatch; img.classList.add('is-ribbon'); }
+            }}
+          />
+        ) : null}
       </span>
-      <span className="shade-tile__code">{shadeLabel(shade)}</span>
+      <span className="shade-dot__code">{shadeLabel(shade)}</span>
     </Link>
+  );
+}
+
+function ShadeGroups({ shades, currentId, onPick }: { shades: ProductShade[]; currentId: string | number; onPick?: () => void }) {
+  const { t } = useTranslation();
+  const groups = groupShades(shades);
+  // A line without numbered tones (e.g. colour masks) needs no headings.
+  const showHeadings = !(groups.length === 1 && groups[0].key === 'other');
+
+  return (
+    <>
+      {groups.map((group) => (
+        <section key={group.key} className="shade-group">
+          {showHeadings && <h4 className="shade-group__title">{t(`product.shadeGroups.${group.key}`)}</h4>}
+          <div className="shade-group__dots">
+            {group.shades.map((shade) => (
+              <ShadeDot key={shade.id} shade={shade} active={String(shade.id) === String(currentId)} onPick={onPick} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </>
   );
 }
 
@@ -46,14 +87,15 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const rowRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const current = shades.find((shade) => String(shade.id) === String(currentId));
 
   // Keep the selected shade in view when arriving from another shade.
   useEffect(() => {
-    const tile = rowRef.current?.querySelector<HTMLElement>(`[data-shade-id="${currentId}"]`);
-    if (tile && rowRef.current) {
-      rowRef.current.scrollLeft = tile.offsetLeft - rowRef.current.clientWidth / 2 + tile.clientWidth / 2;
+    const panel = panelRef.current;
+    const dot = panel?.querySelector<HTMLElement>(`[data-shade-id="${currentId}"]`);
+    if (panel && dot) {
+      panel.scrollTop = dot.offsetTop - panel.clientHeight / 2 + dot.clientHeight / 2;
     }
   }, [currentId]);
 
@@ -69,17 +111,26 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
     <div className="shade-picker">
       <div className="shade-picker__header">
         <Text>
-          {t('product.shade')}:{' '}
-          <strong>{current ? [current.shadeCode, current.shadeName].filter(Boolean).join(' – ') : '—'}</strong>
+          {t('product.shade')}: <strong>{current ? shadeTitle(current) : '—'}</strong>
         </Text>
         <button type="button" className="shade-picker__all" onClick={() => setOpen(true)}>
           {t('product.allShades', { count: shades.length })}
         </button>
       </div>
-      <div className="shade-picker__row" ref={rowRef}>
-        {shades.map((shade) => (
-          <ShadeTile key={shade.id} shade={shade} active={String(shade.id) === String(currentId)} />
-        ))}
+
+      <div className="shade-picker__body">
+        {current && (
+          <figure className="shade-picker__preview">
+            <figcaption className="shade-picker__preview-code">{shadeLabel(current)}</figcaption>
+            <span className="shade-picker__preview-swatch">
+              {current.swatch ? <img src={current.swatch} alt={shadeTitle(current)} /> : null}
+            </span>
+            {current.shadeName && current.shadeCode && <span className="shade-picker__preview-name">{current.shadeName}</span>}
+          </figure>
+        )}
+        <div className="shade-picker__groups" ref={panelRef}>
+          <ShadeGroups shades={shades} currentId={currentId} />
+        </div>
       </div>
 
       <Modal
@@ -99,13 +150,8 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
             style={{ marginBottom: 16 }}
           />
         )}
-        <div className="shade-picker__grid">
-          {filtered.map((shade) => (
-            <div key={shade.id} className="shade-picker__grid-item">
-              <ShadeTile shade={shade} active={String(shade.id) === String(currentId)} onPick={() => setOpen(false)} />
-              {shade.shadeName && shade.shadeCode && <span className="shade-picker__name">{shade.shadeName}</span>}
-            </div>
-          ))}
+        <div className="shade-picker__modal-groups">
+          <ShadeGroups shades={filtered} currentId={currentId} onPick={() => setOpen(false)} />
         </div>
       </Modal>
     </div>
