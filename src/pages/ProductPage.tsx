@@ -44,7 +44,10 @@ export default function ProductPage() {
   const { addItem } = useCart();
   const { t, i18n } = useTranslation();
   
-  const { data: product, isLoading: loading } = useGetProductByIdQuery(id!, { skip: !id });
+  const { data, currentData, isLoading: loading, isFetching } = useGetProductByIdQuery(id!, { skip: !id });
+  // While switching shade, `data` is still the previous product: keep the page in place but dim it until the new one arrives.
+  const product = currentData ?? data;
+  const switching = !currentData && isFetching && Boolean(data);
   const { data: relatedProducts = [] } = useGetRelatedProductsQuery(product?.id as number | string, { skip: !product?.id });
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -190,7 +193,7 @@ export default function ProductPage() {
         ]}
       />
 
-      <div className="product-detail">
+      <div className={`product-detail${switching ? ' product-detail--switching' : ''}`} aria-busy={switching || undefined}>
         {product.inReview && (
           <p className="product-detail__review-note" role="status">{t('product.inReview')}</p>
         )}
@@ -199,6 +202,8 @@ export default function ProductPage() {
           {/* Main Image */}
           <button className="product-detail__main-image" type="button" onClick={() => setIsZoomed(Boolean(selectedAsset))} aria-label={`Zoom ${product.name} image`}>
             <img
+              // A new element per photo: when switching shade the browser would otherwise keep showing the previous product's photo until the new one loads.
+              key={mainImage}
               src={mainImage}
               alt={selectedAsset?.alt || product.name}
               fetchPriority="high"

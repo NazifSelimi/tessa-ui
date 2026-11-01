@@ -4041,3 +4041,10 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
     width: 100%;
   }
 }
+
+/* Switching shade: the previous product stays in place, dimmed, until the new one has loaded. */
+.product-detail--switching {
+  opacity: 0.4;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
