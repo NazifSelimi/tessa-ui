@@ -25,6 +25,7 @@ import {
 import PriceDisplay from '@/components/PriceDisplay';
 import ProductCard from '@/components/ProductCard';
 import ShadePicker from '@/components/ShadePicker';
+import CatalogueBook from '@/components/CatalogueBook';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
@@ -377,6 +378,10 @@ export default function ProductPage() {
           />
         </div>
       </div>
+      {product.shadeFamily?.catalogue && (
+        <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
+      )}
+
       {isZoomed && selectedAsset && (
         <div className="product-image-lightbox" role="dialog" aria-modal="true" aria-label={`${product.name} enlarged image`} onClick={() => setIsZoomed(false)}>
           <button type="button" className="product-image-lightbox__close" onClick={() => setIsZoomed(false)} aria-label="Close image">×</button>

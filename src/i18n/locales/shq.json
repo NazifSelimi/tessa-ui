@@ -106,6 +106,15 @@
     "shadeCount_one": "{{count}} nuancë",
     "shadeCount_other": "{{count}} nuanca",
     "chooseShade": "Zgjidh nuancën",
+    "catalogue": {
+      "hint": "Klikoni një nuancë për ta shtuar në shportë",
+      "viewProduct": "Shiko produktin",
+      "previous": "Faqja e mëparshme",
+      "next": "Faqja tjetër",
+      "page": "Faqja {{page}} nga {{count}}",
+      "zoomIn": "Zmadho",
+      "zoomOut": "Faqja e plotë"
+    },
     "shadeGroups": {
       "natural": "Natyrale",
       "warmNatural": "Natyrale të ngrohta",

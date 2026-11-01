@@ -23,7 +23,7 @@ interface ShadePickerProps {
 const shadeLabel = (shade: ProductShade) => shade.shadeCode || shade.shadeName || shade.name;
 
 /** Generated swatches have a full-bleed texture for round dots next to the ribbon image ({id}.jpg -> {id}-dot.jpg). */
-const dotUrl = (swatch: string) => swatch.replace(/(\/swatches\/silk\/\d+)\.jpg$/, '$1-dot.jpg');
+const dotUrl = (swatch: string) => swatch.replace(/(\/swatches\/silk[\w-]*\/\d+)\.jpg$/, '$1-dot.jpg');
 const shadeTitle = (shade: ProductShade) => [shade.shadeCode, shade.shadeName].filter(Boolean).join(' – ') || shade.name;
 
 function ShadeDot({ shade, active, onPick }: { shade: ProductShade; active: boolean; onPick?: () => void }) {

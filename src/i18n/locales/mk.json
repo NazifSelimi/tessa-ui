@@ -106,6 +106,15 @@
     "shadeCount_one": "{{count}} нијанса",
     "shadeCount_other": "{{count}} нијанси",
     "chooseShade": "Избери нијанса",
+    "catalogue": {
+      "hint": "Кликнете на нијанса за да ја додадете во кошничка",
+      "viewProduct": "Види производ",
+      "previous": "Претходна страна",
+      "next": "Следна страна",
+      "page": "Страна {{page}} од {{count}}",
+      "zoomIn": "Зумирај",
+      "zoomOut": "Цела страна"
+    },
     "shadeGroups": {
       "natural": "Природни",
       "warmNatural": "Топли природни",

@@ -106,6 +106,15 @@
     "shadeCount_one": "{{count}} shade",
     "shadeCount_other": "{{count}} shades",
     "chooseShade": "Choose shade",
+    "catalogue": {
+      "hint": "Tap a shade to add it to your cart",
+      "viewProduct": "View product",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page {{page}} of {{count}}",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Fit to screen"
+    },
     "shadeGroups": {
       "natural": "Natural",
       "warmNatural": "Warm natural",

@@ -69,7 +69,7 @@ export interface Product {
   shadeCode?: string | null;
   shadeName?: string | null;
   swatch?: string | null;
-  shadeFamily?: { id: string; name: string } | null;
+  shadeFamily?: { id: string; name: string; catalogue?: ShadeCatalogue | null } | null;
   shades?: ProductShade[];
   /** Shop cards only: this card stands for a colour line with this many shades. */
   shadeCount?: number;
@@ -83,6 +83,18 @@ export interface Product {
   metaDescription?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** A colour line's brand catalogue (product page only): page images with clickable shade spots. */
+export interface ShadeCatalogue {
+  title: string;
+  pages: {
+    image: string;
+    width: number;
+    height: number;
+    /** Positions are fractions of the page; productId is null when the viewer cannot buy that shade. */
+    spots: { code: string; x: number; y: number; w: number; h: number; productId: string | null; name: string | null; inStock: boolean | null }[];
+  }[];
 }
 
 export interface ProductShade {
