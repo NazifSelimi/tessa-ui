@@ -14,7 +14,7 @@ export function SectionHeading({ eyebrow, title, to, action }: { eyebrow?: strin
 }
 
 export function ProductImage({ product, priority = false }: { product: Product; priority?: boolean }) {
-  return <img src={storefrontImageUrl(product) || '/placeholder.svg'} alt={product.name} loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} onError={e => { if (!e.currentTarget.src.endsWith('/placeholder.svg')) e.currentTarget.src = '/placeholder.svg'; }} />;
+  return <img src={storefrontImageUrl(product) || '/placeholder.svg'} alt={product.name} loading={priority ? 'eager' : 'lazy'} decoding="async" fetchPriority={priority ? 'high' : undefined} onError={e => { if (!e.currentTarget.src.endsWith('/placeholder.svg')) e.currentTarget.src = '/placeholder.svg'; }} />;
 }
 
 export function CatalogState({ loading, error, retry }: { loading?: boolean; error?: unknown; retry?: () => void }) {
