@@ -56,21 +56,6 @@ export default function AdminUsersPage() {
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    // Only allow changing to admin, stylist, or user (not guest or distributor)
-    if (newRole === 'guest' || newRole === 'distributor') {
-      message.error('Invalid role selection');
-      return;
-    }
-    
-    try {
-      await updateUser({ id: userId, data: { role: newRole } }).unwrap();
-      message.success('User role updated');
-    } catch (_error) {
-      message.error('Failed to update role');
-    }
-  };
-
   const handleView = (user: User) => {
     setSelectedUser(user);
     setViewModalOpen(true);
@@ -134,7 +119,7 @@ export default function AdminUsersPage() {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
-      render: (role: UserRole, record: User) => (
+      render: (role: UserRole) => (
         <Tag color={roleColors[role]}>{role === 'user' ? 'Customer' : role}</Tag>
       ),
     },

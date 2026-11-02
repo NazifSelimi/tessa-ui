@@ -11,12 +11,16 @@
  * - 500-level error logging
  */
 
+import { createAction } from '@reduxjs/toolkit';
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '@/store/index';
-import { logout } from '@/features/auth/slice';
 import { logWarn, logError } from '@/shared/utils/logger';
 import i18n from '@/i18n';
 import { notification } from 'antd';
+
+// The auth slice's logout action, by type: importing the slice here would form an
+// import cycle (slice -> auth api -> baseApi) that breaks whichever module loads first.
+const logout = createAction('auth/logout');
 
 /**
  * Module-level flag so concurrent 401 responses produce one logout and one

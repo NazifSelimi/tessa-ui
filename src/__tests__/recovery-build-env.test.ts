@@ -3,8 +3,8 @@ import { validateBuildApiUrl } from '../../scripts/validate-build-env';
 
 describe('deployment API configuration', () => {
   it.each([undefined, '', ' ', 'http://127.0.0.1:8000/api', 'https://127.0.0.2/api',
-    'https://localhost/api', 'https://dev.localhost/api', 'https://[::1]/api', '/api'])
-  ('rejects an unsafe or missing deployment API: %s', (url) => {
+    'https://localhost/api', 'https://dev.localhost/api', 'https://[::1]/api', '/api'])(
+    'rejects an unsafe or missing deployment API: %s', (url) => {
     expect(() => validateBuildApiUrl(url, 'production')).toThrow();
   });
 

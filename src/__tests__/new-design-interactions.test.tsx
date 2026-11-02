@@ -14,6 +14,7 @@ const product = { id: 1, name: 'Shampoo', brand: 'Tessa', category: 'Shampoo', d
 vi.mock('@/hooks/useCart', () => ({ useCart: () => ({ addItem: add, updateQuantity, getCartItem: () => quantity ? { quantity } : undefined }) }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isStylist: false, isProfessional: false }) }));
 vi.mock('@/shared/components/Seo', () => ({ default: () => null }));
+vi.mock('@/features/admin/api', () => ({ useGetPublishedContentBlocksQuery: () => ({ data: [] }) }));
 vi.mock('@/features/products/api', () => ({
   useGetProductsQuery: (params: unknown) => { query(params); return { data: { data: [], meta: { total: 0 } } }; },
   useGetCategoriesQuery: () => ({ data: [{ id: '7', name: 'Masks' }] }),
@@ -21,7 +22,7 @@ vi.mock('@/features/products/api', () => ({
   useGetBundlesQuery: () => ({ data: [] }),
   useGetProductCollectionsQuery: () => ({ data: [] }),
 }));
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string, params: Record<string, unknown> = {}) => {
+vi.mock('react-i18next', async (importOriginal) => ({ ...(await importOriginal<typeof import('react-i18next')>()), useTranslation: () => ({ t: (key: string, params: Record<string, unknown> = {}) => {
   const value = key.split('.').reduce<unknown>((value, part) => value && typeof value === 'object' ? (value as Record<string, unknown>)[part] : undefined, en) || key;
   return String(value).replace(/{{(\w+)}}/g, (_, name) => String(params[name] ?? ''));
 } }) }));

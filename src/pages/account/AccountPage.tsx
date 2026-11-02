@@ -9,7 +9,7 @@
 
 import { Link, useNavigate } from 'react-router-dom';
 import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider, Select } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, ArrowLeftOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeading } from '@/components/storefront/DesignPrimitives';

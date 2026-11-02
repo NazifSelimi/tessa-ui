@@ -5,7 +5,7 @@ import ProductImagesWorkspace from '@/pages/admin/ProductImagesWorkspace';
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 describe('image review workflow', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       const gallery = { product: { id: 42, name: 'Test shampoo' }, images: [{ id: 8, url: '/test.png', alt: 'Front', variant: 'card', sort_order: 0, review_status: 'needs_review', is_primary: true }] };
       const body = url.includes('/products/42/images') ? gallery : url.includes('catalog-image-candidates') ? { audit: 'test-audit', candidates: [] } : { summary: { total: 26, needs_review: 26 }, products: [{ id: '42', name: 'Test shampoo', brand: 'Fanola', status: 'needs_review', imageCount: 1, imageUrl: '/test.png' }], meta: { total: 26 } };
       return { ok: true, json: async () => body };

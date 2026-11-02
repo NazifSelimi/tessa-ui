@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Col, Empty, Row, Space, Tag, Typography, message } from 'antd';
-import { CheckOutlined, PictureOutlined } from '@ant-design/icons';
+import { CheckOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
