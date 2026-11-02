@@ -352,6 +352,12 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.Products],
     }),
 
+    getProductFamilies: builder.query<{ id: string; name: string; shadeCount: number }[], void>({
+      query: () => '/v1/admin/product-families',
+      transformResponse: (response: { data: { id: string; name: string; shadeCount: number }[] }) => response.data,
+      providesTags: [API_TAGS.Products],
+    }),
+
     deleteProduct: builder.mutation<void, string>({
       query: (id) => ({
         url: `/v1/admin/products/${id}`,
@@ -605,6 +611,7 @@ export const {
   useGetAllProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
+  useGetProductFamiliesQuery,
   useDeleteProductMutation,
   useUpdateProductStockMutation,
   useBulkUpdateProductsMutation,

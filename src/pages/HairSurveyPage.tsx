@@ -155,7 +155,7 @@ export default function HairSurveyPage() {
               disabled={isDisabled}
               aria-pressed={isSelected}
             >
-              <span className="hair-quiz__option-icon">{opt.emoji}</span>
+              <span className="hair-quiz__option-icon" aria-hidden="true">{opt.emoji}</span>
               <span className="hair-quiz__option-copy">
                 <span className="hair-quiz__option-title">{opt.label}</span>
                 <span className="hair-quiz__option-description">{opt.description}</span>
@@ -182,7 +182,7 @@ export default function HairSurveyPage() {
               className={`hair-quiz__option ${isSelected ? 'hair-quiz__option--selected' : ''}`}
               aria-pressed={isSelected}
             >
-              <span className="hair-quiz__option-icon">{opt.emoji}</span>
+              <span className="hair-quiz__option-icon" aria-hidden="true">{opt.emoji}</span>
               <span className="hair-quiz__option-copy">
                 <span className="hair-quiz__option-title">{opt.label}</span>
                 <span className="hair-quiz__option-description">{opt.description}</span>

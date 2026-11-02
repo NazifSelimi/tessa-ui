@@ -120,14 +120,14 @@ const LoginPage: React.FC = () => {
         >
           <Form.Item
             name="identifier"
-            label="Email or phone number"
+            label={t('auth.identifier')}
             rules={[
-              { required: true, message: 'Enter your email or phone number.' },
+              { required: true, message: t('auth.enterIdentifier') },
             ]}
           >
             <Input
               prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="Phone number or you@example.com"
+              placeholder={t('auth.identifierPlaceholder')}
               size="large"
               autoComplete="username"
             />

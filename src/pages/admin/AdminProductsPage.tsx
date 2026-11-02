@@ -10,6 +10,7 @@ import {
   useGetAllProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
+  useGetProductFamiliesQuery,
   useDeleteProductMutation,
   useUpdateProductStockMutation,
 } from '@/features/admin/api';
@@ -42,6 +43,10 @@ interface ProductFormValues {
   description_shq?: string;
   hair_type_ids?: number[];
   hair_concern_ids?: number[];
+  product_family_id?: number | null;
+  shade_code?: string;
+  shade_name?: string;
+  shade_sort_order?: number | null;
 }
 
 /**
@@ -61,6 +66,10 @@ function snapshotFromProduct(product: Product): ProductFormValues {
     description_shq: product.translations?.shq ?? '',
     hair_type_ids: product.hairTypeIds ?? [],
     hair_concern_ids: product.hairConcernIds ?? [],
+    product_family_id: product.shadeFamilyId ? Number(product.shadeFamilyId) : null,
+    shade_code: product.shadeCode ?? '',
+    shade_name: product.shadeName ?? '',
+    shade_sort_order: product.shadeSortOrder ?? null,
   };
 }
 
@@ -77,6 +86,8 @@ export default function AdminProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [swatchList, setSwatchList] = useState<UploadFile[]>([]);
+  const [removeSwatch, setRemoveSwatch] = useState(false);
   const [form] = Form.useForm<ProductFormValues>();
 
   const debouncedSearch = useDebounce(search, 300);
@@ -118,6 +129,7 @@ export default function AdminProductsPage() {
   const { data: brands = [] } = useGetBrandsQuery();
   const { data: hairProfileOptions } = useGetHairProfileOptionsQuery();
   const { data, isLoading, refetch } = useGetAllProductsQuery(queryParams);
+  const { data: productFamilies = [] } = useGetProductFamiliesQuery(undefined, { skip: !modalOpen });
 
   const selectedCategoryName = category
     ? categories.find((item) => String(item.id) === category)?.name ?? category
@@ -172,6 +184,8 @@ export default function AdminProductsPage() {
   const handleEdit = useCallback((product: Product) => {
     setEditingProduct(product);
     setFileList([]);
+    setSwatchList([]);
+    setRemoveSwatch(false);
     setModalOpen(true);
   }, []);
 
@@ -211,6 +225,7 @@ export default function AdminProductsPage() {
         const original = snapshotFromProduct(editingProduct);
         const fieldKeys: (keyof ProductFormValues)[] = [
           'name', 'price', 'stylist_price', 'stylist_only', 'quantity', 'category_id', 'brand_id',
+          'product_family_id', 'shade_code', 'shade_name', 'shade_sort_order',
         ];
         let hasChanges = false;
 
@@ -268,6 +283,14 @@ export default function AdminProductsPage() {
           hasChanges = true;
         }
 
+        if (swatchList.length > 0 && swatchList[0].originFileObj) {
+          formData.append('swatch', swatchList[0].originFileObj as File);
+          hasChanges = true;
+        } else if (removeSwatch) {
+          formData.append('remove_swatch', '1');
+          hasChanges = true;
+        }
+
         if (!hasChanges) {
           message.info('No changes detected');
           return;
@@ -306,6 +329,8 @@ export default function AdminProductsPage() {
       setModalOpen(false);
       setEditingProduct(null);
       setFileList([]);
+      setSwatchList([]);
+      setRemoveSwatch(false);
       form.resetFields();
       refetch();
     } catch (error: any) {
@@ -678,6 +703,8 @@ export default function AdminProductsPage() {
           setModalOpen(false);
           setEditingProduct(null);
           setFileList([]);
+          setSwatchList([]);
+          setRemoveSwatch(false);
           form.resetFields();
         }}
         width={700}
@@ -775,6 +802,72 @@ export default function AdminProductsPage() {
               </Form.Item>
             </Col>
           </Row>
+
+          {isEditing && (
+            <>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="product_family_id"
+                    label="Colour line"
+                    extra="Shades of one line share a shop card, the shade picker and the brand catalogue."
+                  >
+                    <Select
+                      allowClear
+                      placeholder="Not a colour"
+                      options={productFamilies.map((family) => ({ value: Number(family.id), label: `${family.name} (${family.shadeCount})` }))}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={4}>
+                  <Form.Item name="shade_code" label="Shade code" extra="As in the catalogue, e.g. 7.43">
+                    <Input placeholder="7.43" maxLength={20} />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="shade_name" label="Shade name">
+                    <Input placeholder="Copper Golden Blonde" maxLength={100} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Form.Item name="shade_sort_order" label="Shade order" extra="Lower numbers come first">
+                    <InputNumber min={0} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={16}>
+                  <Form.Item label="Shade swatch" extra="The small hair-colour picture in the shade picker. JPG, PNG or WebP, max 2MB.">
+                    <Space align="start">
+                      {editingProduct.swatch && !removeSwatch && swatchList.length === 0 && (
+                        <img src={editingProduct.swatch} alt="Current swatch" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: '50%' }} />
+                      )}
+                      <Upload
+                        beforeUpload={() => false}
+                        fileList={swatchList}
+                        onChange={({ fileList: newList }) => { setSwatchList(newList.slice(-1)); setRemoveSwatch(false); }}
+                        accept="image/jpeg,image/png,image/webp"
+                        maxCount={1}
+                        listType="picture-card"
+                      >
+                        {swatchList.length === 0 && (
+                          <div>
+                            <PlusOutlined />
+                            <div style={{ marginTop: 8 }}>{editingProduct.swatch ? 'Replace' : 'Upload'}</div>
+                          </div>
+                        )}
+                      </Upload>
+                      {editingProduct.swatch && swatchList.length === 0 && (
+                        <Checkbox checked={removeSwatch} onChange={(event) => setRemoveSwatch(event.target.checked)}>
+                          Remove swatch
+                        </Checkbox>
+                      )}
+                    </Space>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </>
+          )}
 
           <Form.Item
             label="Product Image"

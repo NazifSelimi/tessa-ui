@@ -69,6 +69,8 @@ export interface Product {
   shadeCode?: string | null;
   shadeName?: string | null;
   swatch?: string | null;
+  shadeSortOrder?: number | null;
+  shadeFamilyId?: string | null;
   shadeFamily?: { id: string; name: string; catalogue?: ShadeCatalogue | null } | null;
   shades?: ProductShade[];
   /** Shop cards only: this card stands for a colour line with this many shades. */

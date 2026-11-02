@@ -8,6 +8,8 @@ const siteUrl = 'https://tessa.mk';
 const urlLocales = ['mk', 'sq', 'en'];
 const appLocaleByUrl = { mk: 'mk', sq: 'shq', en: 'en' };
 const defaultLocale = 'mk';
+// Staging and other non-production builds: SEO_NOINDEX=1 keeps search engines out.
+const noindex = ['1', 'true'].includes(String(process.env.SEO_NOINDEX ?? '').toLowerCase());
 
 const escapeHtml = (value = '') => String(value)
   .replaceAll('&', '&amp;')
@@ -37,7 +39,7 @@ function headMarkup({ title, description, routePath, locale, image, type = 'webs
   return [
     `<title>${escapeHtml(fullTitle)}</title>`,
     `<meta name="description" content="${escapeHtml(description)}" />`,
-    '<meta name="robots" content="index, follow, max-image-preview:large" />',
+    noindex ? '<meta name="robots" content="noindex, nofollow" />' : '<meta name="robots" content="index, follow, max-image-preview:large" />',
     `<link rel="canonical" href="${canonical}" />`,
     ...alternates,
     `<meta property="og:title" content="${escapeHtml(fullTitle)}" />`,
@@ -285,5 +287,8 @@ const sitemapPaths = [...new Set([
 const today = new Date().toISOString().slice(0, 10);
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${sitemapPaths.flatMap((routePath) => urlLocales.map((locale) => `  <url>\n    <loc>${escapeXml(absoluteUrl(localizedPath(routePath, locale)))}</loc>\n    <lastmod>${today}</lastmod>\n${urlLocales.map((alternate) => `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${escapeXml(absoluteUrl(localizedPath(routePath, alternate)))}" />`).join('\n')}\n    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(absoluteUrl(localizedPath(routePath, defaultLocale)))}" />\n  </url>`)).join('\n')}\n</urlset>\n`;
 await writeFile(path.join(distDir, 'sitemap.xml'), sitemap, 'utf8');
+if (noindex) {
+  await writeFile(path.join(distDir, 'robots.txt'), 'User-agent: *\nDisallow: /\n', 'utf8');
+}
 
-console.log(`[seo] Generated localized static HTML for ${sitemapPaths.length} routes (${products.length} products).`);
+console.log(`[seo] Generated localized static HTML for ${sitemapPaths.length} routes (${products.length} products)${noindex ? ', noindex' : ''}.`);
