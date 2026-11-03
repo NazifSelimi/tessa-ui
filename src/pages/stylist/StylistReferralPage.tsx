@@ -23,7 +23,7 @@ export default function StylistReferralPage() {
   const locale = i18n.language === 'shq' ? 'sq' : i18n.language;
 
   if (!data) {
-    return <><Seo title={t('referral.title')} noIndex /><CatalogState loading={isLoading} error={error} retry={() => void refetch()} /></>;
+    return <><Seo title={t('referral.title')} description={t('referral.shortcutCopy')} noIndex /><CatalogState loading={isLoading} error={error} retry={() => void refetch()} /></>;
   }
 
   const { code, stats } = data;
