@@ -140,7 +140,7 @@ export default function AdminReferralsPage() {
       </Card>
 
       {!isLoading && codes.length === 0 && (
-        <Alert type="info" showIcon style={{ marginBottom: 16 }} message="No codes yet. A stylist gets a code the first time they open “Earn with TESSA” in their salon menu." />
+        <Alert type="info" showIcon style={{ marginBottom: 16 }} message="No stylists yet. Every approved stylist gets a code automatically and it shows up here." />
       )}
 
       <Table<AdminReferralCode>
