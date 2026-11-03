@@ -617,6 +617,7 @@
     "codeRules": "4–20 shkronja (A–Z), numra ose viza, p.sh. ANA-SALON.",
     "inactive": "Ky kod është i çaktivizuar. Kontaktoni TESSA për ta aktivizuar përsëri.",
     "terms": "Klientët marrin {{discount}}% zbritje. Ju fitoni {{commission}}% nga ajo që paguajnë për produktet.",
+    "termsCap": "Deri në {{max}} për porosi.",
     "firstOrderOnly": "Vlen për porosinë e parë të klientit.",
     "share": "Ndaj",
     "copyCode": "Kopjo kodin",

@@ -120,6 +120,9 @@ export default function AdminReferralsPage() {
           <Form.Item name="commissionPercentage" label="Stylist credit %" rules={[{ required: true }]}>
             <InputNumber min={0} max={30} step={0.5} />
           </Form.Item>
+          <Form.Item name="maxCommission" label="Max credit per order (MKD)" rules={[{ required: true }]} tooltip="The most a stylist earns from one client order. 0 means no limit.">
+            <InputNumber min={0} max={100000} step={10} precision={0} />
+          </Form.Item>
           <Form.Item name="firstOrderOnly" label="First order only" valuePropName="checked">
             <Switch />
           </Form.Item>
@@ -132,6 +135,7 @@ export default function AdminReferralsPage() {
         </Form>
         <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
           Without “Also change existing codes”, only new codes get these terms. You can still change one stylist's terms with Edit below.
+          The max credit per order applies to every code straight away (0 = no limit); orders already placed keep their credit.
         </Text>
       </Card>
 
@@ -148,7 +152,7 @@ export default function AdminReferralsPage() {
         columns={[
           { title: 'Code', dataIndex: 'code', render: (code: string, row) => <Space><Text strong copyable>{code}</Text>{!row.isActive && <Tag color="red">Off</Tag>}</Space> },
           { title: 'Stylist', key: 'stylist', render: (_, row) => <div><div>{row.stylist.name || '—'}</div><Text type="secondary">{row.stylist.email}</Text></div> },
-          { title: 'Terms', key: 'terms', render: (_, row) => <span>-{row.discountPercentage}% / +{row.commissionPercentage}%{row.firstOrderOnly && <Tag style={{ marginLeft: 6 }}>1st order</Tag>}</span> },
+          { title: 'Terms', key: 'terms', render: (_, row) => <span>-{row.discountPercentage}% / +{row.commissionPercentage}%{(row.maxCommission ?? 0) > 0 && <Text type="secondary"> (max {formatPrice(row.maxCommission ?? 0)})</Text>}{row.firstOrderOnly && <Tag style={{ marginLeft: 6 }}>1st order</Tag>}</span> },
           { title: 'Orders', dataIndex: 'orders', sorter: (a, b) => a.orders - b.orders },
           { title: 'Client sales', dataIndex: 'clientSales', render: formatPrice, sorter: (a, b) => a.clientSales - b.clientSales, defaultSortOrder: 'descend' },
           { title: 'Earned', dataIndex: 'earned', render: formatPrice },

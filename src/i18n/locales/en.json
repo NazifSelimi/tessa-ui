@@ -617,6 +617,7 @@
     "codeRules": "4–20 letters (A–Z), numbers or dashes, e.g. ANA-SALON.",
     "inactive": "This code is switched off. Contact TESSA to turn it back on.",
     "terms": "Clients get {{discount}}% off. You earn {{commission}}% of what they pay for products.",
+    "termsCap": "Up to {{max}} per order.",
     "firstOrderOnly": "Valid on a client's first order.",
     "share": "Share",
     "copyCode": "Copy code",

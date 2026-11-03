@@ -99,6 +99,7 @@ export default function StylistReferralPage() {
         {!code.isActive && <p className="nl-referral-warning">{t('referral.inactive')}</p>}
         <p className="nl-referral-terms">
           {t('referral.terms', { discount: code.discountPercentage, commission: code.commissionPercentage })}
+          {(code.maxCommission ?? 0) > 0 && <> {t('referral.termsCap', { max: formatPrice(code.maxCommission ?? 0) })}</>}
           {code.firstOrderOnly && <> {t('referral.firstOrderOnly')}</>}
         </p>
         <div className="nl-button-row">

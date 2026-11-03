@@ -7,6 +7,8 @@ export interface ReferralCode {
   commissionPercentage: number;
   firstOrderOnly: boolean;
   isActive: boolean;
+  /** Most credit a stylist earns from one client order, in MKD; 0 means no cap. */
+  maxCommission?: number;
 }
 
 export interface StoreCreditTransaction {
@@ -29,6 +31,7 @@ export interface ReferralSettings {
   discountPercentage: number;
   commissionPercentage: number;
   firstOrderOnly: boolean;
+  maxCommission: number;
 }
 
 export interface AdminReferralCode extends ReferralCode {
