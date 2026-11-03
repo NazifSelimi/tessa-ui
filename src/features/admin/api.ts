@@ -349,7 +349,8 @@ export const adminApi = baseApi.injectEndpoints({
         };
       },
       transformResponse: (response: any) => response.data,
-      invalidatesTags: [API_TAGS.Products],
+      // The storefront product page caches by Product id, so refresh it too.
+      invalidatesTags: (_result, _error, { id }) => [API_TAGS.Products, { type: API_TAGS.Product, id }, { type: API_TAGS.Product, id: Number(id) }],
     }),
 
     getProductFamilies: builder.query<{ id: string; name: string; shadeCount: number }[], void>({
@@ -363,7 +364,7 @@ export const adminApi = baseApi.injectEndpoints({
         url: `/v1/admin/products/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [API_TAGS.Products],
+      invalidatesTags: (_result, _error, id) => [API_TAGS.Products, { type: API_TAGS.Product, id }, { type: API_TAGS.Product, id: Number(id) }],
     }),
 
     updateProductStock: builder.mutation<any, { id: string; quantity: number; operation: 'set' | 'add' | 'subtract' }>({

@@ -463,3 +463,21 @@
   .nl-shade-summary img:nth-of-type(n + 4) { display: none; }
   .nl-shade-summary span { font-size: 11px; }
 }
+
+/* Admin-only product shortcuts on storefront cards and product pages */
+.nl-admin-controls { display: flex; align-items: center; gap: 6px; }
+.nl-admin-controls button, .nl-admin-controls a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 0 10px; border: 1px solid #d8c9a8; border-radius: 9px; background: #fffaf0; color: #6b4e16 !important; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.nl-admin-controls button:hover, .nl-admin-controls a:hover { background: #f8ecd2; }
+.nl-admin-controls button:focus-visible, .nl-admin-controls a:focus-visible { outline: 2px solid #6b4e16; outline-offset: 2px; }
+.nl-admin-controls .nl-admin-controls__danger { border-color: #efc4c4; background: #fff5f5; color: #b42318 !important; }
+.nl-admin-controls .nl-admin-controls__danger:hover { background: #fde4e4; }
+.nl-admin-controls--card { padding: 8px 16px 14px; margin-top: -4px; border-top: 1px dashed #eadfca; }
+.nl-admin-controls--card button, .nl-admin-controls--card a { flex: 1; padding: 0; }
+.nl-admin-controls--page { flex-wrap: wrap; margin: -8px 0 20px; padding: 10px 12px; border: 1px dashed #d8c9a8; border-radius: 12px; background: #fffdf7; }
+.nl-admin-controls__tag { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #6b4e16; margin-right: 4px; }
+.nl-admin-add { white-space: nowrap; }
+@media (max-width: 600px) {
+  .nl-shop-toolbar { flex-wrap: wrap; }
+  .nl-shop-toolbar .nl-search { flex-basis: 100%; }
+  .nl-admin-add { flex: 1; justify-content: center; }
+}

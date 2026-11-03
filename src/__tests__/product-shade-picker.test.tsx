@@ -8,6 +8,7 @@ import { groupShades, shadeGroup } from '@/shared/utils/shadeGroups';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, options?: { count?: number }) => (options?.count !== undefined ? `${key} ${options.count}` : key) }),
 }));
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAdmin: false }) }));
 
 const shade = (id: string, code: string | null, name: string, inStock = true): ProductShade => ({
   id, name: `${code ?? ''} ${name}`.trim(), shadeCode: code, shadeName: name, swatch: `https://img.test/${id}.jpg`, inStock,

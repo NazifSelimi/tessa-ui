@@ -26,6 +26,7 @@ import PriceDisplay from '@/components/PriceDisplay';
 import ProductCard from '@/components/ProductCard';
 import ShadePicker from '@/components/ShadePicker';
 import CatalogueBook from '@/components/CatalogueBook';
+import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
@@ -190,6 +191,7 @@ export default function ProductPage() {
           { title: product.name },
         ]}
       />
+      <AdminProductShortcuts product={product} variant="page" onDeleted={() => navigate('/shop')} />
 
       <div className={`product-detail${switching ? ' product-detail--switching' : ''}`} aria-busy={switching || undefined}>
         {product.inReview && (
