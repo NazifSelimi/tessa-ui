@@ -22,7 +22,7 @@ import {
   PURGE,
   REGISTER,
 } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import { browserStorage as storage } from './browserStorage';
 
 // Import slices from feature modules
 import authReducer from '@/features/auth/slice';
