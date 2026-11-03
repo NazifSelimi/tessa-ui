@@ -13,11 +13,11 @@ export function SectionHeading({ eyebrow, title, to, action }: { eyebrow?: strin
   return <div className="nl-section-heading"><div>{eyebrow && <span className="nl-eyebrow">{eyebrow}</span>}<h2>{title}</h2></div>{to && <Link to={to}>{action}<ChevronRight size={16} /></Link>}</div>;
 }
 
-export function ProductImage({ product, priority = false }: { product: Product; priority?: boolean }) {
+export function ProductImage({ product, priority = false, hoverAngle = false }: { product: Product; priority?: boolean; hoverAngle?: boolean }) {
   const photos = storefrontPhotos(product.media);
-  // A second angle, if the product has one, fades in when the card is hovered (loaded on first hover).
+  // On product cards a second angle, if the product has one, fades in on hover (loaded on first hover).
   const [hoverUrl, setHoverUrl] = useState<string | null>(null);
-  const second = photos.length > 1 ? photos[1].url : null;
+  const second = hoverAngle && photos.length > 1 ? photos[1].url : null;
   if (second) {
     return <span className="nl-product-photos" onMouseEnter={() => setHoverUrl(second)}>
       <ProductMainImage product={product} priority={priority} />
