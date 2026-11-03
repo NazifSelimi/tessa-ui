@@ -24,7 +24,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiscounts } from '@/hooks/useDiscounts';
 import { useTranslation } from 'react-i18next';
-import { useCreateOrderMutation } from '@/features/orders/api';
+import { useCreateOrderMutation, useGetCartQuoteQuery } from '@/features/orders/api';
 import { useGetBundlesQuery } from '@/features/products/api';
 import { isProfileComplete } from '@/features/auth/profile';
 import {
@@ -113,8 +113,22 @@ export default function CheckoutPage() {
       return discount + Math.min(regular, saving);
     }, 0);
   }, [activeBundles, bundleIds, getItemTotal, items]);
-  const discountAmount = getDiscountForSubtotal(Math.max(0, subtotal - bundleDiscount));
-  const total = subtotal - discountAmount - bundleDiscount + shippingCost;
+  const localCouponDiscount = getDiscountForSubtotal(Math.max(0, subtotal - bundleDiscount));
+
+  // The server prices the cart exactly as checkout will (offers, coupon, profit
+  // limit, shipping); the local figures above only fill in while it loads.
+  const { currentData: quote } = useGetCartQuoteQuery(
+    {
+      items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })),
+      bundle_ids: bundleIds,
+      coupon_code: appliedCode ?? undefined,
+    },
+    { skip: items.length === 0 || orderComplete },
+  );
+  const discountAmount = quote ? quote.couponDiscount : localCouponDiscount;
+  const offerDiscount = quote ? quote.bundleDiscount : bundleDiscount;
+  const shippingTotal = quote ? quote.shipping : shippingCost;
+  const total = quote ? quote.total : subtotal - localCouponDiscount - bundleDiscount + shippingCost;
 
   // Empty cart check
   if (items.length === 0 && !orderComplete) {
@@ -570,16 +584,20 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {bundleDiscount > 0 && (
+              {offerDiscount > 0 && (
                 <div className="price-row">
-                  <Text type="secondary">Bundle savings</Text>
-                  <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(bundleDiscount)}</Text>
+                  <Text type="secondary">{t('checkout.offerSavings')}</Text>
+                  <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(offerDiscount)}</Text>
                 </div>
+              )}
+
+              {quote?.discountLimited && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('checkout.discountLimited')}</Text>
               )}
               
               <div className="price-row">
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
-                <Text>{shippingCost === 0 ? t('checkout.free') : formatPrice(shippingCost)}</Text>
+                <Text>{shippingTotal === 0 ? t('checkout.free') : formatPrice(shippingTotal)}</Text>
               </div>
             </Space>
 
@@ -591,9 +609,9 @@ export default function CheckoutPage() {
             </div>
 
             {/* Free Shipping Progress */}
-            {shippingCost > 0 && (
+            {shippingTotal > 0 && (
               <Alert
-                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(3000 - subtotal) })}`}
+                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(quote ? quote.amountToFreeShipping : 3000 - subtotal) })}`}
                 type="info"
                 showIcon
                 style={{ marginTop: 'var(--spacing-lg)' }}

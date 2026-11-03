@@ -6,6 +6,7 @@ import CheckoutPage from '@/pages/CheckoutPage';
 
 const clearCartMock = vi.fn();
 const createOrderMock = vi.fn();
+let cartQuote: any;
 
 let cartItems: any[] = [];
 
@@ -38,6 +39,7 @@ vi.mock('@/hooks/useDiscounts', () => ({
 
 vi.mock('@/features/orders/api', () => ({
   useCreateOrderMutation: () => [createOrderMock],
+  useGetCartQuoteQuery: () => ({ currentData: cartQuote }),
 }));
 
 vi.mock('@/features/products/api', () => ({
@@ -70,6 +72,7 @@ describe('Checkout flow', () => {
     createOrderMock.mockReset();
     createOrderMock.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ id: 'order-123' }) });
     cartItems = [];
+    cartQuote = undefined;
   });
 
   it('blocks checkout when the cart is empty', () => {
@@ -111,5 +114,21 @@ describe('Checkout flow', () => {
     })));
     expect(clearCartMock).toHaveBeenCalledOnce();
     expect(await screen.findByText('Order Placed Successfully!')).toBeInTheDocument();
+  });
+
+  it('shows the total the server will charge, including a limited discount', async () => {
+    cartItems = [{
+      productId: '1', quantity: 2,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
+    cartQuote = {
+      subtotal: 1200, bundleDiscount: 100, couponDiscount: 0, discount: 100, discountLimited: true,
+      appliedBundleIds: ['bundle-5-plus-1'], skippedBundles: [], couponCode: null, couponError: null,
+      shipping: 150, amountToFreeShipping: 1800, total: 1250,
+    };
+    renderCheckout();
+
+    expect(await screen.findByText('checkout.discountLimited')).toBeInTheDocument();
+    expect(screen.getAllByText(/1[.,\s]?250/).length).toBeGreaterThan(0);
   });
 });

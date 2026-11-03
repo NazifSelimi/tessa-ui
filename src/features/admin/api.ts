@@ -101,6 +101,34 @@ interface Coupon {
   updatedAt?: string;
 }
 
+export type PricingSettings = {
+  costPercentage: number;
+  minMarginPercentage: number;
+};
+
+export type OfferAudienceResult = {
+  available: boolean;
+  unpricedProducts: string[];
+  regularPrice: number;
+  offerPrice: number;
+  saving: number;
+  savingPercentage: number;
+  cost: number;
+  lowestAllowedPrice: number;
+  appliedSaving: number;
+  limitedByProfitFloor: boolean;
+  profitBefore: number;
+  profitAfter: number;
+  marginAfterPercentage: number | null;
+  salesNeededToMatch: number | null;
+};
+
+export type OfferSimulation = {
+  settings: PricingSettings;
+  retail: OfferAudienceResult;
+  salon: OfferAudienceResult;
+};
+
 type BundlePayload = {
   name?: string;
   description?: string;
@@ -563,6 +591,24 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.Bundles],
     }),
 
+    // Profit of an offer while it is being edited; nothing is saved.
+    simulateBundle: builder.mutation<OfferSimulation, BundlePayload>({
+      query: (body) => ({ url: '/v1/admin/bundles/simulate', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+    }),
+
+    getPricingSettings: builder.query<PricingSettings, void>({
+      query: () => '/v1/admin/pricing-settings',
+      transformResponse: (response: any) => response.data,
+      providesTags: [API_TAGS.PricingSettings],
+    }),
+
+    updatePricingSettings: builder.mutation<PricingSettings, Partial<PricingSettings>>({
+      query: (body) => ({ url: '/v1/admin/pricing-settings', method: 'PUT', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.PricingSettings],
+    }),
+
     // ==================== EDITABLE STOREFRONT CONTENT ====================
 
     getContentBlocks: builder.query<ContentBlock[], void>({
@@ -634,6 +680,9 @@ export const {
   useCreateBundleMutation,
   useUpdateBundleMutation,
   useDeleteBundleMutation,
+  useSimulateBundleMutation,
+  useGetPricingSettingsQuery,
+  useUpdatePricingSettingsMutation,
   useGetContentBlocksQuery,
   useGetPublishedContentBlocksQuery,
   useCreateContentBlockMutation,

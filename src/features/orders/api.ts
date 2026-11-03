@@ -39,6 +39,28 @@ interface OrdersQueryParams {
   status?: string;
 }
 
+export interface CartQuoteRequest {
+  items: Array<{ product_id: number; qty: number }>;
+  bundle_ids?: string[];
+  coupon_code?: string;
+}
+
+/** The server's price for a cart: the same numbers checkout will charge. */
+export interface CartQuote {
+  subtotal: number;
+  bundleDiscount: number;
+  couponDiscount: number;
+  discount: number;
+  discountLimited: boolean;
+  appliedBundleIds: string[];
+  skippedBundles: Array<{ bundleId: string; reason: string }>;
+  couponCode: string | null;
+  couponError: string | null;
+  shipping: number;
+  amountToFreeShipping: number;
+  total: number;
+}
+
 export const ordersApi = baseApi.injectEndpoints({
   overrideExisting: false,
   endpoints: (builder) => ({
@@ -72,6 +94,15 @@ export const ordersApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: API_TAGS.Orders, id: 'LIST' }],
     }),
 
+    getCartQuote: builder.query<CartQuote, CartQuoteRequest>({
+      query: (body) => ({
+        url: '/v1/cart/quote',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: any) => response.data,
+    }),
+
     cancelOrder: builder.mutation<Order, string>({
       query: (id) => ({
         url: `/v1/orders/${id}/cancel`,
@@ -93,4 +124,5 @@ export const {
   useGetOrderQuery,
   useCreateOrderMutation,
   useCancelOrderMutation,
+  useGetCartQuoteQuery,
 } = ordersApi;

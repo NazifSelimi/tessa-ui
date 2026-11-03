@@ -15,6 +15,7 @@ interface ProductFormValues {
   name: string;
   price: number;
   stylist_price?: number;
+  cost_price?: number | null;
   stylist_only?: boolean;
   normalize_catalog_background?: boolean;
   quantity: number;
@@ -39,6 +40,7 @@ function snapshotFromProduct(product: Product): ProductFormValues {
     name: product.name,
     price: Number(product.price ?? 0),
     stylist_price: Number(product.stylistPrice ?? 0),
+    cost_price: product.costPrice ?? null,
     stylist_only: Boolean(product.stylistOnly),
     quantity: product.quantity ?? 0,
     category_id: Number(product.categoryId || (product.category as any)?.id || 0),
@@ -120,7 +122,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
         /* ---- UPDATE: only send fields that actually changed ---- */
         const original = snapshotFromProduct(editingProduct);
         const fieldKeys: (keyof ProductFormValues)[] = [
-          'name', 'price', 'stylist_price', 'stylist_only', 'quantity', 'category_id', 'brand_id',
+          'name', 'price', 'stylist_price', 'cost_price', 'stylist_only', 'quantity', 'category_id', 'brand_id',
           'product_family_id', 'shade_code', 'shade_name', 'shade_sort_order',
         ];
         let hasChanges = false;
@@ -200,6 +202,9 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
         formData.append('price', String(values.price));
         if (values.stylist_price !== undefined && values.stylist_price !== null) {
           formData.append('stylist_price', String(values.stylist_price));
+        }
+        if (values.cost_price !== undefined && values.cost_price !== null) {
+          formData.append('cost_price', String(values.cost_price));
         }
         formData.append('stylist_only', values.stylist_only ? '1' : '0');
         formData.append('quantity', String(values.quantity));
@@ -321,6 +326,15 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
               extra={!isEditing ? 'Auto-calculated as 90% of price if empty' : undefined}
             >
               <InputNumber min={0} prefix="MKD" placeholder="0.00" style={{ width: '100%' }} precision={2} />
+            </Form.Item>
+          </Col>
+          <Col xs={12} sm={8}>
+            <Form.Item
+              name="cost_price"
+              label="Cost Price (MKD)"
+              extra="Admin only. Leave empty to use the estimated cost % from Offers."
+            >
+              <InputNumber min={0} prefix="MKD" placeholder="Estimated" style={{ width: '100%' }} precision={2} />
             </Form.Item>
           </Col>
           <Col xs={12} sm={8}>

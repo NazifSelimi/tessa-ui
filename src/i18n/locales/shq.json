@@ -228,6 +228,8 @@
     "removeDiscount": "Hiq kodin e zbritjes",
     "professionalHint": "Mund të keni qasje në kode profesionale të zbritjes.",
     "addMoreForFreeShipping": "Shtoni edhe {{amount}} për dërgesë falas",
+    "offerSavings": "Kursim nga oferta",
+    "discountLimited": "Zbritjet janë të kufizuara dhe nuk mund të kombinohen nën çmimin tonë minimal.",
     "discountApplied": "Kodi i zbritjes u aplikua!",
     "shippingRequired": "Kërkohen të dhënat e dërgesës."
   },

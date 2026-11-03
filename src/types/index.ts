@@ -48,6 +48,8 @@ export interface Product {
   price?: string | number;
   compareAtPrice?: string | number | null;
   stylistPrice?: string | number;
+  /** Admin-only: real purchase cost; null means the estimated cost % is used. */
+  costPrice?: number | null;
   stylistOnly?: boolean;
   /** Admin-only: the product lacks a real photo, brand or category and is hidden from everyone else. */
   inReview?: boolean | null;

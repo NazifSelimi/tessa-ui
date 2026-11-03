@@ -228,6 +228,8 @@
     "removeDiscount": "Remove discount code",
     "professionalHint": "You may have access to professional discount codes.",
     "addMoreForFreeShipping": "Add {{amount}} more for free shipping",
+    "offerSavings": "Offer savings",
+    "discountLimited": "Discounts are limited so they can't be combined below our minimum price.",
     "discountApplied": "Discount code applied!",
     "shippingRequired": "Shipping information is required."
   },

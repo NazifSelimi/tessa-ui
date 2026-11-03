@@ -139,6 +139,7 @@ export const API_TAGS = {
   DistributorCodes: 'DistributorCodes',
   StylistOrders: 'StylistOrders',
   Bundles: 'Bundles',
+  PricingSettings: 'PricingSettings',
   ContentBlocks: 'ContentBlocks',
 } as const;
 

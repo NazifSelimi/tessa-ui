@@ -4,6 +4,8 @@ import { DeleteOutlined, GiftOutlined, PlusOutlined } from '@ant-design/icons';
 import { useCreateBundleMutation, useDeleteBundleMutation, useGetAdminBundlesQuery, useUpdateBundleMutation, useGetAllProductsQuery } from '@/features/admin/api';
 import type { BundlePromotionType, StoreBundle } from '@/types';
 import { extractErrorMessage } from '@/shared/utils/error';
+import OfferProfitPanel from '@/components/OfferProfitPanel';
+import PricingSettingsCard from '@/components/PricingSettingsCard';
 
 const { Title, Text } = Typography;
 
@@ -29,11 +31,12 @@ export default function AdminBundlesPage() {
   const [editing, setEditing] = useState<StoreBundle | null>(null);
   const [form] = Form.useForm<BundleForm>();
   const promotionType = Form.useWatch('promotion_type', form);
+  const draft = Form.useWatch([], form);
 
   const products = productPage?.data ?? [];
   const productOptions = products.map((product) => ({
     value: String(product.id),
-    label: `${product.name} (${Number(product.price).toFixed(0)} MKD)`,
+    label: `${product.name} (${Number(product.price).toFixed(0)} / salon ${Number(product.stylistPrice ?? 0).toFixed(0)} MKD)`,
   }));
 
   const openEditor = (bundle?: StoreBundle) => {
@@ -75,6 +78,7 @@ export default function AdminBundlesPage() {
         <Title level={2} style={{ margin: 0 }}>Offers & Bundles</Title>
         <Text type="secondary">Create fixed-price sets, percentage savings, or flexible multi-product free-item deals.</Text>
       </Space>
+      <PricingSettingsCard />
       <Button type="primary" icon={<PlusOutlined />} onClick={() => openEditor()} style={{ marginLeft: 16, marginBottom: 24 }}>
         Create offer
       </Button>
@@ -93,7 +97,7 @@ export default function AdminBundlesPage() {
         ]}
       />
 
-      <Drawer title={editing ? 'Edit offer' : 'Create offer'} width={560} open={open} onClose={() => setOpen(false)}>
+      <Drawer title={editing ? 'Edit offer' : 'Create offer'} width={720} open={open} onClose={() => setOpen(false)}>
         <Form form={form} layout="vertical" onFinish={submit}>
           <Form.Item name="name" label="Offer name" rules={[{ required: true }]}><Input placeholder="No Yellow salon restock 5+1" /></Form.Item>
           <Form.Item name="description" label="What makes this worthwhile?"><Input.TextArea rows={3} placeholder="Six salon-size shampoos, with one free." /></Form.Item>
@@ -115,6 +119,9 @@ export default function AdminBundlesPage() {
                 <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, bonus_quantity: 0 })}>Add product</Button>
               </Space>}
             </Form.List>
+          </Card>
+          <Card size="small" title="What this offer earns" style={{ marginBottom: 16 }}>
+            {open && <OfferProfitPanel draft={draft ?? {}} />}
           </Card>
           <Space size={24}>
             <Form.Item name="is_active" valuePropName="checked" label="Live now"><Switch /></Form.Item>
