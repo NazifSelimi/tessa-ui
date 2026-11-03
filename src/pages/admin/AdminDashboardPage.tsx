@@ -25,6 +25,7 @@ import {
   UserOutlined,
   ScissorOutlined,
   RiseOutlined,
+  ShareAltOutlined,
   FileTextOutlined,
   TeamOutlined,
   ShoppingCartOutlined,
@@ -256,6 +257,11 @@ const AdminDashboardPage: React.FC = () => {
               <Link to="/admin/coupons" style={{ display: 'block' }}>
                 <Button icon={<RiseOutlined />} block>
                   Manage Coupons
+                </Button>
+              </Link>
+              <Link to="/admin/referrals" style={{ display: 'block' }}>
+                <Button icon={<ShareAltOutlined />} block>
+                  Stylist Referrals &amp; Credit
                 </Button>
               </Link>
               <Link to="/admin/users" style={{ display: 'block' }}>
