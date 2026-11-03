@@ -62,6 +62,8 @@ const StylistRequestPage = lazy(() => import('./pages/stylist/StylistRequestPage
 const HairSurveyPage = lazy(() => import('./pages/HairSurveyPage'));
 const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage'));
 const StylistQuickOrderPage = lazy(() => import('./pages/stylist/StylistQuickOrderPage'));
+const StylistReferralPage = lazy(() => import('./pages/stylist/StylistReferralPage'));
+const AdminReferralsPage = lazy(() => import('./pages/admin/AdminReferralsPage'));
 // Design Lab — isolated /design-lab route for evaluating Shop/ordering concepts
 const DesignLabPage = lazy(() => import('./pages/design-lab/DesignLabPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -192,6 +194,7 @@ function App() {
                 } />
 
               <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole={['stylist', 'admin']}><StylistWorkspacePage /></ProtectedRoute>} />
+              <Route path="/stylist/referral" element={<ProtectedRoute requiredRole="stylist"><StylistReferralPage /></ProtectedRoute>} />
 
                 {/* Stylist quick-order – stylist role required */}
                 <Route path="/stylist/quick-order" element={
@@ -231,6 +234,7 @@ function App() {
                 <Route path="/admin/orders" element={<AdminOrdersPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/coupons" element={<AdminCouponsPage />} />
+                <Route path="/admin/referrals" element={<AdminReferralsPage />} />
                 <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
                 <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
                 <Route path="/admin/stylist-invitations" element={<AdminStylistInvitationsPage />} />

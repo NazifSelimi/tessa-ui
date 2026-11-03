@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import {
   Row, Col, Typography, Steps, Form, Input, Button, Card, Select,
-  Divider, Space, Image, message, Alert, Tag, Result,
+  Divider, Space, Image, message, Alert, Tag, Result, Checkbox,
 } from 'antd';
 import {
   ShoppingOutlined, CheckCircleOutlined,
@@ -37,6 +37,7 @@ import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import { forgetReferralCode, storedReferralCode } from '@/shared/utils/referral';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -65,6 +66,8 @@ export default function CheckoutPage() {
   const [discountInput, setDiscountInput] = useState('');
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [useStoreCredit, setUseStoreCredit] = useState(true);
+  const [referralTried, setReferralTried] = useState(false);
 
   const [shippingForm] = Form.useForm();
 
@@ -122,13 +125,29 @@ export default function CheckoutPage() {
       items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })),
       bundle_ids: bundleIds,
       coupon_code: appliedCode ?? undefined,
+      use_store_credit: isAuthenticated && useStoreCredit,
     },
     { skip: items.length === 0 || orderComplete },
   );
   const discountAmount = quote ? quote.couponDiscount : localCouponDiscount;
   const offerDiscount = quote ? quote.bundleDiscount : bundleDiscount;
   const shippingTotal = quote ? quote.shipping : shippingCost;
-  const total = quote ? quote.total : subtotal - localCouponDiscount - bundleDiscount + shippingCost;
+  const storeCreditUsed = quote?.storeCreditUsed ?? 0;
+  const total = quote ? (quote.totalToPay ?? quote.total) : subtotal - localCouponDiscount - bundleDiscount + shippingCost;
+
+  // A client who came through a stylist's link (?ref=CODE) gets that code applied
+  // once. Salon accounts never use referral codes, so it is not tried for them.
+  useEffect(() => {
+    const referral = storedReferralCode();
+    if (referralTried || appliedCode || isProfessional || !referral || items.length === 0) return;
+    setReferralTried(true);
+    void applyCode(referral, Math.max(0, subtotal - bundleDiscount)).then((applied) => {
+      if (!applied) {
+        forgetReferralCode();
+        clearError();
+      }
+    });
+  }, [appliedCode, applyCode, bundleDiscount, clearError, isProfessional, items.length, referralTried, subtotal]);
 
   // Empty cart check
   if (items.length === 0 && !orderComplete) {
@@ -219,9 +238,11 @@ export default function CheckoutPage() {
         custom_message: undefined,
         coupon_code: appliedCode || undefined,
         bundle_ids: bundleIds,
+        use_store_credit: isAuthenticated && useStoreCredit && (quote?.storeCreditAvailable ?? 0) > 0,
       };
 
       await createOrder(payload).unwrap();
+      if (appliedCode && appliedCode === storedReferralCode()) forgetReferralCode();
       clearCart();
       setOrderComplete(true);
     } catch (error: unknown) {
@@ -554,6 +575,18 @@ export default function CheckoutPage() {
                 </Space.Compact>
               )}
 
+              {quote?.couponError && appliedCode && !discountError && (
+                <Text type="danger" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
+                  {quote.couponError}
+                </Text>
+              )}
+
+              {appliedCode && quote?.isReferralCode && !quote.couponError && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
+                  {t('referral.checkoutThanks')}
+                </Text>
+              )}
+
               {discountError && (
                 <Text type="danger" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
                   {discountError}
@@ -599,6 +632,19 @@ export default function CheckoutPage() {
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
                 <Text>{shippingTotal === 0 ? t('checkout.free') : formatPrice(shippingTotal)}</Text>
               </div>
+
+              {(quote?.storeCreditAvailable ?? 0) > 0 && (
+                <Checkbox checked={useStoreCredit} onChange={(e) => setUseStoreCredit(e.target.checked)}>
+                  {t('referral.useCredit', { amount: formatPrice(quote!.storeCreditAvailable) })}
+                </Checkbox>
+              )}
+
+              {storeCreditUsed > 0 && (
+                <div className="price-row">
+                  <Text type="secondary">{t('referral.storeCredit')}</Text>
+                  <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(storeCreditUsed)}</Text>
+                </div>
+              )}
             </Space>
 
             <Divider />

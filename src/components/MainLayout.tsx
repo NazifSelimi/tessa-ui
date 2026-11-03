@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ConfigProvider, Drawer, Dropdown } from 'antd';
-import { ArrowUpRight, ChevronRight, ClipboardList, Facebook, Headphones, Home, Instagram, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
+import { ArrowUpRight, ChevronRight, ClipboardList, Facebook, Gift, Headphones, Home, Instagram, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
@@ -11,6 +11,7 @@ import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import './storefront/new-look.css';
 import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
+import { captureReferralCode } from '@/shared/utils/referral';
 
 const CartDrawer = lazy(() => import('./CartDrawer'));
 const AdminDock = lazy(() => import('./storefront/AdminDock'));
@@ -28,12 +29,14 @@ export default function MainLayout() {
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
   useEffect(() => { setSearch(new URLSearchParams(location.search).get('search') || ''); }, [location.search]);
+  useEffect(() => { captureReferralCode(location.search); }, [location.search]);
 
   const home = professionalShell ? '/stylist/workspace' : '/';
   const navigation = professionalShell ? [
     { to: home, label: t('newLook.home'), icon: Home },
     { to: '/shop', label: t('newLook.products'), icon: Package },
     { to: '/stylist/quick-order', label: t('nav.quickOrder'), icon: Zap },
+    { to: '/stylist/referral', label: t('referral.navLabel'), icon: Gift },
     { to: '/account/orders', label: t('newLook.orders'), icon: ClipboardList },
     { to: '/cart', label: t('newLook.cart'), icon: ShoppingBag },
   ] : [

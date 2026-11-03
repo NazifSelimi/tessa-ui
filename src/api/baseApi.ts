@@ -141,6 +141,7 @@ export const API_TAGS = {
   Bundles: 'Bundles',
   PricingSettings: 'PricingSettings',
   ContentBlocks: 'ContentBlocks',
+  Referrals: 'Referrals',
 } as const;
 
 export type ApiTag = typeof API_TAGS[keyof typeof API_TAGS];

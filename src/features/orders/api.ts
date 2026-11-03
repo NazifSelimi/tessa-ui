@@ -30,6 +30,7 @@ interface CreateOrderRequest {
   custom_message?: string;
   coupon_code?: string;
   bundle_ids?: string[];
+  use_store_credit?: boolean;
 }
 
 // Query params
@@ -43,6 +44,7 @@ export interface CartQuoteRequest {
   items: Array<{ product_id: number; qty: number }>;
   bundle_ids?: string[];
   coupon_code?: string;
+  use_store_credit?: boolean;
 }
 
 /** The server's price for a cart: the same numbers checkout will charge. */
@@ -56,9 +58,13 @@ export interface CartQuote {
   skippedBundles: Array<{ bundleId: string; reason: string }>;
   couponCode: string | null;
   couponError: string | null;
+  isReferralCode: boolean;
   shipping: number;
   amountToFreeShipping: number;
   total: number;
+  storeCreditAvailable: number;
+  storeCreditUsed: number;
+  totalToPay: number;
 }
 
 export const ordersApi = baseApi.injectEndpoints({

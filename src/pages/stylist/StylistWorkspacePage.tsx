@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, ChevronRight, ClipboardList, Package, RotateCcw, Sparkles, Zap } from 'lucide-react';
+import { ArrowUpRight, ChevronRight, ClipboardList, Gift, Package, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useReorder } from '@/hooks/useReorder';
@@ -23,6 +23,7 @@ export default function StylistWorkspacePage() {
   const { reorder, isReordering } = useReorder();
   const shortcuts = [
     { to: '/stylist/quick-order', icon: Zap, title: t('nav.quickOrder'), copy: t('newLook.quickCopy') },
+    { to: '/stylist/referral', icon: Gift, title: t('referral.title'), copy: t('referral.shortcutCopy') },
     { to: '/shop?view=consumer', icon: Package, title: 'View Tessa Store', copy: 'Browse the customer-facing Tessa store layout.' },
     { to: '/account/orders', icon: RotateCcw, title: t('newLook.buyAgain'), copy: t('newLook.reorderCopy') },
     { to: '#salon-offers', icon: Sparkles, title: t('newLook.offers'), copy: t('newLook.offersCopy') },

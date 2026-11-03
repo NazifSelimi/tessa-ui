@@ -163,7 +163,7 @@
 .nl-focus-card h2 { color: white; font-family: var(--font-family-display); font-size: 31px; font-weight: 400; line-height: 1.1; margin: 12px 0 24px; }
 .nl-focus-card h2 i { color: var(--nl-pink); font-style: normal; }
 .nl-focus-card a { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; }
-.nl-quick-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.nl-quick-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .nl-quick-actions > a { position: relative; display: grid; grid-template-columns: 38px 1fr; column-gap: 10px; align-items: center; padding: 17px 13px; min-height: 108px; background: white; border: 1px solid var(--color-border); border-radius: 14px; }
 .nl-action-icon { grid-row: span 2; background: #f7e8ed; color: #9b5364; display: grid; place-items: center; border-radius: 11px; width: 38px; height: 38px; }
 .nl-quick-actions strong { font-size: 12px; line-height: 1.3; padding-right: 10px; }
@@ -495,3 +495,44 @@
 .nl-admin-dock__menu a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; color: var(--nl-ink) !important; font-size: 13px; font-weight: 700; text-decoration: none; }
 .nl-admin-dock__menu a:hover { background: #f7f0f2; }
 @media (max-width: 760px) { .nl-admin-dock { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+
+/* Stylist referral page */
+.nl-referral-hero { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; }
+.nl-referral-code { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.nl-referral-code-row { display: flex; align-items: center; gap: 10px; }
+.nl-referral-code-row strong { font-size: clamp(30px, 6vw, 44px); letter-spacing: .04em; color: var(--nl-ink); line-height: 1.1; word-break: break-all; }
+.nl-referral-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--color-border); background: white; color: var(--nl-ink); cursor: pointer; flex: none; }
+.nl-referral-rename { display: flex; flex-direction: column; gap: 10px; }
+.nl-referral-rename input { font-size: 24px; font-weight: 800; letter-spacing: .04em; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 11px; width: 100%; max-width: 360px; }
+.nl-referral-rename small { color: #817974; }
+.nl-referral-terms { margin: 0; color: #5f5458; }
+.nl-referral-warning { margin: 0; color: #a8323e; font-weight: 700; }
+.nl-referral-apps { display: flex; gap: 16px; font-size: 12px; font-weight: 800; }
+.nl-referral-apps a { color: #9b5364; min-height: 44px; display: inline-flex; align-items: center; }
+.nl-referral-qr { padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.nl-referral-qr canvas { border-radius: 10px; }
+.nl-referral-qr p { margin: 0; font-size: 12px; color: #5f5458; }
+.nl-referral-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.nl-referral-stats > div { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.nl-referral-stats strong { font-size: 20px; color: var(--nl-ink); }
+.nl-referral-stats .is-strong { background: #211b21; border-color: #211b21; }
+.nl-referral-stats .is-strong .nl-eyebrow { color: #cfabb7; }
+.nl-referral-stats .is-strong strong { color: var(--nl-pink); }
+.nl-referral-note { display: flex; align-items: center; gap: 8px; color: #5f5458; margin: 12px 0 0; font-size: 13px; }
+.nl-referral-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.nl-referral-steps li { display: flex; gap: 12px; align-items: flex-start; background: white; border: 1px solid var(--color-border); border-radius: 14px; padding: 16px; }
+.nl-referral-steps li > strong { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--nl-pink); color: #24171b; }
+.nl-referral-table { padding: 4px 16px; }
+.nl-referral-table > div { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--color-border); }
+.nl-referral-table > div:last-child { border-bottom: 0; }
+.nl-referral-table > div > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nl-referral-table small { color: #817974; }
+.nl-referral-table .is-negative { color: #a8323e; }
+.nl-referral-table .is-muted { color: #b3a9ac; text-decoration: line-through; }
+.nl-referral-empty { color: #817974; }
+@media (max-width: 1180px) { .nl-referral-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .nl-referral-hero, .nl-referral-steps { grid-template-columns: 1fr; }
+  .nl-referral-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nl-referral-table > div { flex-wrap: wrap; }
+}

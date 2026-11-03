@@ -7,6 +7,14 @@ import CheckoutPage from '@/pages/CheckoutPage';
 const clearCartMock = vi.fn();
 const createOrderMock = vi.fn();
 let cartQuote: any;
+let isProfessional = true;
+const applyCodeMock = vi.fn();
+let referralCode: string | null = null;
+
+vi.mock('@/shared/utils/referral', () => ({
+  storedReferralCode: () => referralCode,
+  forgetReferralCode: () => { referralCode = null; },
+}));
 
 let cartItems: any[] = [];
 
@@ -26,13 +34,13 @@ vi.mock('@/hooks/useAuth', () => ({
       id: 'user-1', firstName: 'Jane', lastName: 'Stylist', email: 'jane@tessa.mk',
       phone: '078 286 003', address: '1 Test Street', city: 'Skopje', postcode: '1000',
     },
-    token: 'token', isAuthenticated: true, isProfessional: true,
+    token: 'token', isAuthenticated: true, isProfessional,
   }),
 }));
 
 vi.mock('@/hooks/useDiscounts', () => ({
   useDiscounts: () => ({
-    appliedCode: null, applyCode: vi.fn(), removeCode: vi.fn(), discountAmount: 0, getDiscountForSubtotal: () => 0,
+    appliedCode: null, applyCode: applyCodeMock, removeCode: vi.fn(), discountAmount: 0, getDiscountForSubtotal: () => 0,
     discountPercent: 0, error: null, isValidating: false, clearError: vi.fn(),
   }),
 }));
@@ -73,6 +81,10 @@ describe('Checkout flow', () => {
     createOrderMock.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ id: 'order-123' }) });
     cartItems = [];
     cartQuote = undefined;
+    isProfessional = true;
+    applyCodeMock.mockReset();
+    applyCodeMock.mockResolvedValue(true);
+    referralCode = null;
   });
 
   it('blocks checkout when the cart is empty', () => {
@@ -130,5 +142,45 @@ describe('Checkout flow', () => {
 
     expect(await screen.findByText('checkout.discountLimited')).toBeInTheDocument();
     expect(screen.getAllByText(/1[.,\s]?250/).length).toBeGreaterThan(0);
+  });
+
+  it('pays with store credit when the account has some', async () => {
+    cartItems = [{
+      productId: '1', quantity: 2,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
+    cartQuote = {
+      subtotal: 1200, bundleDiscount: 0, couponDiscount: 0, discount: 0, discountLimited: false,
+      appliedBundleIds: [], skippedBundles: [], couponCode: null, couponError: null, isReferralCode: false,
+      shipping: 150, amountToFreeShipping: 1800, total: 1350,
+      storeCreditAvailable: 300, storeCreditUsed: 300, totalToPay: 1050,
+    };
+    renderCheckout();
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('referral.useCredit')).toBeInTheDocument();
+    expect(screen.getAllByText(/1[.,\s]?050/).length).toBeGreaterThan(0);
+
+    await waitFor(() => expect(screen.getByLabelText('First name')).toHaveValue('Jane'));
+    await user.click(screen.getByRole('button', { name: 'Continue to review' }));
+    await user.click(await screen.findByRole('button', { name: /Place Order/ }));
+
+    await waitFor(() => expect(createOrderMock).toHaveBeenCalledWith(expect.objectContaining({ use_store_credit: true })));
+  });
+
+  it('applies a code from a stylist link for clients only', async () => {
+    cartItems = [{
+      productId: '1', quantity: 1,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
+    referralCode = 'ANA10';
+
+    renderCheckout();
+    await screen.findByText('Place Order', { exact: false }).catch(() => null);
+    expect(applyCodeMock).not.toHaveBeenCalled();
+
+    isProfessional = false;
+    renderCheckout();
+    await waitFor(() => expect(applyCodeMock).toHaveBeenCalledWith('ANA10', expect.any(Number)));
   });
 });

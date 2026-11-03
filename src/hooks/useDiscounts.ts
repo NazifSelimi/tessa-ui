@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import { useValidateCouponMutation } from '@/features/coupons/api';
 import { couponDiscount } from '@/shared/utils/checkoutPricing';
+import { extractErrorMessage } from '@/shared/utils/error';
 
 interface DiscountState {
   appliedCode: string | null;
@@ -82,10 +83,12 @@ export function useDiscounts() {
       });
 
       return true;
-    } catch {
+    } catch (error) {
+      // The server explains a refused code (e.g. a referral code on a salon account).
+      const status = (error as { status?: number })?.status;
       setDiscountState(prev => ({
         ...prev,
-        error: 'Failed to validate discount code. Please try again.',
+        error: status === 404 || status === 422 ? extractErrorMessage(error) : 'Failed to validate discount code. Please try again.',
         isValidating: false,
       }));
       return false;

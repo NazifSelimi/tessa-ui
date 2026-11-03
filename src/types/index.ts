@@ -230,6 +230,8 @@ export interface Order {
   discount: number;
   shipping: number;
   tax?: number;
+  /** Paid with the buyer's store credit; total is what is left to pay. */
+  storeCreditUsed?: number;
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;

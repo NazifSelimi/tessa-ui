@@ -196,6 +196,12 @@ export default function OrderDetailPage() {
               <Text>{t('orders.shipping')}</Text>
               <Text>{(order.shipping ?? 0) === 0 ? t('orders.free') : formatPrice(order.shipping ?? 0)}</Text>
             </div>
+            {(order.storeCreditUsed ?? 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text type="success">{t('referral.storeCredit')}</Text>
+                <Text type="success">-{formatPrice(order.storeCreditUsed ?? 0)}</Text>
+              </div>
+            )}
             <Divider style={{ margin: '12px 0' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <Text strong style={{ fontSize: 16 }}>{t('orders.total')}</Text>
