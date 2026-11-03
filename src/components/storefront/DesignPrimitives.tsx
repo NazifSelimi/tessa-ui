@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ChevronRight, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Product } from '@/types';
-import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import { storefrontImageUrl, storefrontPhotos } from '@/shared/utils/storefrontCatalog';
 
 export function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description?: string; action?: ReactNode }) {
   return <div className="nl-page-heading"><div><span className="nl-eyebrow">TESSA / {eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{action}</div>;
@@ -14,6 +14,20 @@ export function SectionHeading({ eyebrow, title, to, action }: { eyebrow?: strin
 }
 
 export function ProductImage({ product, priority = false }: { product: Product; priority?: boolean }) {
+  const photos = storefrontPhotos(product.media);
+  // A second angle, if the product has one, fades in when the card is hovered (loaded on first hover).
+  const [hoverUrl, setHoverUrl] = useState<string | null>(null);
+  const second = photos.length > 1 ? photos[1].url : null;
+  if (second) {
+    return <span className="nl-product-photos" onMouseEnter={() => setHoverUrl(second)}>
+      <ProductMainImage product={product} priority={priority} />
+      {hoverUrl && <img className="nl-product-photo-alt" src={hoverUrl} alt="" aria-hidden="true" decoding="async" />}
+    </span>;
+  }
+  return <ProductMainImage product={product} priority={priority} />;
+}
+
+function ProductMainImage({ product, priority }: { product: Product; priority: boolean }) {
   return <img src={storefrontImageUrl(product) || '/placeholder.svg'} alt={product.name} loading={priority ? 'eager' : 'lazy'} decoding="async" fetchPriority={priority ? 'high' : undefined} onError={e => { if (!e.currentTarget.src.endsWith('/placeholder.svg')) e.currentTarget.src = '/placeholder.svg'; }} />;
 }
 

@@ -111,6 +111,13 @@
 .nl-product-card:nth-child(4n + 4) .nl-product-art { background: #f1e4e7; }
 .nl-product-art img { position: absolute; inset: 9%; width: 82%; height: 82%; object-fit: contain; mix-blend-mode: multiply; transition: transform .2s; }
 .nl-product-art:hover img { transform: scale(1.04); }
+.nl-product-photos { position: absolute; inset: 0; display: block; }
+.nl-product-photos img { transition: transform .2s, opacity .25s; }
+.nl-product-photo-alt { opacity: 0; }
+@media (hover: hover) {
+  .nl-product-art:hover .nl-product-photos img:first-child:not(:only-child) { opacity: 0; }
+  .nl-product-art:hover .nl-product-photo-alt { opacity: 1; }
+}
 .nl-product-badge, .nl-stock-badge { position: absolute; top: 12px; left: 12px; font-size: 9px; font-weight: 700; padding: 4px 9px; border-radius: 20px; background: #fffdf8ed; color: #7b5362; }
 .nl-stock-badge { top: auto; bottom: 12px; background: #fff; color: #6b625e; }
 .nl-review-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; font-weight: 800; padding: 4px 9px; border-radius: 20px; background: #b45309; color: #fff; letter-spacing: .04em; }

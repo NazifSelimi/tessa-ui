@@ -7,7 +7,7 @@
  * these helpers to hide them instead.
  */
 
-import type { Brand, Category, Product } from '@/types';
+import type { Brand, Category, Product, ProductMediaAsset } from '@/types';
 
 const INTERNAL_BRAND_NAMES = ['supplier catalogue'];
 const INTERNAL_CATEGORY_NAMES = ['catalogue review'];
@@ -29,6 +29,17 @@ export function storefrontBrandName(product: Pick<Product, 'brand'>): string {
 export function storefrontCategoryName(product: Pick<Product, 'category'>): string {
   const name = typeof product.category === 'object' ? product.category?.name : product.category;
   return name && !isInternalCategoryName(name) ? name : '';
+}
+
+/**
+ * One entry per photo, in the API's display order. An uploaded photo is stored
+ * as an original, a detail and a card copy; only the detail is kept so each
+ * angle shows once. tessa.mk photos (legacy) have a single copy.
+ */
+export function storefrontPhotos(media?: ProductMediaAsset[] | null): ProductMediaAsset[] {
+  const real = (media ?? []).filter((asset) => asset.url && !isPendingPlaceholderUrl(asset.url));
+  const photos = real.filter((asset) => asset.variant === 'legacy' || asset.variant === 'detail');
+  return photos.length ? photos : real.filter((asset) => asset.variant === 'original');
 }
 
 /** First real image URL, skipping the supplier "pending review" placeholder. */

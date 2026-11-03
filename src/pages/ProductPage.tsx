@@ -34,7 +34,7 @@ import Seo from '@/shared/components/Seo';
 import { site } from '@/shared/config/site';
 import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
 import type { ProductMediaAsset } from '@/types';
-import { isPendingPlaceholderUrl, storefrontBrandName, storefrontCategoryName } from '@/shared/utils/storefrontCatalog';
+import { isPendingPlaceholderUrl, storefrontBrandName, storefrontCategoryName, storefrontPhotos } from '@/shared/utils/storefrontCatalog';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -110,13 +110,11 @@ export default function ProductPage() {
 
   // Resolve the product image URL
   const NO_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="100%" height="100%" fill="%23f5f5f5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif" font-size="18">No image</text></svg>';
-  const media = (product.media ?? []).filter((asset) => !isPendingPlaceholderUrl(asset.url));
-  const detailMedia = media.filter((asset) => asset.url && asset.variant !== 'card' && asset.variant !== 'transparent_master');
-  const nonOriginalMedia = media.filter((asset) => asset.url && asset.variant !== 'original');
+  const photos = storefrontPhotos(product.media);
   const legacyMedia = (product.images?.length ? product.images : (product.image ? [product.image] : []))
     .filter((url) => Boolean(url) && !isPendingPlaceholderUrl(url))
     .map((url) => ({ url, alt: product.name, variant: 'legacy' } as Pick<ProductMediaAsset, 'url' | 'alt' | 'variant'>));
-  const productImages = detailMedia.length ? detailMedia : (nonOriginalMedia.length ? nonOriginalMedia : legacyMedia);
+  const productImages = photos.length ? photos : legacyMedia;
   const selectedAsset = productImages[selectedImage] ?? productImages[0];
   const mainImage = selectedAsset?.url ?? NO_IMAGE;
   const brandName = storefrontBrandName(product);
