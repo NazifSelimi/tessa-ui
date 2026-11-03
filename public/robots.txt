@@ -1,4 +1,22 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /recommendations
+Disallow: /*/admin
+Disallow: /*/account
+Disallow: /*/cart
+Disallow: /*/checkout
+Disallow: /*/login
+Disallow: /*/register
+Disallow: /*/forgot-password
+Disallow: /*/reset-password
+Disallow: /*/recommendations
 
 Sitemap: https://tessa.mk/sitemap.xml
