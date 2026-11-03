@@ -13,6 +13,7 @@ import './storefront/new-look.css';
 import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
 
 const CartDrawer = lazy(() => import('./CartDrawer'));
+const AdminDock = lazy(() => import('./storefront/AdminDock'));
 
 export default function MainLayout() {
   const { t } = useTranslation();
@@ -104,6 +105,7 @@ export default function MainLayout() {
       <nav className="nl-mobile-nav" aria-label={t('newLook.mobileNavigation')}>{navLinks()}</nav>
       {professionalShell && <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} placement="left" width={280} title={t('newLook.navigation')}><div className="tessa-design nl-drawer-sidebar">{sidebar}</div></Drawer>}
       <Suspense fallback={null}><CartDrawer /></Suspense>
+      {isAdmin && <Suspense fallback={null}><AdminDock /></Suspense>}
     </div>
   </ConfigProvider>;
 }

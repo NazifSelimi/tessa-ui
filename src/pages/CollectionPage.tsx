@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { Alert, Button, Empty, Skeleton, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined, ArrowRightOutlined, LockOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
+import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetProductCollectionsQuery, useGetProductsQuery } from '@/features/products/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
@@ -407,6 +408,7 @@ export default function CollectionPage() {
                   <Link to={`/product/${product.id}`} className="pairing-card__link">
                     View technical product <ArrowRightOutlined />
                   </Link>
+                  <AdminProductShortcuts product={product} />
                 </article>
               ))}
             </div>

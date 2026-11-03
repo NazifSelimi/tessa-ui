@@ -1,15 +1,17 @@
 import { lazy, Suspense, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { App } from 'antd';
-import { Images, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useDeleteProductMutation } from '@/features/admin/api';
+import { App, InputNumber } from 'antd';
+import { Check, Images, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useDeleteProductMutation, useUpdateProductMutation } from '@/features/admin/api';
+import { useGetProductByIdQuery } from '@/features/products/api';
 import type { Product } from '@/types';
 
 // Customers never load the editor; it is fetched the first time an admin opens it.
 const ProductEditorModal = lazy(() => import('@/features/admin/ProductEditorModal'));
 
 interface AdminProductControlsProps {
-  product: Product;
+  /** Lists may hold a slim copy; the editor always loads the full product. */
+  product: Pick<Product, 'id' | 'name'> & Partial<Product>;
   /** "card" is a compact icon row; "page" shows labelled buttons. */
   variant?: 'card' | 'page';
   onDeleted?: () => void;
@@ -20,6 +22,7 @@ export function AdminProductControls({ product, variant = 'card', onDeleted }: A
   const { modal, message } = App.useApp();
   const [editing, setEditing] = useState(false);
   const [deleteProduct] = useDeleteProductMutation();
+  const { data: fullProduct } = useGetProductByIdQuery(String(product.id), { skip: !editing });
 
   const confirmDelete = () => {
     modal.confirm({
@@ -47,11 +50,39 @@ export function AdminProductControls({ product, variant = 'card', onDeleted }: A
       <button type="button" onClick={() => setEditing(true)} aria-label={`Edit ${product.name}`} title="Edit"><Pencil size={15} />{labelled && 'Edit'}</button>
       <Link to={`/admin/catalog-images?product=${product.id}`} aria-label={`Photos of ${product.name}`} title="Photos"><Images size={15} />{labelled && 'Photos'}</Link>
       <button type="button" className="nl-admin-controls__danger" onClick={confirmDelete} aria-label={`Delete ${product.name}`} title="Delete"><Trash2 size={15} />{labelled && 'Delete'}</button>
+      {labelled && product.price !== undefined && <QuickFields product={product as Product} />}
     </div>
-    {editing && <Suspense fallback={null}>
-      <ProductEditorModal open product={product} onClose={() => setEditing(false)} />
+    {editing && fullProduct && <Suspense fallback={null}>
+      <ProductEditorModal open product={fullProduct} onClose={() => setEditing(false)} />
     </Suspense>}
   </>;
+}
+
+/** Price and stock, saved in place without opening the full editor. */
+function QuickFields({ product }: { product: Product }) {
+  const { message } = App.useApp();
+  const [updateProduct, { isLoading }] = useUpdateProductMutation();
+  const [price, setPrice] = useState<number | null>(Number(product.price ?? 0));
+  const [quantity, setQuantity] = useState<number | null>(product.quantity ?? 0);
+  const changed = price !== Number(product.price ?? 0) || quantity !== (product.quantity ?? 0);
+
+  const save = async () => {
+    const data = new FormData();
+    if (price !== Number(product.price ?? 0)) data.append('price', String(price ?? 0));
+    if (quantity !== (product.quantity ?? 0)) data.append('quantity', String(quantity ?? 0));
+    try {
+      await updateProduct({ id: String(product.id), data }).unwrap();
+      message.success('Saved');
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Failed to save');
+    }
+  };
+
+  return <div className="nl-admin-quick">
+    <label>Price<InputNumber size="small" min={0} value={price} onChange={setPrice} onPressEnter={() => changed && save()} suffix="MKD" /></label>
+    <label>Stock<InputNumber size="small" min={0} value={quantity} onChange={setQuantity} onPressEnter={() => changed && save()} /></label>
+    <button type="button" disabled={!changed || isLoading} onClick={save}><Check size={15} />Save</button>
+  </div>;
 }
 
 /** "Add product" for admins on shop pages; opens the new product once it is saved. */

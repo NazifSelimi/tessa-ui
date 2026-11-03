@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetProductsQuery } from '@/features/products/api';
 import ProductCard from '@/components/ProductCard';
+import { AdminAddProductShortcut, AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import { CatalogState, PageHeading, ProductImage, SectionHeading } from '@/components/storefront/DesignPrimitives';
 import ContentBlocks from '@/components/storefront/ContentBlocks';
 import HomePageEditor from '@/components/storefront/HomePageEditor';
@@ -33,6 +34,7 @@ export default function HomePage() {
       <div className="nl-hero-copy"><span className="nl-eyebrow">{t('newLook.heroEyebrow')}</span><h2>{t('newLook.heroTitle')}<br /><i>{t('newLook.heroAccent')}</i></h2><p>{t('newLook.heroCopy')}</p><Link className="nl-button nl-button-dark" to="/quiz">{t('newLook.discoverRoutine')}<ArrowUpRight size={18} /></Link></div>
       <div className="nl-hero-art"><div className="nl-art-orbit" />{hero ? <ProductImage product={hero} priority /> : <div className="nl-hero-monogram" aria-hidden="true">t<span>care, beautifully.</span></div>}<span className="nl-art-caption">TESSA / HAIR RITUALS</span><Sparkles className="nl-art-sparkle" size={28} aria-hidden="true" /></div>
     </section>
+    {hero && <div className="nl-admin-hero"><AdminProductShortcuts product={hero} variant="page" /></div>}
     <ContentBlocks blocks={contentBlocks} />
     <section className="nl-section">
       <SectionHeading eyebrow={t('newLook.yourHair')} title={t('newLook.whereToStart')} to="/quiz" action={t('newLook.takeQuiz')} />
@@ -41,6 +43,7 @@ export default function HomePage() {
     </section>
     <section className="nl-section"><SectionHeading eyebrow={t('newLook.professionalCare')} title={t('newLook.everydayRituals')} to="/shop" action={t('newLook.viewAll')} />
       {products.length ? <div className="nl-product-grid">{products.slice(0, 4).map(product => <ProductCard key={product.id} product={product} />)}</div> : <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />}
+      <AdminAddProductShortcut />
     </section>
     <section className="nl-professional-invite"><Sparkles size={24} /><div><span className="nl-eyebrow">TESSA PROFESSIONAL</span><h2>{t('newLook.salonTitle')}</h2><p>{t('newLook.salonCopy')}</p></div><Link className="nl-button nl-button-secondary" to="/for-professionals">{t('nav.forProfessionals')}<ArrowUpRight size={17} /></Link></section>
     {isAdmin && <HomePageEditor />}

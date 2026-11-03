@@ -33,6 +33,7 @@ import {
 } from '@ant-design/icons';
 import { useMemo } from 'react';
 import { useCart } from '@/hooks/useCart';
+import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import type {
   RecommendationResult,
   RecommendedBundle,
@@ -131,6 +132,7 @@ function ProductRecommendationCard({ product }: { product: RecommendedProduct })
       >
         {product.inStock ? t('recommendations.addToCart') : t('product.outOfStock')}
       </Button>
+      <AdminProductShortcuts product={{ id: product.id, name: product.name }} />
     </Card>
   );
 }

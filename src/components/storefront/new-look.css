@@ -476,8 +476,22 @@
 .nl-admin-controls--page { flex-wrap: wrap; margin: -8px 0 20px; padding: 10px 12px; border: 1px dashed #d8c9a8; border-radius: 12px; background: #fffdf7; }
 .nl-admin-controls__tag { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #6b4e16; margin-right: 4px; }
 .nl-admin-add { white-space: nowrap; }
+.nl-admin-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.nl-admin-quick label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #6b4e16; }
+.nl-admin-quick .ant-input-number { width: 110px; }
+.nl-admin-controls button:disabled { opacity: .45; cursor: default; }
+.nl-admin-hero { max-width: 1240px; margin: 12px auto 0; }
 @media (max-width: 600px) {
   .nl-shop-toolbar { flex-wrap: wrap; }
   .nl-shop-toolbar .nl-search { flex-basis: 100%; }
   .nl-admin-add { flex: 1; justify-content: center; }
 }
+
+/* Floating admin menu on storefront pages */
+.nl-admin-dock { position: fixed; left: 16px; bottom: 16px; z-index: 95; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.nl-admin-dock__toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 999px; background: #242124; color: #fff; font: inherit; font-size: 13px; font-weight: 800; box-shadow: 0 8px 24px #0000002e; cursor: pointer; }
+.nl-admin-dock__toggle:focus-visible, .nl-admin-dock__menu a:focus-visible { outline: 2px solid #e99aa9; outline-offset: 2px; }
+.nl-admin-dock__menu { display: grid; gap: 2px; width: 230px; max-height: min(70vh, 520px); overflow-y: auto; padding: 8px; background: #fff; border: 1px solid var(--color-border, #e7e1dc); border-radius: 14px; box-shadow: 0 14px 40px #00000026; }
+.nl-admin-dock__menu a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; color: var(--nl-ink) !important; font-size: 13px; font-weight: 700; text-decoration: none; }
+.nl-admin-dock__menu a:hover { background: #f7f0f2; }
+@media (max-width: 760px) { .nl-admin-dock { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
