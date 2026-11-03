@@ -241,6 +241,8 @@ export interface Order {
   customMessage?: string;
   internalNotes?: string;
   couponCode?: string;
+  /** Admin order views only: the stylist whose referral code was used. */
+  referral?: { stylistId: string; stylistName: string; commission: number } | null;
   trackingNumber?: string;
   estimatedDelivery?: string;
   statusHistory?: OrderStatusHistory[];

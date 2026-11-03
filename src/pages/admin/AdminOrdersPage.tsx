@@ -96,7 +96,10 @@ export default function AdminOrdersPage() {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
-      render: (total: number) => <Text strong>{formatPrice(total)}</Text>,
+      render: (total: number, order: Order) => <Space direction="vertical" size={0}>
+        <Text strong>{formatPrice(total)}</Text>
+        {order.couponCode && <Tag color={order.referral ? 'magenta' : 'green'} style={{ marginInlineEnd: 0 }}>{order.couponCode}</Tag>}
+      </Space>,
     },
     {
       title: 'Status',
@@ -203,6 +206,18 @@ export default function AdminOrdersPage() {
               <Text strong>Phone:</Text> {selectedOrder.shippingAddress?.phone ?? '—'}
               <br />
               <Text strong>Address:</Text> {selectedOrder.shippingAddress?.address ?? ''}, {selectedOrder.shippingAddress?.city ?? ''} {selectedOrder.shippingAddress?.zipCode ?? ''}
+              {selectedOrder.couponCode && (
+                <>
+                  <br />
+                  <Text strong>Code used:</Text> <Tag color={selectedOrder.referral ? 'magenta' : 'green'}>{selectedOrder.couponCode}</Tag>
+                  {selectedOrder.referral && (
+                    <Text type="secondary">
+                      stylist referral · {selectedOrder.referral.stylistName || 'stylist'} earns {formatPrice(selectedOrder.referral.commission)} credit
+                      {selectedOrder.status === 'cancelled' ? ' (cancelled, not earned)' : selectedOrder.status === 'pending' ? ' once you confirm the order' : ''}
+                    </Text>
+                  )}
+                </>
+              )}
             </div>
 
             {ORDER_MESSAGE[selectedOrder.status] && (
@@ -247,7 +262,17 @@ export default function AdminOrdersPage() {
               <br />
               {(selectedOrder.discount ?? 0) > 0 && (
                 <>
-                  <Text type="success">Discount: -{formatPrice(selectedOrder.discount ?? 0)}</Text>
+                  <Text type="success">
+                    Discount{selectedOrder.couponCode ? ` (${selectedOrder.couponCode})` : ''}: -{formatPrice(selectedOrder.discount ?? 0)}
+                  </Text>
+                  <br />
+                </>
+              )}
+              <Text>Shipping: {(selectedOrder.shipping ?? 0) > 0 ? formatPrice(selectedOrder.shipping) : 'Free'}</Text>
+              <br />
+              {(selectedOrder.storeCreditUsed ?? 0) > 0 && (
+                <>
+                  <Text type="success">Paid with store credit: -{formatPrice(selectedOrder.storeCreditUsed)}</Text>
                   <br />
                 </>
               )}
