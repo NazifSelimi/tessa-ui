@@ -23,12 +23,12 @@ const { Title, Text, Paragraph } = Typography;
  * their "Earn with TESSA" page.
  */
 export default function AdminReferralsPage() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const { data, isLoading } = useGetAdminReferralsQuery();
   const [updateSettings, { isLoading: savingSettings }] = useUpdateReferralSettingsMutation();
   const [updateCode, { isLoading: savingCode }] = useUpdateReferralCodeMutation();
   const [adjustCredit, { isLoading: adjusting }] = useAdjustStoreCreditMutation();
-  const [settingsForm] = Form.useForm<ReferralSettings>();
+  const [settingsForm] = Form.useForm<ReferralSettings & { applyToExisting?: boolean }>();
   const [codeForm] = Form.useForm();
   const [creditForm] = Form.useForm<{ amount: number; note: string }>();
   const [editing, setEditing] = useState<AdminReferralCode | null>(null);
@@ -38,13 +38,24 @@ export default function AdminReferralsPage() {
     if (data?.settings) settingsForm.setFieldsValue(data.settings);
   }, [data?.settings, settingsForm]);
 
-  const saveSettings = async (values: ReferralSettings) => {
-    try {
-      await updateSettings(values).unwrap();
-      message.success('Defaults saved for new codes');
-    } catch (error) {
-      notifyError(extractErrorMessage(error));
-    }
+  const saveSettings = async ({ applyToExisting, ...values }: ReferralSettings & { applyToExisting?: boolean }) => {
+    const save = async () => {
+      try {
+        await updateSettings({ ...values, applyToExisting: !!applyToExisting }).unwrap();
+        message.success(applyToExisting ? 'Terms saved and applied to every code' : 'Defaults saved for new codes');
+        settingsForm.setFieldValue('applyToExisting', false);
+      } catch (error) {
+        notifyError(extractErrorMessage(error));
+      }
+    };
+
+    if (!applyToExisting) return save();
+    modal.confirm({
+      title: `Change the terms of all ${data?.codes.length ?? 0} codes?`,
+      content: `Every stylist's code will become -${values.discountPercentage}% for clients and +${values.commissionPercentage}% credit${values.firstOrderOnly ? ', first order only' : ''}. Orders already placed keep the credit they earned.`,
+      okText: 'Apply to all codes',
+      onOk: save,
+    });
   };
 
   const openEdit = (code: AdminReferralCode) => {
@@ -112,12 +123,15 @@ export default function AdminReferralsPage() {
           <Form.Item name="firstOrderOnly" label="First order only" valuePropName="checked">
             <Switch />
           </Form.Item>
+          <Form.Item name="applyToExisting" label="Also change existing codes" valuePropName="checked">
+            <Switch />
+          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={savingSettings}>Save</Button>
           </Form.Item>
         </Form>
         <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-          Existing codes keep their own values; change them per code below.
+          Without “Also change existing codes”, only new codes get these terms. You can still change one stylist's terms with Edit below.
         </Text>
       </Card>
 

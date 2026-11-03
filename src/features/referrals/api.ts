@@ -57,7 +57,7 @@ export const referralsApi = baseApi.injectEndpoints({
       transformResponse: (response: any) => response.data,
       providesTags: [API_TAGS.Referrals],
     }),
-    updateReferralSettings: builder.mutation<ReferralSettings, Partial<ReferralSettings>>({
+    updateReferralSettings: builder.mutation<ReferralSettings, Partial<ReferralSettings> & { applyToExisting?: boolean }>({
       query: (body) => ({ url: '/v1/admin/referrals/settings', method: 'PUT', body }),
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Referrals],
