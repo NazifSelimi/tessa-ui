@@ -17,13 +17,15 @@ export default defineConfig(({ command, mode }) => {
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-redux': ['@reduxjs/toolkit', 'react-redux', 'redux-persist'],
-          // antd intentionally excluded: lets Rollup tree-shake unused
-          // components & icons instead of bundling the entire library
+        codeSplitting: {
+          groups: [
+            { name: 'vendor-react', test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/ },
+            { name: 'vendor-redux', test: /[\\/]node_modules[\\/](@reduxjs[\\/]toolkit|react-redux|redux|redux-persist|immer|reselect)[\\/]/ },
+            // antd intentionally excluded: lets the bundler tree-shake unused
+            // components & icons instead of bundling the entire library
+          ],
         },
       },
     },

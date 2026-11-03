@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ConfigProvider, Drawer, Dropdown } from 'antd';
-import { ArrowUpRight, ChevronRight, ClipboardList, Facebook, Gift, Headphones, Home, Instagram, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
+import { ArrowUpRight, ChevronRight, ClipboardList, Gift, Headphones, Home, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
+import { FacebookIcon, InstagramIcon } from './SocialIcons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
@@ -102,7 +103,7 @@ export default function MainLayout() {
           <div><Logo height={28} /><p>{t('footer.tagline')}</p></div>
           <div className="nl-footer-contact"><Link to="/contact">{t('footer.contactUs')}</Link>{site.contactPhones.map(phone => <a key={phone.href} href={phone.href}>{phone.label}</a>)}<a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a><span className="nl-footer-chat"><a href={viberUrl(site.chatPhone)} aria-label={t('footer.chatViber')}>Viber</a><a href={whatsappUrl(site.chatPhone)} target="_blank" rel="noopener noreferrer" aria-label={t('footer.chatWhatsapp')}>WhatsApp</a></span></div>
           <div className="nl-footer-links">{['privacy', 'terms', 'returns', 'delivery'].map((path, i) => <Link to={`/${path}`} key={path}>{t(`footer.${['privacyPolicy', 'termsOfService', 'returns', 'delivery'][i]}`)}</Link>)}</div>
-          <small>© {new Date().getFullYear()} Tessa Hair Care<span className="nl-social-links">{site.social.facebook && <a href={site.social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook"><Facebook size={18} /></a>}{site.social.instagram && <a href={site.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram size={18} /></a>}</span></small>
+          <small>© {new Date().getFullYear()} Tessa Hair Care<span className="nl-social-links">{site.social.facebook && <a href={site.social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon size={18} /></a>}{site.social.instagram && <a href={site.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon size={18} /></a>}</span></small>
         </footer>
       </div>
       <nav className="nl-mobile-nav" aria-label={t('newLook.mobileNavigation')}>{navLinks()}</nav>

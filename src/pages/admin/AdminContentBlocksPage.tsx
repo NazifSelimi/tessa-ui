@@ -80,7 +80,7 @@ export default function AdminContentBlocksPage() {
   };
 
   const submit = async (values: ContentBlockForm) => {
-    let items: ContentBlockItem[] = [];
+    let items: ContentBlockItem[];
     try {
       const parsed = JSON.parse(values.items_json || '[]');
       if (!Array.isArray(parsed)) throw new Error('Cards must be a JSON array.');

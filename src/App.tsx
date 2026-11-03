@@ -122,10 +122,6 @@ function App() {
           <PersistGate loading={<LoadingScreen />} persistor={persistor}>
             <Router
               basename={localePrefix ? `/${localePrefix}` : undefined}
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-              }}
             >
               <AuthBootstrap />
               <ScrollToTop />
