@@ -640,7 +640,7 @@
     "howEyebrow": "3 steps",
     "howTitle": "How it works",
     "step1": "Give your clients your code or let them scan the QR code at your salon.",
-    "step2": "They order at TESSA and get {{discount}}% off.",
+    "step2": "They sign in or create a free TESSA account, order and get {{discount}}% off.",
     "step3": "You get {{commission}}% as store credit for your next salon order.",
     "clientOrders": "Client orders",
     "noOrders": "No client orders yet. Share your code to get started.",
@@ -652,6 +652,10 @@
     },
     "checkoutThanks": "Your stylist's code is applied. Thank you for supporting your salon!",
     "useCredit": "Use my store credit ({{amount}} available)",
-    "storeCredit": "Store credit"
+    "storeCredit": "Store credit",
+    "signInTitle": "Code {{code}} is for TESSA accounts",
+    "signInCopy": "Sign in or create a free account to get your stylist's discount. Your cart and code will be waiting.",
+    "signIn": "Sign in",
+    "createAccount": "Create account"
   }
 }

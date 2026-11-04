@@ -37,7 +37,7 @@ import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
-import { forgetReferralCode, storedReferralCode } from '@/shared/utils/referral';
+import { forgetReferralCode, rememberReferralCode, storedReferralCode } from '@/shared/utils/referral';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -56,7 +56,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, bundleIds, subtotal, clearCart, getItemTotal } = useCart();
   const { user, token, isAuthenticated, isProfessional } = useAuth();
-  const { appliedCode, applyCode, removeCode, getDiscountForSubtotal, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
+  const { appliedCode, applyCode, removeCode, getDiscountForSubtotal, discountPercent, error: discountError, loginRequiredCode, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
   const { data: activeBundles = [] } = useGetBundlesQuery();
   const { t } = useTranslation();
@@ -137,17 +137,29 @@ export default function CheckoutPage() {
 
   // A client who came through a stylist's link (?ref=CODE) gets that code applied
   // once. Salon accounts never use referral codes, so it is not tried for them.
+  // Stylist codes need an account: a guest keeps the code and is asked to sign
+  // in or register, and it applies when they come back here signed in.
   useEffect(() => {
     const referral = storedReferralCode();
     if (referralTried || appliedCode || isProfessional || !referral || items.length === 0) return;
     setReferralTried(true);
     void applyCode(referral, Math.max(0, subtotal - bundleDiscount)).then((applied) => {
-      if (!applied) {
+      if (!applied && isAuthenticated) {
         forgetReferralCode();
         clearError();
       }
     });
-  }, [appliedCode, applyCode, bundleDiscount, clearError, isProfessional, items.length, referralTried, subtotal]);
+  }, [appliedCode, applyCode, bundleDiscount, clearError, isAuthenticated, isProfessional, items.length, referralTried, subtotal]);
+
+  // Remember a stylist code a guest typed, so it is waiting after sign in.
+  useEffect(() => {
+    if (loginRequiredCode && !isAuthenticated) rememberReferralCode(loginRequiredCode);
+  }, [isAuthenticated, loginRequiredCode]);
+
+  const accountPrompt = !isAuthenticated && (loginRequiredCode || (appliedCode && quote?.couponRequiresLogin))
+    ? (loginRequiredCode ?? appliedCode)
+    : null;
+  const continueToCheckout = `?continue=${encodeURIComponent('/checkout')}`;
 
   // Empty cart check
   if (items.length === 0 && !orderComplete) {
@@ -575,7 +587,7 @@ export default function CheckoutPage() {
                 </Space.Compact>
               )}
 
-              {quote?.couponError && appliedCode && !discountError && (
+              {quote?.couponError && appliedCode && !discountError && !accountPrompt && (
                 <Text type="danger" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
                   {quote.couponError}
                 </Text>
@@ -587,7 +599,31 @@ export default function CheckoutPage() {
                 </Text>
               )}
 
-              {discountError && (
+              {accountPrompt && (
+                <Alert
+                  type="info"
+                  showIcon
+                  style={{ marginTop: 'var(--spacing-sm)' }}
+                  message={t('referral.signInTitle', { code: accountPrompt })}
+                  description={
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
+                        {t('referral.signInCopy')}
+                      </Text>
+                      <Space wrap>
+                        <Button type="primary" size="small" onClick={() => navigate(`/login${continueToCheckout}`)}>
+                          {t('referral.signIn')}
+                        </Button>
+                        <Button size="small" onClick={() => navigate(`/register${continueToCheckout}`)}>
+                          {t('referral.createAccount')}
+                        </Button>
+                      </Space>
+                    </Space>
+                  }
+                />
+              )}
+
+              {discountError && !accountPrompt && (
                 <Text type="danger" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
                   {discountError}
                 </Text>

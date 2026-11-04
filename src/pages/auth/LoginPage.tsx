@@ -203,7 +203,7 @@ const LoginPage: React.FC = () => {
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <Text type="secondary">
             {t('auth.noAccount')}{' '}
-            <Link to="/register" style={{ fontWeight: 500 }}>
+            <Link to={from === '/' ? '/register' : `/register?continue=${encodeURIComponent(from)}`} style={{ fontWeight: 500 }}>
               {t('auth.createAccount')}
             </Link>
           </Text>

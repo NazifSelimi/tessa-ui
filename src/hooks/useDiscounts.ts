@@ -16,7 +16,14 @@ interface DiscountState {
   discountPercent: number;
   couponValue: number;
   error: string | null;
+  /** A stylist's code a guest tried: it works once they sign in or register. */
+  loginRequiredCode: string | null;
   isValidating: boolean;
+}
+
+function requiresLogin(error: unknown): boolean {
+  const data = (error as { data?: { errors?: { requires_login?: boolean } | null } })?.data;
+  return data?.errors?.requires_login === true;
 }
 
 export function useDiscounts() {
@@ -26,6 +33,7 @@ export function useDiscounts() {
     discountPercent: 0,
     couponValue: 0,
     error: null,
+    loginRequiredCode: null,
     isValidating: false,
   });
 
@@ -42,7 +50,7 @@ export function useDiscounts() {
       return false;
     }
 
-    setDiscountState(prev => ({ ...prev, isValidating: true, error: null }));
+    setDiscountState(prev => ({ ...prev, isValidating: true, error: null, loginRequiredCode: null }));
 
     try {
       const result = await validateCoupon({ code: trimmedCode, subtotal }).unwrap();
@@ -79,6 +87,7 @@ export function useDiscounts() {
         discountPercent,
         couponValue: Number(coupon?.value ?? 0),
         error: null,
+        loginRequiredCode: null,
         isValidating: false,
       });
 
@@ -89,6 +98,7 @@ export function useDiscounts() {
       setDiscountState(prev => ({
         ...prev,
         error: status === 404 || status === 422 ? extractErrorMessage(error) : 'Failed to validate discount code. Please try again.',
+        loginRequiredCode: requiresLogin(error) ? trimmedCode : null,
         isValidating: false,
       }));
       return false;
@@ -102,6 +112,7 @@ export function useDiscounts() {
       discountPercent: 0,
       couponValue: 0,
       error: null,
+      loginRequiredCode: null,
       isValidating: false,
     });
   }, []);
@@ -110,6 +121,7 @@ export function useDiscounts() {
     setDiscountState(prev => ({
       ...prev,
       error: null,
+      loginRequiredCode: null,
     }));
   }, []);
 
@@ -121,6 +133,7 @@ export function useDiscounts() {
     discountAmount: discountState.discountAmount,
     discountPercent: discountState.discountPercent,
     error: discountState.error,
+    loginRequiredCode: discountState.loginRequiredCode,
     isValidating: discountState.isValidating,
     clearError,
   };

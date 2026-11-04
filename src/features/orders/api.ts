@@ -59,6 +59,8 @@ export interface CartQuote {
   couponCode: string | null;
   couponError: string | null;
   isReferralCode: boolean;
+  /** A stylist's code, refused only because the buyer is not signed in. */
+  couponRequiresLogin?: boolean;
   shipping: number;
   amountToFreeShipping: number;
   total: number;

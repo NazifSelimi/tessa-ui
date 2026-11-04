@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Form,
   Input,
@@ -64,6 +64,10 @@ const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Where a client goes after signing up, e.g. back to checkout to use a stylist's code.
+  const requested = new URLSearchParams(location.search).get('continue') || '/';
+  const clientTarget = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
   const handleSubmit = async (values: RegisterFormValues) => {
     if (!values.agreeToTerms) {
@@ -84,7 +88,7 @@ const RegisterPage: React.FC = () => {
         postcode: values.postcode,
       });
       message.success(t('auth.accountCreated'));
-      navigate(values.accountType === 'stylist' ? '/stylist/request' : '/');
+      navigate(values.accountType === 'stylist' ? '/stylist/request' : clientTarget);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t('auth.registrationFailed');
       message.error(errorMessage);
@@ -95,7 +99,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSocialRegister = (provider: SocialProvider) => {
     const accountType = form.getFieldValue('accountType') as RegisterFormValues['accountType'] | undefined;
-    const target = accountType === 'stylist' ? '/stylist/request' : '/';
+    const target = accountType === 'stylist' ? '/stylist/request' : clientTarget;
 
     startSocialAuth(provider, {
       intent: 'register',
@@ -381,7 +385,7 @@ const RegisterPage: React.FC = () => {
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <Text type="secondary">
             {t('auth.haveAccount')}{' '}
-            <Link to="/login" style={{ fontWeight: 500 }}>
+            <Link to={clientTarget === '/' ? '/login' : `/login?continue=${encodeURIComponent(clientTarget)}`} style={{ fontWeight: 500 }}>
               {t('auth.signIn')}
             </Link>
           </Text>

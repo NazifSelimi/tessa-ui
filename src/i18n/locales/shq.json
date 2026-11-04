@@ -640,7 +640,7 @@
     "howEyebrow": "3 hapa",
     "howTitle": "Si funksionon",
     "step1": "Jepuni klientëve kodin ose le ta skanojnë kodin QR në sallon.",
-    "step2": "Porosisin në TESSA dhe marrin {{discount}}% zbritje.",
+    "step2": "Kyçen ose hapin një llogari falas në TESSA, porosisin dhe marrin {{discount}}% zbritje.",
     "step3": "Ju merrni {{commission}}% kredi për porosinë e ardhshme të sallonit.",
     "clientOrders": "Porosi të klientëve",
     "noOrders": "Ende nuk ka porosi nga klientët. Ndani kodin për të filluar.",
@@ -652,6 +652,10 @@
     },
     "checkoutThanks": "Kodi i parukierit tuaj u aplikua. Faleminderit që e mbështetni sallonin tuaj!",
     "useCredit": "Përdor kredinë time ({{amount}} në dispozicion)",
-    "storeCredit": "Kredi blerjeje"
+    "storeCredit": "Kredi blerjeje",
+    "signInTitle": "Kodi {{code}} vlen vetëm me llogari TESSA",
+    "signInCopy": "Kyçuni ose hapni një llogari falas për të marrë zbritjen e parukierit tuaj. Shporta dhe kodi do t'ju presin.",
+    "signIn": "Kyçu",
+    "createAccount": "Krijo llogari"
   }
 }

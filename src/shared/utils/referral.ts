@@ -12,6 +12,13 @@ export function captureReferralCode(search: string): void {
   try { localStorage.setItem(KEY, code); } catch { /* storage unavailable */ }
 }
 
+/** Keep a code a guest typed, so it applies once they sign in or register. */
+export function rememberReferralCode(code: string): void {
+  const value = code.trim().toUpperCase();
+  if (!CODE.test(value)) return;
+  try { localStorage.setItem(KEY, value); } catch { /* storage unavailable */ }
+}
+
 export function storedReferralCode(): string | null {
   try { return localStorage.getItem(KEY); } catch { return null; }
 }
