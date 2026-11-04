@@ -896,6 +896,20 @@ a {
   font-weight: 700;
 }
 
+.product-detail__visibility-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #6d28d9;
+  color: #fff;
+  font-weight: 700;
+}
+
+.product-detail__visibility-note.is-hidden {
+  background: #b91c1c;
+}
+
 .product-detail__gallery {
   display: flex;
   flex-direction: column;

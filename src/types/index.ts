@@ -31,6 +31,9 @@ export interface User {
 
 export type ProductReviewReason = 'no_photo' | 'no_brand' | 'no_category';
 
+/** Who a product can be shown to; set per product by admins. */
+export type ProductAudience = 'guests' | 'customers' | 'stylists';
+
 export interface Product {
   id: string | number;
   name: string;
@@ -51,6 +54,8 @@ export interface Product {
   /** Admin-only: real purchase cost; null means the estimated cost % is used. */
   costPrice?: number | null;
   stylistOnly?: boolean;
+  /** Admin-only: audiences the product is shown to; [] = hidden from everyone but admins. */
+  visibleTo?: ProductAudience[];
   /** Admin-only: the product lacks a real photo, brand or category and is hidden from everyone else. */
   inReview?: boolean | null;
   reviewReasons?: ProductReviewReason[] | null;

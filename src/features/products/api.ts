@@ -14,6 +14,8 @@ import { baseApi, API_TAGS } from '@/api/baseApi';
 import type { Product, Category, Brand, HairProfileOption, PaginatedResponse, ProductCollection, StoreBundle } from '@/types';
 
 // Query params for products list
+export type VisibilityFilter = 'hidden' | 'limited' | 'everyone' | 'guests' | 'customers' | 'stylists';
+
 export interface ProductsQueryParams {
   page?: number;
   perPage?: number;
@@ -27,6 +29,8 @@ export interface ProductsQueryParams {
   max_price?: number;
   in_stock?: number;
   review?: 'in_review' | 'ready';
+  /** Admin: who the product is shown to. */
+  visibility?: VisibilityFilter;
   sortBy?: 'name' | 'price' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }

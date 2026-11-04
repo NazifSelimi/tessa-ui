@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Typography, Table, Button, Tag, Input, Space, Card, InputNumber, Select, Row, Col, App, Checkbox, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import { useGetCategoriesQuery, useGetBrandsQuery } from '@/features/products/api';
+import { useGetCategoriesQuery, useGetBrandsQuery, type VisibilityFilter } from '@/features/products/api';
+import { productVisibleTo, visibilitySummary } from '@/shared/utils/productVisibility';
 import {
   useGetAllProductsQuery,
   useDeleteProductMutation,
@@ -23,6 +24,16 @@ const REVIEW_REASON_LABELS: Record<ProductReviewReason, string> = {
   no_category: 'a real category',
 };
 
+const VISIBILITY_FILTER_OPTIONS: { value: '' | VisibilityFilter; label: string }[] = [
+  { value: '', label: 'Any visibility' },
+  { value: 'everyone', label: 'Shown to everyone' },
+  { value: 'limited', label: 'Limited or hidden' },
+  { value: 'hidden', label: 'Hidden from everyone' },
+  { value: 'guests', label: 'Shown to guests' },
+  { value: 'customers', label: 'Shown to customers' },
+  { value: 'stylists', label: 'Shown to stylists' },
+];
+
 export default function AdminProductsPage() {
   const { modal, message } = App.useApp();
   const [search, setSearch] = useState('');
@@ -32,6 +43,7 @@ export default function AdminProductsPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, DEFAULT_MAX_PRICE]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [reviewFilter, setReviewFilter] = useState<'' | 'in_review' | 'ready'>('');
+  const [visibilityFilter, setVisibilityFilter] = useState<'' | VisibilityFilter>('');
   const [sortBy, setSortBy] = useState('name_asc');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -46,6 +58,7 @@ export default function AdminProductsPage() {
     brand.length > 0 ||
     inStockOnly ||
     reviewFilter !== '' ||
+    visibilityFilter !== '' ||
     priceRange[0] !== 0 ||
     priceRange[1] !== DEFAULT_MAX_PRICE ||
     sortBy !== 'name_asc';
@@ -69,7 +82,8 @@ export default function AdminProductsPage() {
     max_price: debouncedPriceRange[1],
     in_stock: inStockOnly ? 1 : undefined,
     review: reviewFilter || undefined,
-  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly, reviewFilter]);
+    visibility: visibilityFilter || undefined,
+  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly, reviewFilter, visibilityFilter]);
 
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: brands = [] } = useGetBrandsQuery();
@@ -87,6 +101,7 @@ export default function AdminProductsPage() {
     brand,
     inStockOnly,
     reviewFilter,
+    visibilityFilter,
     hasPriceFilter,
   ].filter(Boolean).length;
 
@@ -115,6 +130,7 @@ export default function AdminProductsPage() {
     setPriceRange([0, DEFAULT_MAX_PRICE]);
     setInStockOnly(false);
     setReviewFilter('');
+    setVisibilityFilter('');
     setSortBy('name_asc');
     setPage(1);
   }, []);
@@ -206,9 +222,10 @@ export default function AdminProductsPage() {
               </div>
             </Tooltip>
           )
-          : record.stylistOnly
-            ? <Tag color="purple">STYLIST ONLY</Tag>
-            : <Tag>ALL USERS</Tag>,
+          : (() => {
+            const summary = visibilitySummary(productVisibleTo(record));
+            return <Tag color={summary.color}>{summary.label.toUpperCase()}</Tag>;
+          })(),
     },
     {
       title: 'Actions',
@@ -361,6 +378,18 @@ export default function AdminProductsPage() {
           </Col>
 
           <Col xs={24} md={6}>
+            <Select
+              style={{ width: '100%' }}
+              value={visibilityFilter}
+              onChange={(value) => {
+                setVisibilityFilter(value);
+                setPage(1);
+              }}
+              options={VISIBILITY_FILTER_OPTIONS}
+            />
+          </Col>
+
+          <Col xs={24} md={6}>
             <Checkbox
               checked={inStockOnly}
               onChange={(event) => {
@@ -439,6 +468,18 @@ export default function AdminProductsPage() {
                 }}
               >
                 {reviewFilter === 'in_review' ? 'In review' : 'Ready for sale'}
+              </Tag>
+            )}
+            {visibilityFilter && (
+              <Tag
+                closable
+                color="purple"
+                onClose={() => {
+                  setVisibilityFilter('');
+                  setPage(1);
+                }}
+              >
+                {VISIBILITY_FILTER_OPTIONS.find((option) => option.value === visibilityFilter)?.label}
               </Tag>
             )}
             {inStockOnly && (

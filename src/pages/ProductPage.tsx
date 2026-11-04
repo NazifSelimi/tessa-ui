@@ -27,6 +27,7 @@ import ProductCard from '@/components/ProductCard';
 import ShadePicker from '@/components/ShadePicker';
 import CatalogueBook from '@/components/CatalogueBook';
 import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
+import VisibilityBadge from '@/components/storefront/VisibilityBadge';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
@@ -197,6 +198,7 @@ export default function ProductPage() {
         {product.inReview && (
           <p className="product-detail__review-note" role="status">{t('product.inReview')}</p>
         )}
+        <VisibilityBadge product={product} className="product-detail__visibility-note" />
         {/* Product Images */}
         <div className="product-detail__gallery">
           {/* Main Image */}

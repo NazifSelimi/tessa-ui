@@ -7,6 +7,7 @@ import PriceDisplay from './PriceDisplay';
 import { storefrontBrandName, storefrontCategoryName } from '@/shared/utils/storefrontCatalog';
 import { ProductImage } from './storefront/DesignPrimitives';
 import { AdminProductShortcuts } from './storefront/AdminShortcuts';
+import VisibilityBadge from './storefront/VisibilityBadge';
 import type { Product } from '@/types';
 
 interface ProductCardProps { product: Product; showQuickAdd?: boolean; priority?: boolean }
@@ -29,6 +30,7 @@ const ProductCard = memo(function ProductCard({ product, showQuickAdd = true, pr
       {product.featured && <span className="nl-product-badge">{t('product.featured')}</span>}
       {!inStock && <span className="nl-stock-badge">{t('product.outOfStock')}</span>}
       {product.inReview && <span className="nl-review-badge">{t('product.inReview')}</span>}
+      <VisibilityBadge product={product} className="nl-visibility-badge" />
     </Link>
     <div className="nl-product-info">{brand && <small>{brand}</small>}<Link to={`/product/${product.id}`}><h3>{title}</h3></Link>{category && <span className="nl-product-category">{category}</span>}{shadeCount > 0 && <div className="nl-shade-summary">
       {(product.shadePreview ?? []).map((url) => <img key={url} src={url} alt="" loading="lazy" />)}

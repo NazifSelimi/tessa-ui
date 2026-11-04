@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Button, Input, Space, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Switch, Checkbox } from 'antd';
+import { Typography, Button, Input, Space, Form, InputNumber, Select, Upload, Row, Col, App, Modal, Checkbox } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useGetCategoriesQuery, useGetBrandsQuery, useGetHairProfileOptionsQuery } from '@/features/products/api';
 import { useCreateProductMutation, useUpdateProductMutation, useGetProductFamiliesQuery } from '@/features/admin/api';
-import type { Product } from '@/types';
+import type { Product, ProductAudience } from '@/types';
+import { PRODUCT_AUDIENCES, productVisibleTo } from '@/shared/utils/productVisibility';
 import { convertToWebP } from '@/shared/utils/imageUtils';
 
 const { Text } = Typography;
+
+/** Sorted, comma-joined audiences for the form post; 'none' = hidden (forms cannot send []). */
+function visibleToParam(audiences: ProductAudience[]): string {
+  const ordered = PRODUCT_AUDIENCES.map((a) => a.value).filter((a) => audiences.includes(a));
+  return ordered.length ? ordered.join(',') : 'none';
+}
 
 /** The fields the backend actually accepts (matching controller validation). */
 interface ProductFormValues {
@@ -16,7 +23,7 @@ interface ProductFormValues {
   price: number;
   stylist_price?: number;
   cost_price?: number | null;
-  stylist_only?: boolean;
+  visible_to?: ProductAudience[];
   normalize_catalog_background?: boolean;
   quantity: number;
   category_id: number;
@@ -41,7 +48,7 @@ function snapshotFromProduct(product: Product): ProductFormValues {
     price: Number(product.price ?? 0),
     stylist_price: Number(product.stylistPrice ?? 0),
     cost_price: product.costPrice ?? null,
-    stylist_only: Boolean(product.stylistOnly),
+    visible_to: productVisibleTo(product),
     quantity: product.quantity ?? 0,
     category_id: Number(product.categoryId || (product.category as any)?.id || 0),
     brand_id: Number(product.brandId || (product.brand as any)?.id || 0),
@@ -73,6 +80,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
   const [swatchList, setSwatchList] = useState<UploadFile[]>([]);
   const [removeSwatch, setRemoveSwatch] = useState(false);
   const [form] = Form.useForm<ProductFormValues>();
+  const visibleWatch = Form.useWatch('visible_to', form);
 
   const { data: categories = [] } = useGetCategoriesQuery(undefined, { skip: !open });
   const { data: brands = [] } = useGetBrandsQuery(undefined, { skip: !open });
@@ -99,7 +107,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
 
     form.resetFields();
     form.setFieldsValue({
-      stylist_only: false,
+      visible_to: PRODUCT_AUDIENCES.map((a) => a.value),
       normalize_catalog_background: false,
       description_en: '',
       description_mk: '',
@@ -122,18 +130,19 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
         /* ---- UPDATE: only send fields that actually changed ---- */
         const original = snapshotFromProduct(editingProduct);
         const fieldKeys: (keyof ProductFormValues)[] = [
-          'name', 'price', 'stylist_price', 'cost_price', 'stylist_only', 'quantity', 'category_id', 'brand_id',
+          'name', 'price', 'stylist_price', 'cost_price', 'visible_to', 'quantity', 'category_id', 'brand_id',
           'product_family_id', 'shade_code', 'shade_name', 'shade_sort_order',
         ];
         let hasChanges = false;
 
         for (const key of fieldKeys) {
-          const newVal = values[key] ?? '';
-          const oldVal = original[key] ?? '';
+          // Checkbox order follows clicks, so compare audiences in a fixed order.
+          const newVal = key === 'visible_to' ? visibleToParam(values.visible_to ?? []) : values[key] ?? '';
+          const oldVal = key === 'visible_to' ? visibleToParam(original.visible_to ?? []) : original[key] ?? '';
 
           if (String(newVal) !== String(oldVal)) {
-            if (key === 'stylist_only') {
-              formData.append(key, newVal ? '1' : '0');
+            if (key === 'visible_to') {
+              formData.append(key, String(newVal));
             } else {
               formData.append(key, String(newVal));
             }
@@ -206,7 +215,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
         if (values.cost_price !== undefined && values.cost_price !== null) {
           formData.append('cost_price', String(values.cost_price));
         }
-        formData.append('stylist_only', values.stylist_only ? '1' : '0');
+        formData.append('visible_to', visibleToParam(values.visible_to ?? []));
         formData.append('quantity', String(values.quantity));
         formData.append('category_id', String(values.category_id));
         formData.append('brand_id', String(values.brand_id));
@@ -342,12 +351,17 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
               <InputNumber min={0} placeholder="0" style={{ width: '100%' }} />
             </Form.Item>
           </Col>
-          <Col xs={12} sm={8}>
-            <Form.Item name="stylist_only" label="Stylist Only" valuePropName="checked" initialValue={false}>
-              <Switch checkedChildren="Yes" unCheckedChildren="No" />
-            </Form.Item>
-          </Col>
         </Row>
+
+        <Form.Item
+          name="visible_to"
+          label="Who can see this product"
+          extra={visibleWatch && visibleWatch.length === 0
+            ? <Text type="danger">Hidden from everyone. Only admins can see it.</Text>
+            : 'Untick a group to hide the product from them (shop, search, quiz and checkout). Untick all to hide it.'}
+        >
+          <Checkbox.Group options={PRODUCT_AUDIENCES.map(({ value, label }) => ({ value, label }))} />
+        </Form.Item>
 
         <Row gutter={16}>
           <Col span={24}>
