@@ -70,7 +70,13 @@ export const DEFAULT_ADJUST = { scale: 1, offsetX: 0, offsetY: 0, crop: null } a
 type DrawnProduct = StudioProduct & { image: HTMLImageElement | null };
 
 /** Where each product photo was drawn, so the page can drag / resize it on the preview. */
-export interface PhotoHitBox { id: string; x: number; y: number; w: number; h: number }
+export interface PhotoHitBox {
+  id: string;
+  x: number; y: number; w: number; h: number;
+  /** Size of the space the photo is placed in; offsets are a share of it. */
+  spaceW: number;
+  spaceH: number;
+}
 let hitBoxes: PhotoHitBox[] = [];
 
 export interface StudioDesign {
@@ -306,7 +312,7 @@ function drawContain(
   if (mode === 'multiply') ctx.globalCompositeOperation = 'multiply';
   ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
   ctx.restore();
-  if (adjust?.id) hitBoxes.push({ id: adjust.id, x: dx, y: dy, w: dw, h: dh });
+  if (adjust?.id) hitBoxes.push({ id: adjust.id, x: dx, y: dy, w: dw, h: dh, spaceW: w, spaceH: h });
 }
 
 /** Fills a box with an image, cropping the overflow. */

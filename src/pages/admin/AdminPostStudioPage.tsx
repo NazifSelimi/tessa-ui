@@ -197,7 +197,7 @@ export default function AdminPostStudioPage() {
 
   /* --------------------------------------------- drag / Shift+drag / wheel on the preview */
 
-  const pointer = useRef<{ id: string; resize: boolean; startX: number; startY: number; scale: number; offsetX: number; offsetY: number; boxW: number; boxH: number } | null>(null);
+  const pointer = useRef<{ id: string; resize: boolean; startX: number; startY: number; scale: number; offsetX: number; offsetY: number; spaceW: number; spaceH: number } | null>(null);
   const [hovering, setHovering] = useState(false);
 
   const canvasPoint = (event: { clientX: number; clientY: number }) => {
@@ -217,7 +217,7 @@ export default function AdminPostStudioPage() {
     if (!box || !product) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    // Offsets are stored relative to the product's own space; the drawn box is that space times its size.
+    // Offsets are stored as a share of the space the photo sits in.
     pointer.current = {
       id: product.id,
       resize: event.shiftKey,
@@ -226,8 +226,8 @@ export default function AdminPostStudioPage() {
       scale: product.scale,
       offsetX: product.offsetX,
       offsetY: product.offsetY,
-      boxW: box.w / Math.max(0.05, product.scale),
-      boxH: box.h / Math.max(0.05, product.scale),
+      spaceW: box.spaceW,
+      spaceH: box.spaceH,
     };
   };
 
@@ -247,12 +247,9 @@ export default function AdminPostStudioPage() {
       const factor = Math.exp((dx - dy) / (unit * 0.5));
       adjustProduct(drag.id, { scale: Math.min(4, Math.max(0.2, drag.scale * factor)) });
     } else {
-      // Offsets are a share of the fitted photo size (at size 1).
-      const fitW = Math.max(1, drag.boxW);
-      const fitH = Math.max(1, drag.boxH);
       adjustProduct(drag.id, {
-        offsetX: Math.max(-1.5, Math.min(1.5, drag.offsetX + dx / fitW)),
-        offsetY: Math.max(-1.5, Math.min(1.5, drag.offsetY + dy / fitH)),
+        offsetX: Math.max(-1, Math.min(1, drag.offsetX + dx / Math.max(1, drag.spaceW))),
+        offsetY: Math.max(-1, Math.min(1, drag.offsetY + dy / Math.max(1, drag.spaceH))),
       });
     }
   };
