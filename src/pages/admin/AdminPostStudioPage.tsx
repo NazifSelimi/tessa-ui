@@ -97,6 +97,13 @@ function toStudioProduct(product: Product): StudioProduct {
   };
 }
 
+/** The photo under a point, with a margin so slim bottles are easy to grab. */
+function findHit(boxes: PhotoHitBox[], x: number, y: number, canvas: HTMLCanvasElement | null) {
+  const margin = canvas ? Math.min(canvas.width, canvas.height) * 0.03 : 0;
+  return [...boxes].reverse().find((box) => x >= box.x - margin && x <= box.x + box.w + margin
+    && y >= box.y - margin && y <= box.y + box.h + margin);
+}
+
 const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   format: 'square',
   template: 'spotlight',
@@ -207,8 +214,7 @@ export default function AdminPostStudioPage() {
     return { x: ((event.clientX - rect.left) / rect.width) * canvas.width, y: ((event.clientY - rect.top) / rect.height) * canvas.height };
   };
 
-  const hitAt = (x: number, y: number) =>
-    [...hitBoxesRef.current].reverse().find((box) => x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h);
+  const hitAt = (x: number, y: number) => findHit(hitBoxesRef.current, x, y, canvasRef.current);
 
   const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const point = canvasPoint(event);
@@ -216,7 +222,11 @@ export default function AdminPostStudioPage() {
     const product = box && products.find((item) => item.id === box.id);
     if (!box || !product) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Capture is a nicety; dragging still works without it.
+    }
     // Offsets are stored as a share of the space the photo sits in.
     pointer.current = {
       id: product.id,
@@ -268,7 +278,7 @@ export default function AdminPostStudioPage() {
       const rect = canvas.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
       const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
-      const box = [...hitBoxesRef.current].reverse().find((item) => x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h);
+      const box = findHit(hitBoxesRef.current, x, y, canvas);
       const product = box && productsRef.current.find((item) => item.id === box.id);
       if (!product) return;
       event.preventDefault();
