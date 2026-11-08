@@ -5,9 +5,13 @@
  */
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/constants/shipping';
+import { site } from '@/shared/config/site';
 import { logoSvg } from './logo';
 
 const FREE_FROM = FREE_SHIPPING_THRESHOLD.toLocaleString('de-DE');
+/** Shop name and web address from the site config, so the studio works for any business. */
+const SHOP = site.name;
+const HOST = site.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 export type FormatId = 'square' | 'portrait' | 'story' | 'landscape';
 export type TemplateId = 'spotlight' | 'offer' | 'grid' | 'announcement';
@@ -18,10 +22,10 @@ export type StudioLang = 'mk' | 'sq' | 'en';
 export interface StudioFormat { id: FormatId; label: string; hint: string; width: number; height: number }
 
 export const FORMATS: StudioFormat[] = [
-  { id: 'square', label: 'Post 1:1', hint: 'Instagram / Facebook feed', width: 1080, height: 1080 },
-  { id: 'portrait', label: 'Post 4:5', hint: 'Instagram feed, tallest', width: 1080, height: 1350 },
-  { id: 'story', label: 'Story 9:16', hint: 'Instagram / Facebook / TikTok story', width: 1080, height: 1920 },
-  { id: 'landscape', label: 'Wide 1.91:1', hint: 'Facebook link / cover', width: 1200, height: 630 },
+  { id: 'square', label: 'Instagram post 1:1', hint: 'Square, works on Instagram and Facebook', width: 1080, height: 1080 },
+  { id: 'portrait', label: 'Instagram portrait 4:5', hint: 'Best reach: fills the most screen', width: 1080, height: 1350 },
+  { id: 'story', label: 'Story / Reel cover 9:16', hint: 'Instagram & Facebook stories, Reels', width: 1080, height: 1920 },
+  { id: 'landscape', label: 'Facebook / link 1.91:1', hint: 'Facebook feed, link previews, covers', width: 1200, height: 630 },
 ];
 
 export interface StudioTheme {
@@ -40,7 +44,7 @@ export const THEMES: StudioTheme[] = [
   { id: 'blush', label: 'Blush', background: ['#fbeef0', '#f3d9df'], ink: '#242124', muted: '#6f5a60', accent: '#9b5364', accentInk: '#ffffff', photo: 'multiply' },
   { id: 'cream', label: 'Cream', background: ['#f8f4ee', '#efe6da'], ink: '#242124', muted: '#6d625a', accent: '#242124', accentInk: '#ffffff', photo: 'multiply' },
   { id: 'white', label: 'Clean white', background: ['#ffffff', '#f6f2ef'], ink: '#242124', muted: '#6f6a6a', accent: '#9b5364', accentInk: '#ffffff', photo: 'multiply' },
-  { id: 'rose', label: 'Tessa rose', background: ['#a35a6c', '#733a49'], ink: '#ffffff', muted: '#f6dbe1', accent: '#ffffff', accentInk: '#733a49', photo: 'card' },
+  { id: 'rose', label: 'Rose', background: ['#a35a6c', '#733a49'], ink: '#ffffff', muted: '#f6dbe1', accent: '#ffffff', accentInk: '#733a49', photo: 'card' },
   { id: 'noir', label: 'Noir & gold', background: ['#221d1f', '#0f0c0d'], ink: '#ffffff', muted: '#cbbfb8', accent: '#d8b475', accentInk: '#1a1416', photo: 'card' },
 ];
 
@@ -673,40 +677,33 @@ export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, as
 /* ----------------------------------------------------------------- copy */
 
 const COPY: Record<StudioLang, {
-  order: string; tags: string[];
   defaults: Record<TemplateId, { eyebrow: string; headline: string; subline: string; badge: string }>;
   quick: { label: string; badge: string }[];
 }> = {
   mk: {
-    order: 'Нарачајте на tessa.mk 🛒 Достава низ цела Македонија.',
-    tags: ['#tessa', '#негазакоса', '#фризер', '#салон', '#македонија'],
     defaults: {
-      spotlight: { eyebrow: 'Избор на Tessa', headline: '', subline: '', badge: '' },
+      spotlight: { eyebrow: `Избор на ${SHOP}`, headline: '', subline: '', badge: '' },
       offer: { eyebrow: 'Понуда', headline: 'Специјална понуда', subline: 'Само оваа недела или до истекување на залихите.', badge: '-20%' },
-      grid: { eyebrow: 'Tessa', headline: 'Омилени производи', subline: '', badge: '' },
-      announcement: { eyebrow: 'Tessa Hair Care', headline: 'Бесплатна достава', subline: `За сите нарачки од ${FREE_FROM} ден. низ цела Македонија.`, badge: 'tessa.mk' },
+      grid: { eyebrow: SHOP, headline: 'Омилени производи', subline: '', badge: '' },
+      announcement: { eyebrow: SHOP, headline: 'Бесплатна достава', subline: `За сите нарачки од ${FREE_FROM} ден. низ цела Македонија.`, badge: HOST },
     },
     quick: [{ label: 'Ново', badge: 'НОВО' }, { label: '-10%', badge: '-10%' }, { label: '-20%', badge: '-20%' }, { label: '1+1', badge: '1+1' }, { label: 'Хит', badge: 'ХИТ' }],
   },
   sq: {
-    order: 'Porositni në tessa.mk 🛒 Dërgesë në gjithë Maqedoninë.',
-    tags: ['#tessa', '#kujdesperflokët', '#floktar', '#sallon', '#maqedonia'],
     defaults: {
-      spotlight: { eyebrow: 'Zgjedhja e Tessa', headline: '', subline: '', badge: '' },
+      spotlight: { eyebrow: `Zgjedhja e ${SHOP}`, headline: '', subline: '', badge: '' },
       offer: { eyebrow: 'Ofertë', headline: 'Ofertë speciale', subline: 'Vetëm këtë javë ose deri në mbarim të stokut.', badge: '-20%' },
-      grid: { eyebrow: 'Tessa', headline: 'Produktet e preferuara', subline: '', badge: '' },
-      announcement: { eyebrow: 'Tessa Hair Care', headline: 'Dërgesë falas', subline: `Për të gjitha porositë nga ${FREE_FROM} den. në gjithë Maqedoninë.`, badge: 'tessa.mk' },
+      grid: { eyebrow: SHOP, headline: 'Produktet e preferuara', subline: '', badge: '' },
+      announcement: { eyebrow: SHOP, headline: 'Dërgesë falas', subline: `Për të gjitha porositë nga ${FREE_FROM} den. në gjithë Maqedoninë.`, badge: HOST },
     },
     quick: [{ label: 'E re', badge: 'E RE' }, { label: '-10%', badge: '-10%' }, { label: '-20%', badge: '-20%' }, { label: '1+1', badge: '1+1' }, { label: 'Hit', badge: 'HIT' }],
   },
   en: {
-    order: 'Order at tessa.mk 🛒 Delivery across North Macedonia.',
-    tags: ['#tessa', '#haircare', '#hairstylist', '#salon', '#macedonia'],
     defaults: {
-      spotlight: { eyebrow: "Tessa's pick", headline: '', subline: '', badge: '' },
+      spotlight: { eyebrow: `${SHOP} picks`, headline: '', subline: '', badge: '' },
       offer: { eyebrow: 'Offer', headline: 'Special offer', subline: 'This week only, or while stocks last.', badge: '-20%' },
-      grid: { eyebrow: 'Tessa', headline: 'Our favourites', subline: '', badge: '' },
-      announcement: { eyebrow: 'Tessa Hair Care', headline: 'Free delivery', subline: `On every order from ${FREE_SHIPPING_THRESHOLD.toLocaleString('en-US')} MKD across North Macedonia.`, badge: 'tessa.mk' },
+      grid: { eyebrow: SHOP, headline: 'Our favourites', subline: '', badge: '' },
+      announcement: { eyebrow: SHOP, headline: 'Free delivery', subline: `On every order from ${FREE_SHIPPING_THRESHOLD.toLocaleString('en-US')} MKD across North Macedonia.`, badge: HOST },
     },
     quick: [{ label: 'New', badge: 'NEW' }, { label: '-10%', badge: '-10%' }, { label: '-20%', badge: '-20%' }, { label: '1+1', badge: '1+1' }, { label: 'Best seller', badge: 'HIT' }],
   },
@@ -714,23 +711,3 @@ const COPY: Record<StudioLang, {
 
 export const templateDefaults = (template: TemplateId, lang: StudioLang) => COPY[lang].defaults[template];
 export const quickBadges = (lang: StudioLang) => COPY[lang].quick;
-
-const brandTag = (brand: string) => `#${brand.toLowerCase().replace(/[^a-z0-9а-шѓѕјљњќџ]+/gi, '')}`;
-
-/** Ready-to-paste caption for Instagram / Facebook. */
-export function buildCaption(design: StudioDesign, products: StudioProduct[]): string {
-  const copy = COPY[design.lang];
-  const parts: string[] = [];
-  const title = [design.badge.trim(), design.headline.trim()].filter(Boolean).join(' · ');
-  if (title) parts.push(`✨ ${title}`);
-  if (design.subline.trim()) parts.push(design.subline.trim());
-  const lines = products.map((product) => {
-    const price = productPrice(product, design);
-    return `• ${product.name}${product.brand ? ` (${product.brand})` : ''}${price ? ` — ${price}` : ''}`;
-  });
-  if (lines.length) parts.push(lines.join('\n'));
-  parts.push(copy.order);
-  const brandTags = Array.from(new Set(products.map((product) => product.brand).filter(Boolean).map(brandTag)));
-  parts.push([...brandTags, ...copy.tags].join(' '));
-  return parts.join('\n\n');
-}

@@ -1,8 +1,9 @@
 /**
- * Post Studio: admins make ready-to-post social images (Instagram / Facebook /
- * stories) from catalogue products in the TESSA look, download them as PNG and
- * copy a matching caption. Everything renders in the browser; nothing is saved
- * on the server. Drafts are kept in this browser only.
+ * Post Studio: admins make ready-to-post Instagram / Facebook images and
+ * captions from catalogue products, in the shop's own look: pick a ready post
+ * idea, see the post in a feed preview, download the PNG and copy a caption
+ * written for the chosen network. Everything renders in the browser; nothing is
+ * saved on the server. Drafts are kept in this browser only.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -10,15 +11,22 @@ import {
   App, Button, Card, Col, Empty, Input, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  CopyOutlined, DeleteOutlined, DownloadOutlined, PictureOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, UndoOutlined, UploadOutlined,
+  BulbOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import CropModal from '@/features/studio/CropModal';
+import PostMockup from '@/features/studio/PostMockup';
+import {
+  FACEBOOK_PREVIEW, INSTAGRAM_LIMITS, TONES, buildCaption, countHashtags, siteHost, suggestHashtags, toHashtag,
+  type Platform, type Tone,
+} from '@/features/studio/caption';
+import { IDEAS, IDEA_GROUPS, ideaById, ideaText, upcomingIdeas, type IdeaGroup, type PostIdea } from '@/features/studio/ideas';
 import { useGetAllProductsQuery } from '@/features/admin/api';
 import { useLazyGetProductByIdQuery } from '@/features/products/api';
 import type { Product } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { site } from '@/shared/config/site';
 import {
-  FORMATS, THEMES, buildCaption, ensureFonts, formatById, loadImage, loadLogo, quickBadges, renderDesign, templateDefaults, themeById,
+  FORMATS, THEMES, ensureFonts, formatById, loadImage, loadLogo, quickBadges, renderDesign, templateDefaults, themeById,
   DEFAULT_ADJUST,
   type FormatId, type PhotoCrop, type PhotoHitBox, type PriceMode, type StudioDesign, type StudioLang, type StudioProduct, type TemplateId, type ThemeId,
 } from '@/features/studio/render';
@@ -40,13 +48,57 @@ const LANGS: { value: StudioLang; label: string }[] = [
 ];
 
 const DRAFTS_KEY = 'tessa.postStudio.drafts.v1';
+const PROFILE_KEY = 'postStudio.socialProfile.v1';
 const MAX_DRAFTS = 12;
+
+/** Caption settings; kept with drafts. */
+interface SocialState {
+  platform: Platform;
+  tone: Tone;
+  variant: number;
+  emojis: boolean;
+  /** null = use the suggested hashtags. */
+  hashtags: string[] | null;
+  ideaId: string | null;
+}
+
+const initialSocial = (): SocialState => ({
+  platform: 'instagram', tone: 'friendly', variant: 0, emojis: true, hashtags: null, ideaId: null,
+});
+
+/** How many suggested hashtags are used before the admin changes them. */
+const DEFAULT_TAG_COUNT: Record<Platform, number> = { instagram: 15, facebook: 3 };
+
+interface SocialProfile { handle: string; pageName: string }
+
+const defaultProfile = (): SocialProfile => {
+  const instagram = site.social.instagram.replace(/\/$/, '').split('/').pop() ?? '';
+  return { handle: instagram || siteHost(), pageName: site.name };
+};
+
+const readProfile = (): SocialProfile => {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(PROFILE_KEY) ?? 'null');
+    return parsed && typeof parsed.handle === 'string' ? { ...defaultProfile(), ...parsed } : defaultProfile();
+  } catch {
+    return defaultProfile();
+  }
+};
+
+const writeProfile = (profile: SocialProfile) => {
+  try {
+    window.localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {
+    // Private mode / blocked storage: the names just aren't remembered.
+  }
+};
 
 interface Draft {
   id: string;
   savedAt: string;
   design: StudioDesign;
   products: { id: string; photoIndex: number; scale?: number; offsetX?: number; offsetY?: number; crop?: PhotoCrop | null }[];
+  social?: SocialState;
   thumbnail: string;
 }
 
@@ -105,12 +157,12 @@ function findHit(boxes: PhotoHitBox[], x: number, y: number, canvas: HTMLCanvasE
 }
 
 const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
-  format: 'square',
+  format: 'portrait',
   template: 'spotlight',
   theme: 'blush',
   lang,
   ...templateDefaults('spotlight', lang),
-  cta: 'tessa.mk',
+  cta: siteHost(),
   priceMode: 'retail',
   customPrice: '',
   oldPrice: '',
@@ -130,6 +182,10 @@ export default function AdminPostStudioPage() {
   const [fontsReady, setFontsReady] = useState(false);
   const [captionEdited, setCaptionEdited] = useState<string | null>(null);
   const [cropping, setCropping] = useState<string | null>(null);
+  const [social, setSocial] = useState<SocialState>(() => initialSocial());
+  const [profile, setProfile] = useState<SocialProfile>(() => readProfile());
+  const [ideaGroup, setIdeaGroup] = useState<IdeaGroup | 'all'>('all');
+  const [newTag, setNewTag] = useState('');
   const hitBoxesRef = useRef<PhotoHitBox[]>([]);
 
   const { data: catalogue, isLoading: catalogueLoading } = useGetAllProductsQuery({ perPage: 1000, sort: 'name_asc' });
@@ -310,6 +366,21 @@ export default function AdminPostStudioPage() {
   };
 
   const changeLang = (lang: StudioLang) => {
+    const idea = ideaById(social.ideaId);
+    if (idea) {
+      const text = ideaText(idea, lang, products[0]?.name);
+      setDesign((current) => ({
+        ...current,
+        lang,
+        eyebrow: text.eyebrow,
+        headline: text.headline || current.headline,
+        subline: text.subline,
+        badge: text.badge,
+      }));
+      setSocial((current) => ({ ...current, hashtags: null }));
+      setCaptionEdited(null);
+      return;
+    }
     const defaults = templateDefaults(design.template, lang);
     const first = products[0];
     setDesign((current) => ({
@@ -320,6 +391,75 @@ export default function AdminPostStudioPage() {
       subline: current.template === 'spotlight' && first ? current.subline : defaults.subline,
       badge: current.badge ? defaults.badge || current.badge : current.badge,
     }));
+    setCaptionEdited(null);
+  };
+
+  /* ------------------------------------------------------------ ready ideas */
+
+  const applyIdea = (idea: PostIdea) => {
+    const meta = TEMPLATES.find((item) => item.id === idea.template) ?? TEMPLATES[0];
+    const kept = products.slice(0, meta.maxProducts);
+    const text = ideaText(idea, design.lang, kept[0]?.name);
+    setDesign((current) => ({
+      ...current,
+      template: idea.template,
+      theme: idea.theme,
+      format: idea.format ?? (current.format === 'story' ? 'story' : social.platform === 'instagram' ? 'portrait' : current.format),
+      eyebrow: text.eyebrow,
+      headline: text.headline,
+      subline: text.subline,
+      badge: text.badge,
+      priceMode: idea.priceMode ?? (current.priceMode === 'none' ? 'retail' : current.priceMode),
+    }));
+    if (kept.length !== products.length) setProducts(kept);
+    setSocial((current) => ({ ...current, tone: idea.tone, ideaId: idea.id, hashtags: null, variant: 0 }));
+    setCaptionEdited(null);
+    if (idea.wantsProducts && kept.length === 0) {
+      message.info(`${idea.label}: now pick ${meta.maxProducts > 1 ? 'products' : 'a product'} in step 2.`);
+    }
+  };
+
+  const coming = useMemo(() => upcomingIdeas(30), []);
+  const visibleIdeas = IDEAS.filter((idea) => ideaGroup === 'all' || idea.group === ideaGroup);
+
+  /* ------------------------------------------------------------ platform & caption */
+
+  const setPlatform = (platform: Platform) => {
+    setSocial((current) => ({ ...current, platform, hashtags: null }));
+    // Instagram crops wide images; 4:5 gets the most screen in the feed.
+    if (platform === 'instagram' && design.format === 'landscape') update('format', 'portrait');
+    setCaptionEdited(null);
+  };
+
+  const updateProfile = (change: Partial<SocialProfile>) => {
+    setProfile((current) => {
+      const next = { ...current, ...change };
+      writeProfile(next);
+      return next;
+    });
+  };
+
+  const ideaTags = useMemo(() => {
+    const idea = ideaById(social.ideaId);
+    return idea ? ideaText(idea, design.lang).tags : [];
+  }, [social.ideaId, design.lang]);
+  const suggestedTags = useMemo(() => suggestHashtags(design, products, ideaTags), [design, products, ideaTags]);
+  const hashtags = social.hashtags ?? suggestedTags.slice(0, DEFAULT_TAG_COUNT[social.platform]);
+  const moreTags = suggestedTags.filter((tag) => !hashtags.includes(tag));
+
+  const setHashtags = (next: string[]) => {
+    setSocial((current) => ({ ...current, hashtags: Array.from(new Set(next.filter(Boolean))) }));
+    setCaptionEdited(null);
+  };
+
+  const addTag = () => {
+    const tags = newTag.split(/[\s,]+/).map(toHashtag).filter(Boolean);
+    if (tags.length) setHashtags([...hashtags, ...tags]);
+    setNewTag('');
+  };
+
+  const changeSocial = (change: Partial<SocialState>) => {
+    setSocial((current) => ({ ...current, ...change }));
     setCaptionEdited(null);
   };
 
@@ -348,7 +488,8 @@ export default function AdminPostStudioPage() {
 
   const fileName = () => {
     const slug = (design.headline || products[0]?.name || 'post').toLowerCase().replace(/[^a-z0-9а-ш]+/gi, '-').replace(/^-|-$/g, '').slice(0, 40);
-    return `tessa-${design.format}-${slug || 'post'}.png`;
+    const shop = siteHost().split('.')[0] || 'post';
+    return `${shop}-${design.format}-${slug || 'post'}.png`;
   };
 
   const canvasBlob = () => new Promise<Blob | null>((resolve) => {
@@ -376,16 +517,29 @@ export default function AdminPostStudioPage() {
     message.success(`Downloaded ${format.width}×${format.height} PNG`);
   };
 
-  const caption = captionEdited ?? buildCaption(design, products);
+  const caption = captionEdited ?? buildCaption(design, products, {
+    platform: social.platform,
+    tone: social.tone,
+    variant: social.variant,
+    emojis: social.emojis,
+    hashtags,
+  });
+  const captionTags = countHashtags(caption);
+  const firstLine = caption.split('\n')[0] ?? '';
 
-  const copyCaption = async () => {
+  const copyText = async (text: string, done: string) => {
     try {
-      await navigator.clipboard.writeText(caption);
-      message.success('Caption copied');
+      await navigator.clipboard.writeText(text);
+      message.success(done);
+      return true;
     } catch {
-      message.error('Copy failed — select the caption text and copy it by hand.');
+      message.error('Copy failed — select the text and copy it by hand.');
+      return false;
     }
   };
+
+  const copyCaption = () => copyText(caption, 'Caption copied');
+  const copyHashtags = () => copyText(hashtags.join(' '), 'Hashtags copied — paste them as the first comment');
 
   const canShareFiles = typeof navigator !== 'undefined' && typeof navigator.canShare === 'function';
   const share = async () => {
@@ -396,8 +550,11 @@ export default function AdminPostStudioPage() {
       message.info('Sharing files isn’t supported in this browser — use Download.');
       return;
     }
+    // Instagram ignores text that comes with a shared image, so put the caption
+    // on the clipboard first: it can be pasted straight into the post.
+    const copied = await copyText(caption, 'Caption copied — paste it in the app after choosing the photo');
     try {
-      await navigator.share({ files: [file], text: caption });
+      await navigator.share(copied ? { files: [file] } : { files: [file], text: caption });
     } catch {
       // Closing the share sheet is not an error.
     }
@@ -421,6 +578,7 @@ export default function AdminPostStudioPage() {
       savedAt: new Date().toISOString(),
       design,
       products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop }) => ({ id, photoIndex, scale, offsetX, offsetY, crop })),
+      social,
       thumbnail,
     };
     const next = [draft, ...drafts].slice(0, MAX_DRAFTS);
@@ -434,6 +592,7 @@ export default function AdminPostStudioPage() {
 
   const openDraft = async (draft: Draft) => {
     setDesign({ ...initialDesign(draft.design.lang), ...draft.design });
+    setSocial({ ...initialSocial(), ...(draft.social ?? {}) });
     setCaptionEdited(null);
     setProducts([]);
     const list = await Promise.all(draft.products.map(async (saved) => {
@@ -465,13 +624,14 @@ export default function AdminPostStudioPage() {
     setProducts([]);
     setBackgroundUrl(null);
     setCaptionEdited(null);
+    setSocial((current) => ({ ...initialSocial(), platform: current.platform }));
   };
 
   /* ------------------------------------------------------------ view */
 
   const priceOptions: { value: PriceMode; label: string }[] = [
     { value: 'retail', label: 'Retail price' },
-    { value: 'salon', label: 'Salon price' },
+    { value: 'salon', label: 'Business price' },
     { value: 'custom', label: 'Custom' },
     { value: 'none', label: 'No price' },
   ];
@@ -481,7 +641,7 @@ export default function AdminPostStudioPage() {
       <div className="post-studio__head">
         <div>
           <Title level={2} style={{ margin: 0 }}>Post Studio</Title>
-          <Text type="secondary">Make Instagram, Facebook and story images from your products, in the Tessa look. Download, then post.</Text>
+          <Text type="secondary">Ready Instagram & Facebook posts from your products: pick an idea, check the feed preview, download the image and copy the caption.</Text>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={reset}>Start over</Button>
@@ -492,6 +652,44 @@ export default function AdminPostStudioPage() {
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={10} xl={9}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <Card size="small" title={<Space><BulbOutlined />Ready post ideas</Space>}>
+              {coming.length > 0 && (
+                <div className="post-studio__coming">
+                  <Text strong className="post-studio__label">Coming up</Text>
+                  <div className="post-studio__ideas">
+                    {coming.map(({ idea, inDays, date }) => (
+                      <button
+                        key={idea.id}
+                        type="button"
+                        className={`post-studio__idea post-studio__idea--soon${social.ideaId === idea.id ? ' is-active' : ''}`}
+                        onClick={() => applyIdea(idea)}
+                      >
+                        <span className="post-studio__idea-emoji">{idea.emoji}</span>
+                        <strong>{idea.label}</strong>
+                        <small>{inDays === 0 ? 'Today' : `in ${inDays} day${inDays === 1 ? '' : 's'}`} · {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <Segmented size="small" block value={ideaGroup} onChange={(value) => setIdeaGroup(value as IdeaGroup | 'all')} options={IDEA_GROUPS} style={{ margin: '4px 0 10px' }} />
+              <div className="post-studio__ideas">
+                {visibleIdeas.map((idea) => (
+                  <button
+                    key={idea.id}
+                    type="button"
+                    className={`post-studio__idea${social.ideaId === idea.id ? ' is-active' : ''}`}
+                    onClick={() => applyIdea(idea)}
+                    title={idea.hint}
+                  >
+                    <span className="post-studio__idea-emoji">{idea.emoji}</span>
+                    <strong>{idea.label}</strong>
+                    <small>{idea.hint}</small>
+                  </button>
+                ))}
+              </div>
+            </Card>
+
             <Card size="small" title="1 · Size & look">
               <Space direction="vertical" size={14} style={{ width: '100%' }}>
                 <div>
@@ -563,7 +761,7 @@ export default function AdminPostStudioPage() {
                     </div>
                   )}
                   <Paragraph type="secondary" style={{ margin: '6px 0 0', fontSize: 12 }}>
-                    A salon or shelf photo from your phone. It stays on this computer; nothing is uploaded.
+                    A shop, shelf or team photo from your phone. It stays on this computer; nothing is uploaded.
                   </Paragraph>
                 </div>
               </Space>
@@ -599,7 +797,7 @@ export default function AdminPostStudioPage() {
                         <Text strong ellipsis style={{ display: 'block', maxWidth: 220 }}>{product.name}</Text>
                         <Text type="secondary" style={{ fontSize: 12 }}>
                           {product.brand} · {product.price > 0 ? formatPrice(product.price) : 'no price'}
-                          {product.stylistPrice > 0 ? ` · salon ${formatPrice(product.stylistPrice)}` : ''}
+                          {product.stylistPrice > 0 ? ` · business ${formatPrice(product.stylistPrice)}` : ''}
                         </Text>
                       </div>
                       <Tooltip title={product.photos.length > 1 ? `Use another photo (${product.photoIndex + 1}/${product.photos.length})` : 'Only one photo'}>
@@ -670,10 +868,10 @@ export default function AdminPostStudioPage() {
                     ))}
                   </Space>
                 </div>
-                <Input addonBefore="Bottom text" value={design.cta} onChange={(event) => update('cta', event.target.value)} placeholder="tessa.mk" maxLength={40} />
+                <Input addonBefore="Bottom text" value={design.cta} onChange={(event) => update('cta', event.target.value)} placeholder={siteHost()} maxLength={40} />
                 <Space>
                   <Switch checked={design.showLogo} onChange={(checked) => update('showLogo', checked)} />
-                  <Text>Show TESSA logo</Text>
+                  <Text>Show logo</Text>
                 </Space>
               </Space>
             </Card>
@@ -682,8 +880,31 @@ export default function AdminPostStudioPage() {
 
         <Col xs={24} lg={14} xl={15}>
           <div className="post-studio__preview-wrap">
-            <Card size="small" className="post-studio__preview-card">
+            <Card
+              size="small"
+              className="post-studio__preview-card"
+              title={(
+                <Segmented
+                  value={social.platform}
+                  onChange={(value) => setPlatform(value as Platform)}
+                  options={[
+                    { value: 'instagram', label: <Space size={6}><InstagramOutlined />Instagram</Space> },
+                    { value: 'facebook', label: <Space size={6}><FacebookFilled />Facebook</Space> },
+                  ]}
+                />
+              )}
+              extra={(
+                <Space size={6} wrap className="post-studio__profile">
+                  {social.platform === 'instagram' ? (
+                    <Input size="small" prefix="@" value={profile.handle} onChange={(event) => updateProfile({ handle: event.target.value })} placeholder="handle" style={{ width: 150 }} aria-label="Instagram handle shown in the preview" />
+                  ) : (
+                    <Input size="small" value={profile.pageName} onChange={(event) => updateProfile({ pageName: event.target.value })} placeholder="Page name" style={{ width: 170 }} aria-label="Facebook page name shown in the preview" />
+                  )}
+                </Space>
+              )}
+            >
               <div className="post-studio__preview">
+                <PostMockup platform={social.platform} format={design.format} handle={profile.handle} pageName={profile.pageName} caption={caption}>
                 <canvas
                   ref={canvasRef}
                   className={`${rendering ? 'is-rendering' : ''}${hovering ? ' is-over-photo' : ''}`}
@@ -695,6 +916,7 @@ export default function AdminPostStudioPage() {
                   style={{ aspectRatio: `${format.width} / ${format.height}` }}
                   aria-label="Post preview"
                 />
+                </PostMockup>
               </div>
               <div className="post-studio__actions">
                 <Text type="secondary">{format.width} × {format.height} px · {format.hint}</Text>
@@ -707,15 +929,97 @@ export default function AdminPostStudioPage() {
 
             <Card
               size="small"
-              title="Caption"
+              title={`Caption for ${social.platform === 'instagram' ? 'Instagram' : 'Facebook'}`}
               extra={(
-                <Space>
+                <Space size={6} wrap>
                   {captionEdited !== null && <Button size="small" type="link" onClick={() => setCaptionEdited(null)}>Rebuild</Button>}
-                  <Button size="small" icon={<CopyOutlined />} onClick={copyCaption}>Copy</Button>
+                  <Button size="small" icon={<CopyOutlined />} onClick={copyHashtags} disabled={!hashtags.length}>Hashtags</Button>
+                  <Button size="small" type="primary" icon={<CopyOutlined />} onClick={copyCaption}>Copy caption</Button>
                 </Space>
               )}
             >
-              <TextArea value={caption} onChange={(event) => setCaptionEdited(event.target.value)} autoSize={{ minRows: 4, maxRows: 12 }} />
+              <Space direction="vertical" size={10} style={{ width: '100%' }}>
+                <div className="post-studio__caption-tools">
+                  <Segmented size="small" value={social.tone} onChange={(value) => changeSocial({ tone: value as Tone, variant: 0 })} options={TONES} />
+                  <Tooltip title="Same facts, different first line">
+                    <Button size="small" icon={<SyncOutlined />} onClick={() => changeSocial({ variant: social.variant + 1 })}>New wording</Button>
+                  </Tooltip>
+                  <Space size={6}>
+                    <Switch size="small" checked={social.emojis} onChange={(checked) => changeSocial({ emojis: checked })} />
+                    <Text style={{ fontSize: 13 }}>Emojis</Text>
+                  </Space>
+                </div>
+
+                <TextArea
+                  value={caption}
+                  onChange={(event) => setCaptionEdited(event.target.value)}
+                  autoSize={{ minRows: 5, maxRows: 14 }}
+                  aria-label="Caption"
+                />
+                {captionEdited !== null && (
+                  <Text type="secondary" style={{ fontSize: 12 }}>Your edits are kept. “Rebuild” writes it again from the design.</Text>
+                )}
+
+                <div className="post-studio__counters">
+                  {social.platform === 'instagram' ? (
+                    <>
+                      <Tag color={caption.length > INSTAGRAM_LIMITS.characters ? 'red' : 'default'}>
+                        {caption.length.toLocaleString('en-US')} / {INSTAGRAM_LIMITS.characters.toLocaleString('en-US')} characters
+                      </Tag>
+                      <Tag color={captionTags > INSTAGRAM_LIMITS.hashtags ? 'red' : 'default'}>
+                        {captionTags} / {INSTAGRAM_LIMITS.hashtags} hashtags
+                      </Tag>
+                      <Tag color={firstLine.length > INSTAGRAM_LIMITS.preview ? 'orange' : 'green'}>
+                        First line {firstLine.length > INSTAGRAM_LIMITS.preview ? 'is cut before “more”' : 'fits before “more”'}
+                      </Tag>
+                    </>
+                  ) : (
+                    <>
+                      <Tag>{caption.length.toLocaleString('en-US')} characters</Tag>
+                      <Tag color={caption.length > FACEBOOK_PREVIEW ? 'orange' : 'green'}>
+                        {caption.length > FACEBOOK_PREVIEW ? 'Long: Facebook shows “See more”' : 'Fits without “See more”'}
+                      </Tag>
+                      <Tag color={captionTags > 3 ? 'orange' : 'default'}>{captionTags} hashtags (2–3 work best)</Tag>
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <Text strong className="post-studio__label">Hashtags</Text>
+                  <div className="post-studio__tags">
+                    {hashtags.map((tag) => (
+                      <Tag key={tag} closable color="magenta" onClose={(event) => { event.preventDefault(); setHashtags(hashtags.filter((item) => item !== tag)); }}>
+                        {tag}
+                      </Tag>
+                    ))}
+                    <Space.Compact size="small">
+                      <Input
+                        size="small"
+                        value={newTag}
+                        onChange={(event) => setNewTag(event.target.value)}
+                        onPressEnter={addTag}
+                        placeholder="#add"
+                        style={{ width: 120 }}
+                        aria-label="Add a hashtag"
+                      />
+                      <Button size="small" icon={<PlusOutlined />} onClick={addTag} aria-label="Add hashtag" />
+                    </Space.Compact>
+                  </div>
+                  {moreTags.length > 0 && (
+                    <div className="post-studio__tags post-studio__tags--suggested">
+                      <Text type="secondary" style={{ fontSize: 12 }}>Suggested:</Text>
+                      {moreTags.slice(0, 16).map((tag) => (
+                        <Tag key={tag} className="post-studio__tag-add" onClick={() => setHashtags([...hashtags, tag])}>+ {tag}</Tag>
+                      ))}
+                    </div>
+                  )}
+                  {social.platform === 'instagram' && (
+                    <Paragraph type="secondary" style={{ margin: '6px 0 0', fontSize: 12 }}>
+                      Tip: copy the hashtags separately and paste them as the first comment for a cleaner caption.
+                    </Paragraph>
+                  )}
+                </div>
+              </Space>
             </Card>
 
             <Card size="small" title={`Drafts in this browser (${drafts.length})`}>
