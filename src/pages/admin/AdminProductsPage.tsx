@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Typography, Table, Button, Tag, Input, Space, Card, InputNumber, Select, Row, Col, App, Checkbox, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetCategoriesQuery, useGetBrandsQuery, type VisibilityFilter } from '@/features/products/api';
@@ -18,6 +18,17 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 const { Title, Text } = Typography;
 const ITEMS_PER_PAGE = 20;
 const DEFAULT_MAX_PRICE = 1000000000;
+
+/** Work queues the dashboard to-do list links to (?queue=...). */
+type WorkQueue = '' | 'missing_price' | 'low_stock' | 'out_of_stock';
+const WORK_QUEUE_OPTIONS: { value: WorkQueue; label: string }[] = [
+  { value: '', label: 'Any price & stock' },
+  { value: 'missing_price', label: 'Missing retail or salon price' },
+  { value: 'low_stock', label: 'Low stock (1–3)' },
+  { value: 'out_of_stock', label: 'Out of stock' },
+];
+const isWorkQueue = (value: string | null): value is WorkQueue =>
+  WORK_QUEUE_OPTIONS.some((option) => option.value === value);
 const REVIEW_REASON_LABELS: Record<ProductReviewReason, string> = {
   no_photo: 'a real photo',
   no_brand: 'a real brand',
@@ -36,13 +47,19 @@ const VISIBILITY_FILTER_OPTIONS: { value: '' | VisibilityFilter; label: string }
 
 export default function AdminProductsPage() {
   const { modal, message } = App.useApp();
+  const [searchParams] = useSearchParams();
+  const initialReview = searchParams.get('review');
+  const initialQueue = searchParams.get('queue');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, DEFAULT_MAX_PRICE]);
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [reviewFilter, setReviewFilter] = useState<'' | 'in_review' | 'ready'>('');
+  const [reviewFilter, setReviewFilter] = useState<'' | 'in_review' | 'ready'>(
+    initialReview === 'in_review' || initialReview === 'ready' ? initialReview : '',
+  );
+  const [workQueue, setWorkQueue] = useState<WorkQueue>(isWorkQueue(initialQueue) ? initialQueue : '');
   const [visibilityFilter, setVisibilityFilter] = useState<'' | VisibilityFilter>('');
   const [sortBy, setSortBy] = useState('name_asc');
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,6 +76,7 @@ export default function AdminProductsPage() {
     inStockOnly ||
     reviewFilter !== '' ||
     visibilityFilter !== '' ||
+    workQueue !== '' ||
     priceRange[0] !== 0 ||
     priceRange[1] !== DEFAULT_MAX_PRICE ||
     sortBy !== 'name_asc';
@@ -83,7 +101,9 @@ export default function AdminProductsPage() {
     in_stock: inStockOnly ? 1 : undefined,
     review: reviewFilter || undefined,
     visibility: visibilityFilter || undefined,
-  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly, reviewFilter, visibilityFilter]);
+    price_status: workQueue === 'missing_price' ? 'missing' as const : undefined,
+    stock: workQueue === 'low_stock' ? 'low' as const : workQueue === 'out_of_stock' ? 'out' as const : undefined,
+  }), [page, searchQuery, category, brand, sortBy, debouncedPriceRange, inStockOnly, reviewFilter, visibilityFilter, workQueue]);
 
   const { data: categories = [] } = useGetCategoriesQuery();
   const { data: brands = [] } = useGetBrandsQuery();
@@ -102,6 +122,7 @@ export default function AdminProductsPage() {
     inStockOnly,
     reviewFilter,
     visibilityFilter,
+    workQueue,
     hasPriceFilter,
   ].filter(Boolean).length;
 
@@ -123,7 +144,7 @@ export default function AdminProductsPage() {
     setModalOpen(true);
   }, []);
 
-  const clearAllFilters = useCallback(() => {
+  const clearAllFilters = () => {
     setSearch('');
     setCategory('');
     setBrand('');
@@ -131,9 +152,10 @@ export default function AdminProductsPage() {
     setInStockOnly(false);
     setReviewFilter('');
     setVisibilityFilter('');
+    setWorkQueue('');
     setSortBy('name_asc');
     setPage(1);
-  }, []);
+  };
 
   const handleDelete = (productId: string | number) => {
     modal.confirm({
@@ -218,7 +240,7 @@ export default function AdminProductsPage() {
             <Tooltip title={`Hidden from customers and stylists until it has ${(record.reviewReasons ?? []).map((reason) => REVIEW_REASON_LABELS[reason]).join(', ')}.`}>
               <Tag color="orange">IN REVIEW · ADMIN ONLY</Tag>
               <div style={{ fontSize: 12, color: '#b45309', marginTop: 4 }}>
-                {(record.reviewReasons ?? []).map((reason) => REVIEW_REASON_LABELS[reason]).join(' · ')}
+                Needs {(record.reviewReasons ?? []).map((reason) => REVIEW_REASON_LABELS[reason]).join(' · ')}
               </div>
             </Tooltip>
           )
@@ -390,6 +412,18 @@ export default function AdminProductsPage() {
           </Col>
 
           <Col xs={24} md={6}>
+            <Select
+              style={{ width: '100%' }}
+              value={workQueue}
+              onChange={(value) => {
+                setWorkQueue(value);
+                setPage(1);
+              }}
+              options={WORK_QUEUE_OPTIONS}
+            />
+          </Col>
+
+          <Col xs={12} md={3} style={{ display: 'flex', alignItems: 'center' }}>
             <Checkbox
               checked={inStockOnly}
               onChange={(event) => {
@@ -401,7 +435,7 @@ export default function AdminProductsPage() {
             </Checkbox>
           </Col>
 
-          <Col xs={24} md={12} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Col xs={12} md={3} style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button onClick={clearAllFilters} disabled={!hasPendingFilterState}>
               Clear Filters
             </Button>
@@ -480,6 +514,18 @@ export default function AdminProductsPage() {
                 }}
               >
                 {VISIBILITY_FILTER_OPTIONS.find((option) => option.value === visibilityFilter)?.label}
+              </Tag>
+            )}
+            {workQueue && (
+              <Tag
+                closable
+                color="red"
+                onClose={() => {
+                  setWorkQueue('');
+                  setPage(1);
+                }}
+              >
+                {WORK_QUEUE_OPTIONS.find((option) => option.value === workQueue)?.label}
               </Tag>
             )}
             {inStockOnly && (

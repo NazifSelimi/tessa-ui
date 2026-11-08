@@ -29,6 +29,9 @@ export interface ProductsQueryParams {
   max_price?: number;
   in_stock?: number;
   review?: 'in_review' | 'ready';
+  /** Admin work queues. */
+  price_status?: 'missing';
+  stock?: 'low' | 'out';
   /** Admin: who the product is shown to. */
   visibility?: VisibilityFilter;
   sortBy?: 'name' | 'price' | 'createdAt';

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { App, InputNumber } from 'antd';
-import { Check, Images, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Images, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useDeleteProductMutation, useUpdateProductMutation } from '@/features/admin/api';
 import { useGetProductByIdQuery } from '@/features/products/api';
 import type { Product } from '@/types';
@@ -49,6 +49,7 @@ export function AdminProductControls({ product, variant = 'card', onDeleted }: A
       {labelled && <span className="nl-admin-controls__tag">Admin</span>}
       <button type="button" onClick={() => setEditing(true)} aria-label={`Edit ${product.name}`} title="Edit"><Pencil size={15} />{labelled && 'Edit'}</button>
       <Link to={`/admin/catalog-images?product=${product.id}`} aria-label={`Photos of ${product.name}`} title="Photos"><Images size={15} />{labelled && 'Photos'}</Link>
+      <Link to={`/admin/studio?product=${product.id}`} aria-label={`Make a social post for ${product.name}`} title="Make a post"><Megaphone size={15} />{labelled && 'Make post'}</Link>
       <button type="button" className="nl-admin-controls__danger" onClick={confirmDelete} aria-label={`Delete ${product.name}`} title="Delete"><Trash2 size={15} />{labelled && 'Delete'}</button>
       {labelled && product.price !== undefined && <QuickFields product={product as Product} />}
     </div>

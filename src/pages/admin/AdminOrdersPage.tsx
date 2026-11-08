@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Typography, Table, Tag, Select, Input, Space, Card, Modal, App } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import type { Order, OrderStatus } from '@/types';
@@ -38,7 +39,8 @@ const ORDER_MESSAGE: Record<string, MessageTemplate['kind']> = {
 export default function AdminOrdersPage() {
   const { message } = App.useApp();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? 'all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 

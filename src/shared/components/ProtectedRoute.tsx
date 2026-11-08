@@ -39,7 +39,9 @@ export default function ProtectedRoute({ children, requiredRole, allowIncomplete
     return <Navigate to="/" replace />;
   }
 
-  if (!allowIncompleteProfile && user && !isProfileComplete(user)) {
+  // Staff accounts don't ship orders to themselves, so admins are never sent
+  // to the shipping-profile form before reaching a page.
+  if (!allowIncompleteProfile && currentRole !== 'admin' && user && !isProfileComplete(user)) {
     const continueTo = `${location.pathname}${location.search}${location.hash}`;
     return <Navigate to={`/complete-profile?continue=${encodeURIComponent(continueTo)}`} replace />;
   }

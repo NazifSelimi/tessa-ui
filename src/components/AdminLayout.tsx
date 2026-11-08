@@ -32,6 +32,7 @@ import {
   AuditOutlined,
   ExperimentOutlined,
   LayoutOutlined,
+  InstagramOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from './Logo';
@@ -53,7 +54,9 @@ const pageTitles: Record<string, string> = {
   '/admin/bundles': 'Offers & Bundles',
   '/admin/content-blocks': 'Editable Sections',
   '/admin/catalog-images': 'Image Review',
-  '/admin/catalogue-review': 'Catalogue Review',
+  '/admin/catalogue-review': 'Supplier list (old)',
+  '/admin/hair-quiz': 'Hair Quiz',
+  '/admin/studio': 'Post Studio',
 };
 
 export default function AdminLayout() {
@@ -86,9 +89,10 @@ const pendingCount = 0;
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
     { key: '/admin/referrals', icon: <ShareAltOutlined />, label: <Link to="/admin/referrals">Stylist Referrals</Link> },
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
+    { key: '/admin/studio', icon: <InstagramOutlined />, label: <Link to="/admin/studio">Post Studio</Link> },
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
-    { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Catalogue Review</Link> },
+    { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },
     { key: '/admin/hair-quiz', icon: <ExperimentOutlined />, label: <Link to="/admin/hair-quiz">Hair Quiz</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
   ], [pendingCount]);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, ClipboardList, FlaskConical, Gift, Images, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
+import { BarChart3, ClipboardList, FlaskConical, Gift, Images, Megaphone, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: BarChart3 },
@@ -13,6 +13,7 @@ const links = [
   { to: '/admin/coupons', label: 'Coupons', icon: Tag },
   { to: '/admin/referrals', label: 'Stylist referrals', icon: Share2 },
   { to: '/admin/bundles', label: 'Offers & bundles', icon: Gift },
+  { to: '/admin/studio', label: 'Post Studio', icon: Megaphone },
   { to: '/admin/content-blocks', label: 'Page sections', icon: LayoutTemplate },
   { to: '/admin/hair-quiz', label: 'Hair quiz', icon: FlaskConical },
   { to: '/admin/distributors', label: 'Distributors', icon: Truck },

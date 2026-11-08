@@ -325,7 +325,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
         <Row gutter={16}>
           <Col xs={12} sm={8}>
             <Form.Item name="price" label="Price (MKD)" rules={[{ required: !isEditing, message: 'Please enter price' }]}>
-              <InputNumber min={0} prefix="MKD" placeholder="0.00" style={{ width: '100%' }} precision={2} />
+              <InputNumber min={0} prefix="MKD" placeholder="0" style={{ width: '100%' }} precision={0} />
             </Form.Item>
           </Col>
           <Col xs={12} sm={8}>
@@ -334,7 +334,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
               label="Stylist Price (MKD)"
               extra={!isEditing ? 'Auto-calculated as 90% of price if empty' : undefined}
             >
-              <InputNumber min={0} prefix="MKD" placeholder="0.00" style={{ width: '100%' }} precision={2} />
+              <InputNumber min={0} prefix="MKD" placeholder="0" style={{ width: '100%' }} precision={0} />
             </Form.Item>
           </Col>
           <Col xs={12} sm={8}>
@@ -343,7 +343,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
               label="Cost Price (MKD)"
               extra="Admin only. Leave empty to use the estimated cost % from Offers."
             >
-              <InputNumber min={0} prefix="MKD" placeholder="Estimated" style={{ width: '100%' }} precision={2} />
+              <InputNumber min={0} prefix="MKD" placeholder="Estimated" style={{ width: '100%' }} precision={0} />
             </Form.Item>
           </Col>
           <Col xs={12} sm={8}>

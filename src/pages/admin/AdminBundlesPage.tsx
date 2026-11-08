@@ -23,7 +23,7 @@ type BundleForm = {
 
 export default function AdminBundlesPage() {
   const { data: bundles = [], isLoading } = useGetAdminBundlesQuery();
-  const { data: productPage } = useGetAllProductsQuery({ perPage: 500 });
+  const { data: productPage } = useGetAllProductsQuery({ perPage: 1000 });
   const [createBundle] = useCreateBundleMutation();
   const [updateBundle] = useUpdateBundleMutation();
   const [deleteBundle] = useDeleteBundleMutation();

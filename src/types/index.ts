@@ -440,6 +440,16 @@ export interface StylistApplicationFormData {
 
 // ==================== DASHBOARD STATS ====================
 
+export interface AdminTodoCounts {
+  inReview: number;
+  inReviewInStock: number;
+  missingPrice: number;
+  lowStock: number;
+  outOfStock: number;
+  pendingOrders: number;
+  pendingStylistRequests: number;
+}
+
 export interface DashboardStats {
   totalRevenue: number;
   totalOrders: number;
@@ -447,6 +457,9 @@ export interface DashboardStats {
   totalProducts: number;
   pendingStylistRequests: number;
   lowStockProducts: number;
+  revenueThisMonth: number;
+  pendingOrders: number;
+  todo: AdminTodoCounts;
   recentOrders: Order[];
   ordersByStatus: Record<string, number>;
   revenueByMonth: { month: string; revenue: number }[];
