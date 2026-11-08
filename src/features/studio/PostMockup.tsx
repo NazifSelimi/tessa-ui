@@ -6,7 +6,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { Bookmark, Globe, Heart, MessageCircle, MoreHorizontal, Send, Share2, ThumbsUp } from 'lucide-react';
-import { FACEBOOK_PREVIEW, INSTAGRAM_LIMITS, type Platform } from './caption';
+import { previewCut, type Platform } from './caption';
 import type { FormatId } from './render';
 
 interface PostMockupProps {
@@ -19,18 +19,6 @@ interface PostMockupProps {
 }
 
 const initials = (text: string) => (text.trim().replace(/^@/, '')[0] ?? '•').toUpperCase();
-
-/** Caption text with the cut the network applies; returns [visible, isCut]. */
-function cut(caption: string, limit: number, maxLines: number): [string, boolean] {
-  const lines = caption.split('\n');
-  let visible = lines.slice(0, maxLines).join('\n');
-  let isCut = lines.length > maxLines;
-  if (visible.length > limit) {
-    visible = visible.slice(0, limit).replace(/\s+\S*$/, '');
-    isCut = true;
-  }
-  return [visible, isCut];
-}
 
 export default function PostMockup({ platform, format, handle, pageName, caption, children }: PostMockupProps) {
   const [expanded, setExpanded] = useState(false);
@@ -57,7 +45,7 @@ export default function PostMockup({ platform, format, handle, pageName, caption
   }
 
   if (platform === 'facebook') {
-    const [visible, isCut] = cut(caption, FACEBOOK_PREVIEW, 8);
+    const [visible, isCut] = previewCut(caption, 'facebook');
     return (
       <div className="post-mockup post-mockup--facebook">
         <div className="post-mockup__head">
@@ -84,7 +72,7 @@ export default function PostMockup({ platform, format, handle, pageName, caption
     );
   }
 
-  const [visible, isCut] = cut(caption, INSTAGRAM_LIMITS.preview, 2);
+  const [visible, isCut] = previewCut(caption, 'instagram');
   return (
     <div className="post-mockup post-mockup--instagram">
       <div className="post-mockup__head">

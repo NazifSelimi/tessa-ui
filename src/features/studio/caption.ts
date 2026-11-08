@@ -17,6 +17,29 @@ export const INSTAGRAM_LIMITS = { characters: 2200, hashtags: 30, preview: 125 }
 /** Facebook cuts long posts at roughly this many characters with "See more". */
 export const FACEBOOK_PREVIEW = 480;
 
+/** Lines shown before the cut: Instagram ~2, Facebook ~8. */
+const PREVIEW_LINES: Record<Platform, number> = { instagram: 2, facebook: 8 };
+
+/**
+ * The part of a caption a network shows before "more" / "See more", and whether
+ * it is cut. Used by both the feed preview and the counters, so they agree.
+ */
+export function previewCut(caption: string, platform: Platform): [string, boolean] {
+  const limit = platform === 'instagram' ? INSTAGRAM_LIMITS.preview : FACEBOOK_PREVIEW;
+  const lines = caption.split('\n');
+  let visible = lines.slice(0, PREVIEW_LINES[platform]).join('\n');
+  let isCut = lines.length > PREVIEW_LINES[platform];
+  if (visible.length > limit) {
+    visible = visible.slice(0, limit).replace(/\s+\S*$/, '');
+    isCut = true;
+  }
+  return [visible.replace(/\s+$/, ''), isCut];
+}
+
+/** "990 MKD" → "990 ден." / "990 den." to match the caption's language. */
+const CURRENCY: Record<StudioLang, string> = { mk: 'ден.', sq: 'den.', en: 'MKD' };
+const localPrice = (price: string, lang: StudioLang) => price.replace(/\s?MKD$/, ` ${CURRENCY[lang]}`);
+
 export const TONES: { value: Tone; label: string }[] = [
   { value: 'friendly', label: 'Friendly' },
   { value: 'premium', label: 'Premium' },
@@ -153,7 +176,7 @@ export function buildCaption(design: StudioDesign, products: StudioProduct[], op
 
   const lines = products.map((product) => {
     const price = productPrice(product, design);
-    const line = `${options.platform === 'instagram' ? '▪️' : '👉'} ${product.name}${price ? ` — ${price}` : ''}`;
+    const line = `${options.platform === 'instagram' ? '▪️' : '👉'} ${product.name}${price ? ` — ${localPrice(price, design.lang)}` : ''}`;
     return options.platform === 'facebook' ? `${line}\n${site.url.replace(/\/$/, '')}/product/${product.id}` : line;
   });
   if (lines.length) parts.push(lines.join(options.platform === 'facebook' ? '\n\n' : '\n'));

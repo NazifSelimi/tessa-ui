@@ -16,7 +16,7 @@ import {
 import CropModal from '@/features/studio/CropModal';
 import PostMockup from '@/features/studio/PostMockup';
 import {
-  FACEBOOK_PREVIEW, INSTAGRAM_LIMITS, TONES, buildCaption, countHashtags, siteHost, suggestHashtags, toHashtag,
+  INSTAGRAM_LIMITS, TONES, buildCaption, countHashtags, previewCut, siteHost, suggestHashtags, toHashtag,
   type Platform, type Tone,
 } from '@/features/studio/caption';
 import { IDEAS, IDEA_GROUPS, ideaById, ideaText, upcomingIdeas, type IdeaGroup, type PostIdea } from '@/features/studio/ideas';
@@ -526,6 +526,7 @@ export default function AdminPostStudioPage() {
   });
   const captionTags = countHashtags(caption);
   const firstLine = caption.split('\n')[0] ?? '';
+  const facebookCut = previewCut(caption, 'facebook')[1];
 
   const copyText = async (text: string, done: string) => {
     try {
@@ -976,8 +977,8 @@ export default function AdminPostStudioPage() {
                   ) : (
                     <>
                       <Tag>{caption.length.toLocaleString('en-US')} characters</Tag>
-                      <Tag color={caption.length > FACEBOOK_PREVIEW ? 'orange' : 'green'}>
-                        {caption.length > FACEBOOK_PREVIEW ? 'Long: Facebook shows “See more”' : 'Fits without “See more”'}
+                      <Tag color={facebookCut ? 'orange' : 'green'}>
+                        {facebookCut ? 'Long: Facebook shows “See more”' : 'Fits without “See more”'}
                       </Tag>
                       <Tag color={captionTags > 3 ? 'orange' : 'default'}>{captionTags} hashtags (2–3 work best)</Tag>
                     </>
