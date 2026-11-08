@@ -54,7 +54,24 @@ export interface StudioProduct {
   /** Photo URLs, best first; the page lets admins choose one. */
   photos: string[];
   photoIndex: number;
+  /** Size on the image: 1 = fit its space. Shift+drag or the slider changes it. */
+  scale: number;
+  /** Move from the centre of its space, as a share of that space's width / height. */
+  offsetX: number;
+  offsetY: number;
+  /** Manual crop of the photo (0–1 of its width/height); null = auto-trim white margins. */
+  crop: PhotoCrop | null;
 }
+
+export interface PhotoCrop { x: number; y: number; w: number; h: number }
+
+export const DEFAULT_ADJUST = { scale: 1, offsetX: 0, offsetY: 0, crop: null } as const;
+
+type DrawnProduct = StudioProduct & { image: HTMLImageElement | null };
+
+/** Where each product photo was drawn, so the page can drag / resize it on the preview. */
+export interface PhotoHitBox { id: string; x: number; y: number; w: number; h: number }
+let hitBoxes: PhotoHitBox[] = [];
 
 export interface StudioDesign {
   format: FormatId;
@@ -75,7 +92,7 @@ export interface StudioDesign {
 }
 
 export interface RenderAssets {
-  products: (StudioProduct & { image: HTMLImageElement | null })[];
+  products: DrawnProduct[];
   background: HTMLImageElement | null;
   logo: HTMLImageElement | null;
 }
@@ -206,20 +223,90 @@ function drawText(ctx: CanvasRenderingContext2D, box: TextBox): number {
   return box.y + lines.length * lineHeight;
 }
 
+interface SourceRect { sx: number; sy: number; sw: number; sh: number }
+const trimCache = new WeakMap<HTMLImageElement, SourceRect>();
+
+/**
+ * The part of a product photo that isn't white or transparent margin, so the
+ * bottle fills its space instead of floating small in a big white square.
+ */
+function trimmedRect(image: HTMLImageElement): SourceRect {
+  const cached = trimCache.get(image);
+  if (cached) return cached;
+  const full = { sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight };
+  try {
+    const scale = Math.min(1, 240 / Math.max(image.naturalWidth, image.naturalHeight));
+    const w = Math.max(1, Math.round(image.naturalWidth * scale));
+    const h = Math.max(1, Math.round(image.naturalHeight * scale));
+    const probe = document.createElement('canvas');
+    probe.width = w;
+    probe.height = h;
+    const ctx = probe.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return full;
+    ctx.drawImage(image, 0, 0, w, h);
+    const { data } = ctx.getImageData(0, 0, w, h);
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+    for (let y = 0; y < h; y += 1) {
+      for (let x = 0; x < w; x += 1) {
+        const i = (y * w + x) * 4;
+        const background = data[i + 3] < 16 || (data[i] > 242 && data[i + 1] > 242 && data[i + 2] > 242);
+        if (!background) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < minX || maxY < minY) return full;
+    const pad = 2;
+    const rect = {
+      sx: Math.max(0, (minX - pad) / scale),
+      sy: Math.max(0, (minY - pad) / scale),
+      sw: Math.min(image.naturalWidth, (maxX - minX + 1 + pad * 2) / scale),
+      sh: Math.min(image.naturalHeight, (maxY - minY + 1 + pad * 2) / scale),
+    };
+    rect.sw = Math.min(rect.sw, image.naturalWidth - rect.sx);
+    rect.sh = Math.min(rect.sh, image.naturalHeight - rect.sy);
+    trimCache.set(image, rect);
+    return rect;
+  } catch {
+    return full; // a photo from another site can't be read; draw it whole
+  }
+}
+
 /** Fits an image inside a box (no cropping). */
 function drawContain(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
   x: number, y: number, w: number, h: number,
   mode: 'multiply' | 'normal' = 'normal',
+  adjust?: Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop'> & { id?: string },
+  clip?: { x: number; y: number; w: number; h: number; r: number },
 ) {
-  const scale = Math.min(w / image.naturalWidth, h / image.naturalHeight);
-  const dw = image.naturalWidth * scale;
-  const dh = image.naturalHeight * scale;
+  const crop = adjust?.crop;
+  const { sx, sy, sw, sh } = crop
+    ? {
+      sx: crop.x * image.naturalWidth,
+      sy: crop.y * image.naturalHeight,
+      sw: Math.max(1, crop.w * image.naturalWidth),
+      sh: Math.max(1, crop.h * image.naturalHeight),
+    }
+    : trimmedRect(image);
+  const fit = Math.min(w / sw, h / sh) * (adjust?.scale ?? 1);
+  const dw = sw * fit;
+  const dh = sh * fit;
+  const dx = x + (w - dw) / 2 + (adjust?.offsetX ?? 0) * w;
+  const dy = y + (h - dh) / 2 + (adjust?.offsetY ?? 0) * h;
   ctx.save();
+  if (clip) {
+    roundRect(ctx, clip.x, clip.y, clip.w, clip.h, clip.r);
+    ctx.clip();
+  }
   if (mode === 'multiply') ctx.globalCompositeOperation = 'multiply';
-  ctx.drawImage(image, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
   ctx.restore();
+  if (adjust?.id) hitBoxes.push({ id: adjust.id, x: dx, y: dy, w: dw, h: dh });
 }
 
 /** Fills a box with an image, cropping the overflow. */
@@ -233,10 +320,11 @@ function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: nu
 function drawPhoto(
   ctx: CanvasRenderingContext2D,
   theme: StudioTheme,
-  image: HTMLImageElement | null,
+  product: DrawnProduct | undefined,
   x: number, y: number, w: number, h: number,
   forceCard = false,
 ) {
+  const image = product?.image ?? null;
   const card = forceCard || theme.photo === 'card';
   if (card) {
     ctx.save();
@@ -260,7 +348,11 @@ function drawPhoto(
     return;
   }
   const pad = card ? Math.min(w, h) * 0.08 : 0;
-  drawContain(ctx, image, x + pad, y + pad, w - pad * 2, h - pad * 2, card ? 'normal' : 'multiply');
+  drawContain(
+    ctx, image, x + pad, y + pad, w - pad * 2, h - pad * 2, card ? 'normal' : 'multiply', product,
+    // On a white tile the photo stays inside the tile; on plain backgrounds it may spill out.
+    card ? { x, y, w, h, r: Math.min(w, h) * 0.07 } : undefined,
+  );
 }
 
 /** Circle sticker with short text such as "-20%" or "NEW". */
@@ -393,7 +485,7 @@ function spotlight(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: St
 
   if (wide) {
     const photoW = W * 0.42;
-    drawPhoto(ctx, theme, product?.image ?? null, W - m - photoW, m, photoW, H - m * 2);
+    drawPhoto(ctx, theme, product, W - m - photoW, m, photoW, H - m * 2);
     let y = m * 1.2;
     const textW = W - photoW - m * 3;
     y = drawText(ctx, { text: design.eyebrow.toUpperCase(), x: m, y, maxWidth: textW, font: (s) => `800 ${s}px ${SANS}`, size: unit * 0.04, maxLines: 1, color: theme.accent === '#ffffff' ? theme.muted : theme.accent, letterSpacing: 3 }) + unit * 0.03;
@@ -416,7 +508,7 @@ function spotlight(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: St
   const photoBottom = H - m - footerH - priceH - unit * 0.05;
   const photoH = Math.max(unit * 0.25, photoBottom - photoTop);
   const photoW = Math.min(W - m * 2, photoH * (theme.photo === 'card' || assets.background ? 0.92 : 1.2));
-  drawPhoto(ctx, theme, product?.image ?? null, (W - photoW) / 2, photoTop, photoW, photoH);
+  drawPhoto(ctx, theme, product, (W - photoW) / 2, photoTop, photoW, photoH);
   drawBadge(ctx, theme, design.badge, (W + photoW) / 2 - unit * 0.04, photoTop + unit * 0.07, unit * 0.1);
   if (product) drawPrice(ctx, theme, productPrice(product, design), design.oldPrice, W / 2, photoTop + photoH + unit * 0.035, unit * 0.04, 'center');
   drawFooter(ctx, theme, design, assets, W, H, m);
@@ -443,7 +535,7 @@ function offer(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: Studio
     const areaX = W * 0.56;
     const areaW = W - areaX - m;
     const each = areaW / Math.max(1, products.length);
-    products.forEach((product, index) => drawPhoto(ctx, theme, product.image, areaX + index * each + each * 0.04, m, each * 0.92, H - m * 2));
+    products.forEach((product, index) => drawPhoto(ctx, theme, product, areaX + index * each + each * 0.04, m, each * 0.92, H - m * 2));
     drawFooter(ctx, theme, design, assets, areaX, H, m);
     return;
   }
@@ -457,7 +549,7 @@ function offer(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: Studio
   const photoH = Math.max(unit * 0.2, bottom - top - priceSpace);
   products.forEach((product, index) => {
     const x = m + index * (each + gap);
-    drawPhoto(ctx, theme, product.image, x, top, each, photoH);
+    drawPhoto(ctx, theme, product, x, top, each, photoH);
     const price = productPrice(product, design);
     if (price) {
       drawPrice(ctx, theme, price, n === 1 ? design.oldPrice : '', x + each / 2, top + photoH + unit * 0.025, unit * (n === 1 ? 0.04 : 0.032), 'center');
@@ -485,7 +577,8 @@ function grid(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioD
   const areaH = H - y - m - footerH;
   const cellW = (W - m * 2 - gap * (cols - 1)) / cols;
   const cellH = (areaH - gap * (rows - 1)) / rows;
-  const labelH = Math.min(cellH * 0.3, unit * 0.12);
+  // Room for a two-line name and the price under the photo.
+  const labelH = Math.min(cellH * 0.38, unit * 0.13);
 
   products.forEach((product, index) => {
     const col = index % cols;
@@ -497,16 +590,19 @@ function grid(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioD
     ctx.fillStyle = theme.photo === 'card' || assets.background ? '#ffffff' : 'rgba(255,255,255,0.55)';
     ctx.fill();
     ctx.restore();
-    if (product.image) drawContain(ctx, product.image, x + cellW * 0.08, cy + cellH * 0.05, cellW * 0.84, cellH - labelH - cellH * 0.06, 'multiply');
+    if (product.image) {
+      drawContain(ctx, product.image, x + cellW * 0.08, cy + cellH * 0.05, cellW * 0.84, cellH - labelH - cellH * 0.06, 'multiply', product,
+        { x, y: cy, w: cellW, h: cellH - labelH, r: unit * 0.03 });
+    }
     const textInk = '#242124';
-    const ty = drawText(ctx, { text: product.name, x: x + cellW / 2, y: cy + cellH - labelH, maxWidth: cellW * 0.88, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.026, maxLines: 2, color: textInk, align: 'center', lineHeight: 1.15 });
+    const ty = drawText(ctx, { text: product.name, x: x + cellW / 2, y: cy + cellH - labelH + unit * 0.008, maxWidth: cellW * 0.88, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.026, maxLines: 2, color: textInk, align: 'center', lineHeight: 1.15 });
     const price = productPrice(product, design);
     if (price) {
       ctx.font = `800 ${unit * 0.028}px ${SANS}`;
       ctx.fillStyle = theme.photo === 'card' ? '#9b5364' : theme.accent === '#ffffff' ? '#9b5364' : theme.accent;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(price, x + cellW / 2, Math.min(ty + unit * 0.006, cy + cellH - unit * 0.04));
+      ctx.fillText(price, x + cellW / 2, ty + unit * 0.008);
     }
   });
   drawBadge(ctx, theme, design.badge, W - m - unit * 0.07, (tall ? H * 0.08 : m) + unit * 0.07, unit * 0.075);
@@ -544,26 +640,28 @@ function announcement(ctx: CanvasRenderingContext2D, theme: StudioTheme, design:
   const footerH = unit * 0.11;
   const space = H - m - footerH - y;
   if (product?.image && space > unit * 0.18) {
-    const h = Math.min(space, unit * 0.6);
-    drawPhoto(ctx, theme, product.image, (W - h * 0.9) / 2, y, h * 0.9, h);
+    const h = Math.min(space, unit * (tall ? 0.8 : 0.6));
+    drawPhoto(ctx, theme, product, (W - h * 0.9) / 2, y, h * 0.9, h);
   }
   drawFooter(ctx, theme, design, assets, W, H, m);
 }
 
 const TEMPLATE_RENDERERS: Record<TemplateId, typeof spotlight> = { spotlight, offer, grid, announcement };
 
-export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, assets: RenderAssets) {
+export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, assets: RenderAssets): PhotoHitBox[] {
+  hitBoxes = [];
   const format = formatById(design.format);
   if (canvas.width !== format.width) canvas.width = format.width;
   if (canvas.height !== format.height) canvas.height = format.height;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  if (!ctx) return [];
   const theme = effectiveTheme(themeById(design.theme), assets);
   ctx.save();
   ctx.clearRect(0, 0, format.width, format.height);
   drawBackground(ctx, theme, design, assets, format.width, format.height);
   TEMPLATE_RENDERERS[design.template](ctx, theme, design, assets, format.width, format.height);
   ctx.restore();
+  return hitBoxes;
 }
 
 /* ----------------------------------------------------------------- copy */

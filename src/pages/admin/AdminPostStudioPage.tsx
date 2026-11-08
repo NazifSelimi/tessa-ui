@@ -10,15 +10,17 @@ import {
   App, Button, Card, Col, Empty, Input, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  CopyOutlined, DeleteOutlined, DownloadOutlined, PictureOutlined, ReloadOutlined, SaveOutlined, ShareAltOutlined, SwapOutlined, UploadOutlined,
+  CopyOutlined, DeleteOutlined, DownloadOutlined, PictureOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
+import CropModal from '@/features/studio/CropModal';
 import { useGetAllProductsQuery } from '@/features/admin/api';
 import { useLazyGetProductByIdQuery } from '@/features/products/api';
 import type { Product } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import {
   FORMATS, THEMES, buildCaption, ensureFonts, formatById, loadImage, loadLogo, quickBadges, renderDesign, templateDefaults, themeById,
-  type FormatId, type PriceMode, type StudioDesign, type StudioLang, type StudioProduct, type TemplateId, type ThemeId,
+  DEFAULT_ADJUST,
+  type FormatId, type PhotoCrop, type PhotoHitBox, type PriceMode, type StudioDesign, type StudioLang, type StudioProduct, type TemplateId, type ThemeId,
 } from '@/features/studio/render';
 
 const { Title, Text, Paragraph } = Typography;
@@ -44,7 +46,7 @@ interface Draft {
   id: string;
   savedAt: string;
   design: StudioDesign;
-  products: { id: string; photoIndex: number }[];
+  products: { id: string; photoIndex: number; scale?: number; offsetX?: number; offsetY?: number; crop?: PhotoCrop | null }[];
   thumbnail: string;
 }
 
@@ -91,6 +93,7 @@ function toStudioProduct(product: Product): StudioProduct {
     stylistPrice: Number(product.stylistPrice ?? 0),
     photos: photoUrls(product),
     photoIndex: 0,
+    ...DEFAULT_ADJUST,
   };
 }
 
@@ -119,6 +122,8 @@ export default function AdminPostStudioPage() {
   const [drafts, setDrafts] = useState<Draft[]>(() => readDrafts());
   const [fontsReady, setFontsReady] = useState(false);
   const [captionEdited, setCaptionEdited] = useState<string | null>(null);
+  const [cropping, setCropping] = useState<string | null>(null);
+  const hitBoxesRef = useRef<PhotoHitBox[]>([]);
 
   const { data: catalogue, isLoading: catalogueLoading } = useGetAllProductsQuery({ perPage: 1000, sort: 'name_asc' });
   const [fetchProduct] = useLazyGetProductByIdQuery();
@@ -182,9 +187,102 @@ export default function AdminPostStudioPage() {
 
   const nextPhoto = (id: string) => {
     setProducts((current) => current.map((product) => (product.id === id && product.photos.length > 1
-      ? { ...product, photoIndex: (product.photoIndex + 1) % product.photos.length }
+      ? { ...product, photoIndex: (product.photoIndex + 1) % product.photos.length, crop: null }
       : product)));
   };
+
+  const adjustProduct = useCallback((id: string, change: Partial<Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop'>>) => {
+    setProducts((current) => current.map((product) => (product.id === id ? { ...product, ...change } : product)));
+  }, []);
+
+  /* --------------------------------------------- drag / Shift+drag / wheel on the preview */
+
+  const pointer = useRef<{ id: string; resize: boolean; startX: number; startY: number; scale: number; offsetX: number; offsetY: number; boxW: number; boxH: number } | null>(null);
+  const [hovering, setHovering] = useState(false);
+
+  const canvasPoint = (event: { clientX: number; clientY: number }) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return { x: ((event.clientX - rect.left) / rect.width) * canvas.width, y: ((event.clientY - rect.top) / rect.height) * canvas.height };
+  };
+
+  const hitAt = (x: number, y: number) =>
+    [...hitBoxesRef.current].reverse().find((box) => x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h);
+
+  const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = canvasPoint(event);
+    const box = hitAt(point.x, point.y);
+    const product = box && products.find((item) => item.id === box.id);
+    if (!box || !product) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    // Offsets are stored relative to the product's own space; the drawn box is that space times its size.
+    pointer.current = {
+      id: product.id,
+      resize: event.shiftKey,
+      startX: point.x,
+      startY: point.y,
+      scale: product.scale,
+      offsetX: product.offsetX,
+      offsetY: product.offsetY,
+      boxW: box.w / Math.max(0.05, product.scale),
+      boxH: box.h / Math.max(0.05, product.scale),
+    };
+  };
+
+  const onCanvasPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = canvasPoint(event);
+    const drag = pointer.current;
+    if (!drag) {
+      setHovering(Boolean(hitAt(point.x, point.y)));
+      return;
+    }
+    const dx = point.x - drag.startX;
+    const dy = point.y - drag.startY;
+    if (drag.resize || event.shiftKey) {
+      // Up or right = bigger, down or left = smaller.
+      const canvas = canvasRef.current;
+      const unit = canvas ? Math.min(canvas.width, canvas.height) : 1000;
+      const factor = Math.exp((dx - dy) / (unit * 0.5));
+      adjustProduct(drag.id, { scale: Math.min(4, Math.max(0.2, drag.scale * factor)) });
+    } else {
+      // Offsets are a share of the fitted photo size (at size 1).
+      const fitW = Math.max(1, drag.boxW);
+      const fitH = Math.max(1, drag.boxH);
+      adjustProduct(drag.id, {
+        offsetX: Math.max(-1.5, Math.min(1.5, drag.offsetX + dx / fitW)),
+        offsetY: Math.max(-1.5, Math.min(1.5, drag.offsetY + dy / fitH)),
+      });
+    }
+  };
+
+  const onCanvasPointerUp = () => {
+    pointer.current = null;
+  };
+
+  // Mouse wheel / trackpad pinch over a product resizes it (needs a non-passive listener).
+  const productsRef = useRef(products);
+  useEffect(() => { productsRef.current = products; }, [products]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const onWheel = (event: WheelEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+      const box = [...hitBoxesRef.current].reverse().find((item) => x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h);
+      const product = box && productsRef.current.find((item) => item.id === box.id);
+      if (!product) return;
+      event.preventDefault();
+      const factor = Math.exp(-event.deltaY * (event.ctrlKey ? 0.01 : 0.0015));
+      setProducts((current) => current.map((item) => (item.id === product.id
+        ? { ...item, scale: Math.min(4, Math.max(0.2, item.scale * factor)) }
+        : item)));
+    };
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, []);
 
   /* ------------------------------------------------------------ template */
 
@@ -234,7 +332,7 @@ export default function AdminPostStudioPage() {
       loadLogo(logoInk),
     ]).then(([withImages, background, logo]) => {
       if (token !== renderToken.current) return;
-      renderDesign(canvas, design, { products: withImages, background, logo });
+      hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo });
       setRendering(false);
     });
   }, [design, products, backgroundUrl, fontsReady]);
@@ -315,7 +413,7 @@ export default function AdminPostStudioPage() {
       id: `${Date.now()}`,
       savedAt: new Date().toISOString(),
       design,
-      products: products.map((product) => ({ id: product.id, photoIndex: product.photoIndex })),
+      products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop }) => ({ id, photoIndex, scale, offsetX, offsetY, crop })),
       thumbnail,
     };
     const next = [draft, ...drafts].slice(0, MAX_DRAFTS);
@@ -331,11 +429,17 @@ export default function AdminPostStudioPage() {
     setDesign({ ...initialDesign(draft.design.lang), ...draft.design });
     setCaptionEdited(null);
     setProducts([]);
-    const indexes = Object.fromEntries(draft.products.map((item) => [item.id, item.photoIndex]));
-    const list = await Promise.all(draft.products.map(async ({ id }) => {
+    const list = await Promise.all(draft.products.map(async (saved) => {
       try {
-        const detail = await fetchProduct(id, true).unwrap();
-        return { ...toStudioProduct(detail), photoIndex: indexes[id] ?? 0 };
+        const detail = await fetchProduct(saved.id, true).unwrap();
+        return {
+          ...toStudioProduct(detail),
+          photoIndex: saved.photoIndex ?? 0,
+          scale: saved.scale ?? 1,
+          offsetX: saved.offsetX ?? 0,
+          offsetY: saved.offsetY ?? 0,
+          crop: saved.crop ?? null,
+        };
       } catch {
         return null;
       }
@@ -473,6 +577,11 @@ export default function AdminPostStudioPage() {
                 style={{ width: '100%' }}
               />
               {products.length > 0 && (
+                <Paragraph type="secondary" style={{ margin: '8px 0 0', fontSize: 12 }}>
+                  On the preview: drag a product to move it · Shift + drag (or mouse wheel / pinch) to resize it.
+                </Paragraph>
+              )}
+              {products.length > 0 && (
                 <div className="post-studio__picked">
                   {products.map((product) => (
                     <div key={product.id} className="post-studio__picked-item">
@@ -491,6 +600,31 @@ export default function AdminPostStudioPage() {
                           {product.photoIndex + 1}/{Math.max(1, product.photos.length)}
                         </Button>
                       </Tooltip>
+                      <div className="post-studio__adjust">
+                        <Text type="secondary" style={{ fontSize: 12, width: 34 }}>Size</Text>
+                        <Slider
+                          min={20}
+                          max={300}
+                          value={Math.round(product.scale * 100)}
+                          onChange={(value) => adjustProduct(product.id, { scale: value / 100 })}
+                          tooltip={{ formatter: (value) => `${value}%` }}
+                          style={{ flex: 1, margin: '0 6px' }}
+                        />
+                        <Tooltip title="Crop the photo">
+                          <Button size="small" icon={<ScissorOutlined />} type={product.crop ? 'primary' : 'default'} disabled={!product.photos.length} onClick={() => setCropping(product.id)}>
+                            Crop
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Reset size, position and crop">
+                          <Button
+                            size="small"
+                            icon={<UndoOutlined />}
+                            aria-label="Reset size, position and crop"
+                            disabled={product.scale === 1 && product.offsetX === 0 && product.offsetY === 0 && !product.crop}
+                            onClick={() => adjustProduct(product.id, { ...DEFAULT_ADJUST })}
+                          />
+                        </Tooltip>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -545,7 +679,12 @@ export default function AdminPostStudioPage() {
               <div className="post-studio__preview">
                 <canvas
                   ref={canvasRef}
-                  className={rendering ? 'is-rendering' : ''}
+                  className={`${rendering ? 'is-rendering' : ''}${hovering ? ' is-over-photo' : ''}`}
+                  onPointerDown={onCanvasPointerDown}
+                  onPointerMove={onCanvasPointerMove}
+                  onPointerUp={onCanvasPointerUp}
+                  onPointerCancel={onCanvasPointerUp}
+                  onPointerLeave={() => { if (!pointer.current) setHovering(false); }}
                   style={{ aspectRatio: `${format.width} / ${format.height}` }}
                   aria-label="Post preview"
                 />
@@ -592,6 +731,19 @@ export default function AdminPostStudioPage() {
           </div>
         </Col>
       </Row>
+      <CropModal
+        open={cropping !== null}
+        imageUrl={(() => {
+          const product = products.find((item) => item.id === cropping);
+          return product ? product.photos[product.photoIndex] ?? null : null;
+        })()}
+        initial={products.find((item) => item.id === cropping)?.crop ?? null}
+        onCancel={() => setCropping(null)}
+        onApply={(crop) => {
+          if (cropping) adjustProduct(cropping, { crop, scale: 1, offsetX: 0, offsetY: 0 });
+          setCropping(null);
+        }}
+      />
     </div>
   );
 }

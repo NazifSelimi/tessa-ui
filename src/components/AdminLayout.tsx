@@ -35,6 +35,7 @@ import {
   InstagramOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
+import { useGetDashboardStatsQuery } from '@/features/admin/api';
 import Logo from './Logo';
 
 const { Sider, Content, Header } = Layout;
@@ -64,14 +65,27 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-const pendingCount = 0;
+  // Same numbers as the dashboard to-do list; refreshed when orders or requests change.
+  const { data: stats } = useGetDashboardStatsQuery(undefined, { pollingInterval: 120_000 });
+  const pendingCount = stats?.pendingStylistRequests ?? 0;
+  const pendingOrders = stats?.pendingOrders ?? 0;
 
-  // Sidebar menu items — memoized inside the component so it can react to
-  // dynamic values like pendingCount once wired to the API.
+  // Sidebar menu items, with live badges for work waiting.
   const menuItems = useMemo(() => [
     { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
     { key: '/admin/products', icon: <ShoppingOutlined />, label: <Link to="/admin/products">Products</Link> },
-    { key: '/admin/orders', icon: <FileTextOutlined />, label: <Link to="/admin/orders">Orders</Link> },
+    {
+      key: '/admin/orders',
+      icon: <FileTextOutlined />,
+      label: (
+        <Link to="/admin/orders">
+          <Space>
+            Orders
+            {pendingOrders > 0 && <Badge count={pendingOrders} size="small" />}
+          </Space>
+        </Link>
+      ),
+    },
     { key: '/admin/users', icon: <UserOutlined />, label: <Link to="/admin/users">Users</Link> },
     {
       key: '/admin/stylist-requests',
@@ -95,7 +109,7 @@ const pendingCount = 0;
     { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },
     { key: '/admin/hair-quiz', icon: <ExperimentOutlined />, label: <Link to="/admin/hair-quiz">Hair Quiz</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
-  ], [pendingCount]);
+  ], [pendingCount, pendingOrders]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -263,12 +277,13 @@ const pendingCount = 0;
 
           {/* Right: Notifications & User */}
           <Space size={isMobile ? 'small' : 'middle'}>
-            <Badge count={pendingCount} size="small">
-              <Button 
-                type="text" 
+            <Badge count={pendingCount + pendingOrders} size="small">
+              <Button
+                type="text"
                 icon={<BellOutlined style={{ fontSize: 18 }} />}
-                onClick={() => navigate('/admin/stylist-requests')}
-                aria-label="Notifications"
+                onClick={() => navigate('/admin')}
+                aria-label="Work waiting (dashboard to-do list)"
+                title="Work waiting: see the dashboard to-do list"
               />
             </Badge>
 

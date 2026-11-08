@@ -14,6 +14,7 @@ import {
   useGetStylistRequestsQuery,
   useApproveStylistRequestMutation,
   useRejectStylistRequestMutation,
+  useGetDashboardStatsQuery,
 } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import SendMessageButtons from '@/features/admin/SendMessageButtons';
@@ -99,7 +100,9 @@ export default function AdminStylistRequestsPage() {
     }
   };
 
-  const pendingCount = requests.filter((r) => getStatus(r) === 'pending').length;
+  // Count across every page, not only the requests shown on this one.
+  const { data: stats } = useGetDashboardStatsQuery();
+  const pendingCount = stats?.pendingStylistRequests ?? requests.filter((r) => getStatus(r) === 'pending').length;
 
   const columns = [
     {
