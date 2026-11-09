@@ -33,6 +33,7 @@ import {
   ExperimentOutlined,
   LayoutOutlined,
   InstagramOutlined,
+  WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetDashboardStatsQuery } from '@/features/admin/api';
@@ -58,6 +59,7 @@ const pageTitles: Record<string, string> = {
   '/admin/catalogue-review': 'Supplier list (old)',
   '/admin/hair-quiz': 'Hair Quiz',
   '/admin/studio': 'Post Studio',
+  '/admin/messages': 'Viber & WhatsApp',
 };
 
 export default function AdminLayout() {
@@ -104,6 +106,7 @@ export default function AdminLayout() {
     { key: '/admin/referrals', icon: <ShareAltOutlined />, label: <Link to="/admin/referrals">Stylist Referrals</Link> },
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
     { key: '/admin/studio', icon: <InstagramOutlined />, label: <Link to="/admin/studio">Post Studio</Link> },
+    { key: '/admin/messages', icon: <WhatsAppOutlined />, label: <Link to="/admin/messages">Viber & WhatsApp</Link> },
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
     { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },

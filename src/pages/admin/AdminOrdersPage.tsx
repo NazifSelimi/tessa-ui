@@ -8,8 +8,8 @@ import type { Order, OrderStatus } from '@/types';
 import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatPrice } from '@/shared/utils/formatPrice';
-import SendMessageButtons from '@/features/admin/SendMessageButtons';
-import type { MessageTemplate } from '@/features/admin/messageTemplates';
+import MessageButtons from '@/features/messaging/MessageButtons';
+import { firstName, ORDER_STATUS_TEMPLATE } from '@/features/messaging/templates';
 
 const { Title, Text } = Typography;
 
@@ -28,13 +28,6 @@ const statusOptions: { value: string; label: string }[] = [
   { value: 'shipped', label: 'Shipped' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
-
-const ORDER_MESSAGE: Record<string, MessageTemplate['kind']> = {
-  pending: 'orderReceived',
-  confirmed: 'orderConfirmed',
-  shipped: 'orderShipped',
-  cancelled: 'orderCancelled',
-};
 
 export default function AdminOrdersPage() {
   const { message } = App.useApp();
@@ -222,13 +215,13 @@ export default function AdminOrdersPage() {
               )}
             </div>
 
-            {ORDER_MESSAGE[selectedOrder.status] && (
+            {ORDER_STATUS_TEMPLATE[selectedOrder.status] && (
               <div style={{ marginBottom: 16 }}>
                 <Text strong style={{ display: 'block', marginBottom: 6 }}>Message the customer about this status:</Text>
-                <SendMessageButtons
-                  size="middle"
+                <MessageButtons
                   phone={selectedOrder.shippingAddress?.phone}
-                  template={{ kind: ORDER_MESSAGE[selectedOrder.status], name: selectedOrder.shippingAddress?.fullName, orderId: String(selectedOrder.id) } as MessageTemplate}
+                  templateKey={ORDER_STATUS_TEMPLATE[selectedOrder.status]}
+                  vars={{ name: firstName(selectedOrder.shippingAddress?.fullName), order: selectedOrder.id, total: formatPrice(selectedOrder.total) }}
                 />
               </div>
             )}

@@ -55,6 +55,7 @@ const AdminCatalogImagesPage = lazy(() => import('./pages/admin/ProductImagesWor
 const AdminCatalogueReviewPage = lazy(() => import('./pages/admin/AdminCatalogueReviewPage'));
 const AdminHairQuizPage = lazy(() => import('./pages/admin/AdminHairQuizPage'));
 const AdminPostStudioPage = lazy(() => import('./pages/admin/AdminPostStudioPage'));
+const AdminMessagesPage = lazy(() => import('./pages/admin/AdminMessagesPage'));
 const StylistWorkspacePage = lazy(() => import('./pages/stylist/StylistWorkspacePage'));
 const DistributorPortalPage = lazy(() => import('./pages/distributor/DistributorPortalPage'));
 const DistributorProductsPage = lazy(() => import('./pages/distributor/DistributorProductsPage'));
@@ -241,6 +242,7 @@ function App() {
                 <Route path="/admin/catalogue-review" element={<AdminCatalogueReviewPage />} />
                 <Route path="/admin/hair-quiz" element={<AdminHairQuizPage />} />
                 <Route path="/admin/studio" element={<AdminPostStudioPage />} />
+                <Route path="/admin/messages" element={<AdminMessagesPage />} />
               </Route>
 
               {/* Catch-all */}
