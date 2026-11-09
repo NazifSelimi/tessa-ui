@@ -166,6 +166,14 @@ function toStudioProduct(product: Product): StudioProduct {
   };
 }
 
+let slideCounter = 0;
+const nextSlideId = () => `slide-${(slideCounter += 1)}`;
+
+/** Products of all slides, with the slide being edited taken live. */
+function currentSlidesForCaption(slides: { products: StudioProduct[] }[], active: number, live: StudioProduct[]): StudioProduct[] {
+  return slides.flatMap((slide, index) => (index === active ? live : slide.products));
+}
+
 /** The photo under a point, with a margin so slim bottles are easy to grab. */
 function findHit(boxes: PhotoHitBox[], x: number, y: number, canvas: HTMLCanvasElement | null) {
   const margin = canvas ? Math.min(canvas.width, canvas.height) * 0.03 : 0;
@@ -651,16 +659,12 @@ export default function AdminPostStudioPage() {
 
   /* ------------------------------------------------------------ rendering */
 
-  const renderToken = useRef(0);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !fontsReady) return;
-    const token = ++renderToken.current;
-    setRendering(true);
-    const theme = themeById(design.theme);
+  /** Loads photos (with background removal), background, logo and before/after photos for one design. */
+  const loadAssets = useCallback(async (forDesign: StudioDesign, forProducts: StudioProduct[]) => {
+    const theme = themeById(forDesign.theme);
     const logoInk = backgroundUrl || theme.photo === 'card' ? '#ffffff' : '#242124';
-    Promise.all([
-      Promise.all(products.map(async (product) => {
+    const [withImages, background, logo, before, after] = await Promise.all([
+      Promise.all(forProducts.map(async (product) => {
         const photo = await loadImage(product.photos[product.photoIndex]);
         // Background removal runs here, in the browser; results are cached per photo + settings.
         const image = product.cutout && photo ? getCutout(photo, { tolerance: product.tolerance, erase: product.erase }) ?? photo : photo;
@@ -670,14 +674,125 @@ export default function AdminPostStudioPage() {
       loadLogo(logoInk),
       loadImage(beforeAfterUrls.before),
       loadImage(beforeAfterUrls.after),
-    ]).then(([withImages, background, logo, before, after]) => {
+    ]);
+    return { products: withImages, background, logo, before, after };
+  }, [backgroundUrl, beforeAfterUrls]);
+
+  const renderToken = useRef(0);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !fontsReady) return;
+    const token = ++renderToken.current;
+    setRendering(true);
+    loadAssets(design, products).then((assets) => {
       if (token !== renderToken.current) return;
       const qr = design.qr ? qrRef.current?.querySelector('canvas') ?? null : null;
-      hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo, before, after, qr });
+      hitBoxesRef.current = renderDesign(canvas, design, { ...assets, qr });
       setRendering(false);
       setRenderVersion((version) => version + 1);
     });
-  }, [design, products, backgroundUrl, beforeAfterUrls, fontsReady]);
+  }, [design, products, loadAssets, fontsReady]);
+
+  /* ------------------------------------------------------------ carousel */
+
+  interface Slide { id: string; design: StudioDesign; products: StudioProduct[]; thumbnail: string }
+  /** Empty = a single post. Otherwise every slide; the active one is edited live above. */
+  const [slides, setSlides] = useState<Slide[]>([]);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const thumbnailOf = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return '';
+    const thumb = document.createElement('canvas');
+    const scale = 160 / Math.max(canvas.width, canvas.height);
+    thumb.width = Math.round(canvas.width * scale);
+    thumb.height = Math.round(canvas.height * scale);
+    thumb.getContext('2d')?.drawImage(canvas, 0, 0, thumb.width, thumb.height);
+    try { return thumb.toDataURL('image/jpeg', 0.7); } catch { return ''; }
+  };
+
+  /** The slide list with the slide being edited brought up to date. */
+  const currentSlides = (): Slide[] => {
+    const live: Slide = { id: slides[activeSlide]?.id ?? nextSlideId(), design, products, thumbnail: thumbnailOf() };
+    return slides.length ? slides.map((slide, index) => (index === activeSlide ? live : slide)) : [live];
+  };
+
+  const openSlide = (list: Slide[], index: number) => {
+    const target = list[index];
+    if (!target) return;
+    setSlides(list);
+    setActiveSlide(index);
+    setSelectedEl(null);
+    setErasingId(null);
+    // Every slide in a carousel has the same size.
+    setDesign({ ...target.design, format: design.format });
+    setProducts(target.products);
+  };
+
+  const addSlide = (duplicate: boolean) => {
+    const list = currentSlides();
+    if (list.length >= 10) {
+      message.info('Instagram allows up to 10 slides in one post.');
+      return;
+    }
+    const fresh: Slide = duplicate
+      ? { id: nextSlideId(), design: { ...design, elements: design.elements.map((item) => ({ ...item, id: `${item.id}c` })) }, products, thumbnail: '' }
+      : { id: nextSlideId(), design: { ...design, elements: [], headline: '', subline: '', eyebrow: '', badge: '' }, products: [], thumbnail: '' };
+    const next = [...list.slice(0, activeSlide + 1), fresh, ...list.slice(activeSlide + 1)];
+    openSlide(next, activeSlide + 1);
+  };
+
+  const moveSlide = (direction: -1 | 1) => {
+    const list = currentSlides();
+    const target = activeSlide + direction;
+    if (target < 0 || target >= list.length) return;
+    [list[activeSlide], list[target]] = [list[target], list[activeSlide]];
+    setSlides(list);
+    setActiveSlide(target);
+  };
+
+  const deleteSlide = () => {
+    const list = currentSlides();
+    if (list.length <= 1) return;
+    const next = list.filter((_, index) => index !== activeSlide);
+    if (next.length === 1) {
+      setSlides([]);
+      setActiveSlide(0);
+      setDesign({ ...next[0].design, format: design.format });
+      setProducts(next[0].products);
+      return;
+    }
+    openSlide(next, Math.min(activeSlide, next.length - 1));
+  };
+
+  /** Every slide as a numbered PNG, downloaded one after another (no zip library needed). */
+  const exportSlides = async () => {
+    const list = currentSlides();
+    const base = fileName().replace(/\.png$/, '');
+    for (let index = 0; index < list.length; index += 1) {
+      const slide = list[index];
+      const slideDesign = { ...slide.design, format: design.format };
+      const canvas = document.createElement('canvas');
+      const assets = await loadAssets(slideDesign, slide.products);
+      const qr = slideDesign.qr ? qrRef.current?.querySelector('canvas') ?? null : null;
+      renderDesign(canvas, slideDesign, { ...assets, qr });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) continue;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${base}-${String(index + 1).padStart(2, '0')}.png`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+    message.success(`${list.length} slides downloaded — post them as one carousel.`);
+  };
+
+  /** Caption products: every product in the carousel, once. */
+  const captionProducts = slides.length
+    ? Array.from(new Map(currentSlidesForCaption(slides, activeSlide, products).map((product) => [product.id, product])).values())
+    : products;
 
   /* ------------------------------------------------------------ output */
 
@@ -733,7 +848,7 @@ export default function AdminPostStudioPage() {
   /** QR link: what the admin typed, else the first product's page, else the shop. */
   const qrValue = design.qrUrl.trim() || (products[0] ? `${getBrandKit().url}/product/${products[0].id}` : getBrandKit().url);
 
-  const caption = captionEdited ?? buildCaption(design, products, {
+  const caption = captionEdited ?? buildCaption(design, captionProducts, {
     platform: social.platform,
     tone: social.tone,
     variant: social.variant,
@@ -1373,11 +1488,36 @@ export default function AdminPostStudioPage() {
                 </div>
                 </PostMockup>
               </div>
+              <div className="post-studio__slides">
+                {slides.length > 0 && slides.map((slide, index) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    className={`post-studio__slide${index === activeSlide ? ' is-active' : ''}`}
+                    onClick={() => { if (index !== activeSlide) openSlide(currentSlides(), index); }}
+                    title={`Slide ${index + 1}`}
+                  >
+                    {index !== activeSlide && slide.thumbnail ? <img src={slide.thumbnail} alt="" /> : <span>{index + 1}</span>}
+                  </button>
+                ))}
+                <Space size={4} wrap>
+                  <Button size="small" icon={<PlusOutlined />} onClick={() => addSlide(false)}>{slides.length ? 'Slide' : 'Make a carousel'}</Button>
+                  <Button size="small" icon={<CopyOutlined />} onClick={() => addSlide(true)}>Duplicate</Button>
+                  {slides.length > 0 && (
+                    <>
+                      <Button size="small" icon={<ArrowUpOutlined style={{ transform: 'rotate(-90deg)' }} />} disabled={activeSlide === 0} onClick={() => moveSlide(-1)} aria-label="Move slide left" />
+                      <Button size="small" icon={<ArrowDownOutlined style={{ transform: 'rotate(-90deg)' }} />} disabled={activeSlide === slides.length - 1} onClick={() => moveSlide(1)} aria-label="Move slide right" />
+                      <Button size="small" danger icon={<DeleteOutlined />} onClick={deleteSlide} aria-label="Delete slide" />
+                    </>
+                  )}
+                </Space>
+              </div>
               <div className="post-studio__actions">
-                <Text type="secondary">{format.width} × {format.height} px · {format.hint}</Text>
+                <Text type="secondary">{format.width} × {format.height} px · {format.hint}{slides.length ? ` · slide ${activeSlide + 1} of ${slides.length}` : ''}</Text>
                 <Space wrap>
                   {canShareFiles && <Button icon={<ShareAltOutlined />} onClick={share}>Share</Button>}
-                  <Button type="primary" icon={<DownloadOutlined />} onClick={download}>Download PNG</Button>
+                  {slides.length > 0 && <Button icon={<DownloadOutlined />} onClick={exportSlides}>All {slides.length} slides</Button>}
+                  <Button type="primary" icon={<DownloadOutlined />} onClick={download}>{slides.length ? 'This slide' : 'Download PNG'}</Button>
                 </Space>
               </div>
             </Card>
