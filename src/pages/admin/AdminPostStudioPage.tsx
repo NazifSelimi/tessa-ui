@@ -8,10 +8,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  App, Button, Card, Col, Empty, Input, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
+  App, Button, Card, Col, Empty, Input, Modal, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  ArrowDownOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
+  AppstoreOutlined, ArrowDownOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import CropModal from '@/features/studio/CropModal';
@@ -789,6 +789,60 @@ export default function AdminPostStudioPage() {
     message.success(`${list.length} slides downloaded — post them as one carousel.`);
   };
 
+  /* ------------------------------------------------------------ template gallery */
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryThumbs, setGalleryThumbs] = useState<Record<string, string>>({});
+
+  /** Designs for every ready idea and every layout, using the products already chosen. */
+  const galleryItems = useMemo(() => [
+    ...IDEAS.map((idea) => {
+      const text = ideaText(idea, design.lang, products[0]?.name);
+      return {
+        key: `idea:${idea.id}`, label: `${idea.emoji} ${idea.label}`, idea, template: null as TemplateId | null,
+        design: { ...design, template: idea.template, theme: idea.theme, ...text, info: idea.info ?? 'benefits', benefits: [], elements: [] } as StudioDesign,
+      };
+    }),
+    ...TEMPLATES.map((item) => {
+      const defaults = templateDefaults(item.id, design.lang);
+      const headline = item.id === 'spotlight' && products[0] ? products[0].name : defaults.headline;
+      return {
+        key: `layout:${item.id}`, label: item.label, idea: null as PostIdea | null, template: item.id,
+        design: { ...design, template: item.id, ...defaults, headline, elements: [] } as StudioDesign,
+      };
+    }),
+  ], [design, products]);
+
+  // Draw the thumbnails when the gallery opens (small JPEGs, in the background).
+  useEffect(() => {
+    if (!galleryOpen) return undefined;
+    let cancelled = false;
+    (async () => {
+      for (const item of galleryItems) {
+        if (cancelled) return;
+        const limit = TEMPLATES.find((entry) => entry.id === item.design.template)?.maxProducts ?? 1;
+        const assets = await loadAssets(item.design, products.slice(0, limit));
+        const full = document.createElement('canvas');
+        renderDesign(full, item.design, { ...assets, qr: null });
+        const thumb = document.createElement('canvas');
+        const scale = 240 / Math.max(full.width, full.height);
+        thumb.width = Math.round(full.width * scale);
+        thumb.height = Math.round(full.height * scale);
+        thumb.getContext('2d')?.drawImage(full, 0, 0, thumb.width, thumb.height);
+        let url = '';
+        try { url = thumb.toDataURL('image/jpeg', 0.75); } catch { url = ''; }
+        if (!cancelled) setGalleryThumbs((current) => ({ ...current, [item.key]: url }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [galleryOpen, galleryItems, loadAssets, products]);
+
+  const pickFromGallery = (item: (typeof galleryItems)[number]) => {
+    if (item.idea) applyIdea(item.idea);
+    else if (item.template) changeTemplate(item.template);
+    setGalleryOpen(false);
+  };
+
   /** Caption products: every product in the carousel, once. */
   const captionProducts = slides.length
     ? Array.from(new Map(currentSlidesForCaption(slides, activeSlide, products).map((product) => [product.id, product])).values())
@@ -994,7 +1048,11 @@ export default function AdminPostStudioPage() {
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={10} xl={9}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
-            <Card size="small" title={<Space><BulbOutlined />Ready post ideas</Space>}>
+            <Card
+              size="small"
+              title={<Space><BulbOutlined />Ready post ideas</Space>}
+              extra={<Button size="small" icon={<AppstoreOutlined />} onClick={() => { setGalleryThumbs({}); setGalleryOpen(true); }}>Template gallery</Button>}
+            >
               {coming.length > 0 && (
                 <div className="post-studio__coming">
                   <Text strong className="post-studio__label">Coming up</Text>
@@ -1637,6 +1695,21 @@ export default function AdminPostStudioPage() {
           </div>
         </Col>
       </Row>
+      <Modal open={galleryOpen} onCancel={() => setGalleryOpen(false)} footer={null} width={1000} title="Template gallery — click one to start">
+        <Paragraph type="secondary" style={{ marginTop: 0 }}>
+          Previews use your chosen products{products.length ? '' : ' (pick products first to see them here)'}, language and size.
+        </Paragraph>
+        <div className="post-studio__gallery">
+          {galleryItems.map((item) => (
+            <button key={item.key} type="button" className="post-studio__gallery-item" onClick={() => pickFromGallery(item)}>
+              <span className="post-studio__gallery-thumb" style={{ aspectRatio: `${format.width} / ${format.height}` }}>
+                {galleryThumbs[item.key] ? <img src={galleryThumbs[item.key]} alt="" /> : <span className="post-studio__gallery-wait">…</span>}
+              </span>
+              <strong>{item.label}</strong>
+            </button>
+          ))}
+        </div>
+      </Modal>
       <CropModal
         open={cropping !== null}
         imageUrl={(() => {
