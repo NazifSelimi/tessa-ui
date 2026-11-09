@@ -112,6 +112,81 @@ function floodFill(
   }
 }
 
+/**
+ * Seeds for the next background layer: the outline of what is left, when that
+ * outline runs along a rectangle (≥70% of it on the bounding box sides) and is
+ * mostly one colour. Otherwise no seeds (the outline is the product itself).
+ */
+function rectangularLayer(data: Uint8ClampedArray, w: number, h: number, mask: Uint8Array, tolerance: number): { index: number; colour: RGB }[] {
+  let minX = w; let minY = h; let maxX = -1; let maxY = -1;
+  const outline: number[] = [];
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const index = y * w + x;
+      if (mask[index]) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      const touches = x === 0 || y === 0 || x === w - 1 || y === h - 1
+        || mask[index - 1] || mask[index + 1] || mask[index - w] || mask[index + w];
+      if (touches) outline.push(index);
+    }
+  }
+  // Nothing removed yet, nothing left, or the remaining part is small: stop.
+  if (outline.length < 40 || maxX < 0 || (maxX - minX) * (maxY - minY) < w * h * 0.05) return [];
+  const near = 3;
+  let onBox = 0;
+  for (const index of outline) {
+    const x = index % w;
+    const y = (index - x) / w;
+    if (x - minX <= near || maxX - x <= near || y - minY <= near || maxY - y <= near) onBox += 1;
+  }
+  if (onBox / outline.length < 0.7) return [];
+
+  const colours = borderColoursOf(data, outline);
+  const main = colours[0];
+  if (!main || main.share < 0.6) return [];
+  return outline
+    .filter((index) => {
+      const p = index * 4;
+      return distance(data[p], data[p + 1], data[p + 2], ...main.colour) <= tolerance;
+    })
+    .map((index) => ({ index, colour: [data[index * 4], data[index * 4 + 1], data[index * 4 + 2]] as RGB }));
+}
+
+/** Main colours of a set of pixels, with their share. */
+function borderColoursOf(data: Uint8ClampedArray, indices: number[]): { colour: RGB; share: number }[] {
+  const buckets = new Map<number, { count: number; sum: RGB }>();
+  for (const index of indices) {
+    const i = index * 4;
+    const key = ((data[i] >> 4) << 8) | ((data[i + 1] >> 4) << 4) | (data[i + 2] >> 4);
+    const bucket = buckets.get(key) ?? { count: 0, sum: [0, 0, 0] };
+    bucket.count += 1;
+    bucket.sum[0] += data[i];
+    bucket.sum[1] += data[i + 1];
+    bucket.sum[2] += data[i + 2];
+    buckets.set(key, bucket);
+  }
+  // Neighbouring buckets of one flat colour belong together: merge by distance.
+  const merged: { count: number; sum: RGB }[] = [];
+  for (const bucket of [...buckets.values()].sort((a, b) => b.count - a.count)) {
+    const colour = bucket.sum.map((value) => value / bucket.count) as RGB;
+    const home = merged.find((item) => distance(...colour, ...(item.sum.map((value) => value / item.count) as RGB)) < 18);
+    if (home) {
+      home.count += bucket.count;
+      home.sum[0] += bucket.sum[0];
+      home.sum[1] += bucket.sum[1];
+      home.sum[2] += bucket.sum[2];
+    } else {
+      merged.push({ count: bucket.count, sum: [...bucket.sum] as RGB });
+    }
+  }
+  return merged
+    .sort((a, b) => b.count - a.count)
+    .map((item) => ({ colour: item.sum.map((value) => value / item.count) as RGB, share: item.count / Math.max(1, indices.length) }));
+}
+
 function sourceSize(image: HTMLImageElement) {
   const scale = Math.min(1, MAX_SIDE / Math.max(image.naturalWidth, image.naturalHeight));
   return { w: Math.max(1, Math.round(image.naturalWidth * scale)), h: Math.max(1, Math.round(image.naturalHeight * scale)) };
@@ -162,6 +237,15 @@ export function getCutout(image: HTMLImageElement, settings: CutoutSettings): HT
   for (let x = 0; x < w; x += 1) { trySeed(x, 0); trySeed(x, h - 1); }
   for (let y = 1; y < h - 1; y += 1) { trySeed(0, y); trySeed(w - 1, y); }
   floodFill(data, w, h, mask, reference, seeds, tolerance);
+
+  // 1b. Layered backgrounds (e.g. a pink square on a white frame): while what is
+  // left is still a flat-coloured rectangle, remove that layer too. A product's
+  // outline is not a rectangle, so it is never eaten this way.
+  for (let pass = 0; pass < 2; pass += 1) {
+    const layer = rectangularLayer(data, w, h, mask, tolerance);
+    if (!layer.length) break;
+    floodFill(data, w, h, mask, reference, layer, tolerance);
+  }
 
   // 2. Magic-eraser spots.
   const eraseSeeds = settings.erase.map(({ x, y }) => {
