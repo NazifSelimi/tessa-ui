@@ -78,7 +78,7 @@ export interface StudioProduct {
 export interface PhotoCrop { x: number; y: number; w: number; h: number }
 
 export const DEFAULT_ADJUST = { scale: 1, offsetX: 0, offsetY: 0, crop: null } as const;
-export const DEFAULT_CUTOUT = { cutout: false, tolerance: 32, erase: [] as { x: number; y: number }[], shadow: true };
+export const DEFAULT_CUTOUT = { cutout: false, tolerance: 20, erase: [] as { x: number; y: number }[], shadow: true };
 
 /** A loaded photo, or its cut-out (a canvas with a transparent background). */
 export type PhotoSource = HTMLImageElement | HTMLCanvasElement;

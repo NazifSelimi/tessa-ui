@@ -16,7 +16,10 @@ export interface CutoutSettings {
   erase: { x: number; y: number }[];
 }
 
-export const DEFAULT_TOLERANCE = 32;
+export const DEFAULT_TOLERANCE = 20;
+
+/** Photos often have a darker 1–2 px line at the very edge; filling starts this far inside. */
+const INSET = 3;
 
 /** Larger photos are worked on at this size (still full quality for posts). */
 const MAX_SIDE = 2400;
@@ -29,17 +32,16 @@ const MAX_CACHE = 24;
 const keyOf = (image: HTMLImageElement, settings: CutoutSettings) =>
   `${image.currentSrc || image.src}|${Math.round(settings.tolerance)}|${settings.erase.map((p) => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(';')}`;
 
-/** Colour distance that roughly follows how different colours look. */
+/**
+ * Plain RGB distance. It keeps light pink backdrops apart from white / light-grey
+ * bottles better than "perceptual" formulas, which rate those as close.
+ */
 function distance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
-  const rMean = (r1 + r2) / 2;
-  const dr = r1 - r2;
-  const dg = g1 - g2;
-  const db = b1 - b2;
-  return Math.sqrt((2 + rMean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rMean) / 256) * db * db) / 3;
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b2);
 }
 
 /** The colours that make up most of the border (the studio background). */
-function borderColours(data: Uint8ClampedArray, w: number, h: number): RGB[] {
+function borderColours(data: Uint8ClampedArray, w: number, h: number, inset: number): RGB[] {
   const buckets = new Map<number, { count: number; sum: RGB }>();
   const add = (x: number, y: number) => {
     const i = (y * w + x) * 4;
@@ -52,9 +54,9 @@ function borderColours(data: Uint8ClampedArray, w: number, h: number): RGB[] {
     bucket.sum[2] += data[i + 2];
     buckets.set(key, bucket);
   };
-  for (let x = 0; x < w; x += 1) { add(x, 0); add(x, h - 1); }
-  for (let y = 0; y < h; y += 1) { add(0, y); add(w - 1, y); }
-  const total = 2 * (w + h);
+  for (let x = inset; x < w - inset; x += 1) { add(x, inset); add(x, h - 1 - inset); }
+  for (let y = inset; y < h - inset; y += 1) { add(inset, y); add(w - 1 - inset, y); }
+  const total = Math.max(1, 2 * (w + h - 4 * inset));
   return [...buckets.values()]
     .filter((bucket) => bucket.count >= total * 0.04)
     .sort((a, b) => b.count - a.count)
@@ -63,14 +65,16 @@ function borderColours(data: Uint8ClampedArray, w: number, h: number): RGB[] {
 }
 
 /**
- * Marks background pixels (mask = 1). Each fill carries the colour it started
- * from, so slow gradients are followed but the product edge stops it.
+ * Marks background pixels (mask = 1). Each fill keeps the exact colour it
+ * started from (no drifting), so a soft product edge can never walk the fill
+ * from the backdrop colour into the product. Gradients are covered because
+ * every border pixel starts its own fill.
  */
 function floodFill(
   data: Uint8ClampedArray, w: number, h: number, mask: Uint8Array, reference: Float32Array,
   seeds: { index: number; colour: RGB }[], tolerance: number,
 ) {
-  const step = Math.max(6, tolerance * 0.45);
+  const step = Math.max(5, tolerance * 0.45);
   const queue = new Int32Array(w * h);
   let head = 0;
   let tail = 0;
@@ -102,89 +106,13 @@ function floodFill(
       const toNeighbour = distance(data[q], data[q + 1], data[q + 2], data[p], data[p + 1], data[p + 2]);
       if (toReference <= tolerance && toNeighbour <= step) {
         mask[next] = 1;
-        // Drift the reference slowly so long gradients (pink → lighter pink) are followed.
-        reference[next * 3] = rr * 0.9 + data[q] * 0.1;
-        reference[next * 3 + 1] = rg * 0.9 + data[q + 1] * 0.1;
-        reference[next * 3 + 2] = rb * 0.9 + data[q + 2] * 0.1;
+        reference[next * 3] = rr;
+        reference[next * 3 + 1] = rg;
+        reference[next * 3 + 2] = rb;
         queue[tail++] = next;
       }
     }
   }
-}
-
-/**
- * Seeds for the next background layer: the outline of what is left, when that
- * outline runs along a rectangle (≥70% of it on the bounding box sides) and is
- * mostly one colour. Otherwise no seeds (the outline is the product itself).
- */
-function rectangularLayer(data: Uint8ClampedArray, w: number, h: number, mask: Uint8Array, tolerance: number): { index: number; colour: RGB }[] {
-  let minX = w; let minY = h; let maxX = -1; let maxY = -1;
-  const outline: number[] = [];
-  for (let y = 0; y < h; y += 1) {
-    for (let x = 0; x < w; x += 1) {
-      const index = y * w + x;
-      if (mask[index]) continue;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
-      const touches = x === 0 || y === 0 || x === w - 1 || y === h - 1
-        || mask[index - 1] || mask[index + 1] || mask[index - w] || mask[index + w];
-      if (touches) outline.push(index);
-    }
-  }
-  // Nothing removed yet, nothing left, or the remaining part is small: stop.
-  if (outline.length < 40 || maxX < 0 || (maxX - minX) * (maxY - minY) < w * h * 0.05) return [];
-  const near = 3;
-  let onBox = 0;
-  for (const index of outline) {
-    const x = index % w;
-    const y = (index - x) / w;
-    if (x - minX <= near || maxX - x <= near || y - minY <= near || maxY - y <= near) onBox += 1;
-  }
-  if (onBox / outline.length < 0.7) return [];
-
-  const colours = borderColoursOf(data, outline);
-  const main = colours[0];
-  if (!main || main.share < 0.6) return [];
-  return outline
-    .filter((index) => {
-      const p = index * 4;
-      return distance(data[p], data[p + 1], data[p + 2], ...main.colour) <= tolerance;
-    })
-    .map((index) => ({ index, colour: [data[index * 4], data[index * 4 + 1], data[index * 4 + 2]] as RGB }));
-}
-
-/** Main colours of a set of pixels, with their share. */
-function borderColoursOf(data: Uint8ClampedArray, indices: number[]): { colour: RGB; share: number }[] {
-  const buckets = new Map<number, { count: number; sum: RGB }>();
-  for (const index of indices) {
-    const i = index * 4;
-    const key = ((data[i] >> 4) << 8) | ((data[i + 1] >> 4) << 4) | (data[i + 2] >> 4);
-    const bucket = buckets.get(key) ?? { count: 0, sum: [0, 0, 0] };
-    bucket.count += 1;
-    bucket.sum[0] += data[i];
-    bucket.sum[1] += data[i + 1];
-    bucket.sum[2] += data[i + 2];
-    buckets.set(key, bucket);
-  }
-  // Neighbouring buckets of one flat colour belong together: merge by distance.
-  const merged: { count: number; sum: RGB }[] = [];
-  for (const bucket of [...buckets.values()].sort((a, b) => b.count - a.count)) {
-    const colour = bucket.sum.map((value) => value / bucket.count) as RGB;
-    const home = merged.find((item) => distance(...colour, ...(item.sum.map((value) => value / item.count) as RGB)) < 18);
-    if (home) {
-      home.count += bucket.count;
-      home.sum[0] += bucket.sum[0];
-      home.sum[1] += bucket.sum[1];
-      home.sum[2] += bucket.sum[2];
-    } else {
-      merged.push({ count: bucket.count, sum: [...bucket.sum] as RGB });
-    }
-  }
-  return merged
-    .sort((a, b) => b.count - a.count)
-    .map((item) => ({ colour: item.sum.map((value) => value / item.count) as RGB, share: item.count / Math.max(1, indices.length) }));
 }
 
 function sourceSize(image: HTMLImageElement) {
@@ -217,12 +145,14 @@ export function getCutout(image: HTMLImageElement, settings: CutoutSettings): HT
     return null; // photo from another website: the browser does not allow reading it
   }
   const data = pixels.data;
-  const tolerance = 4 + (Math.max(0, Math.min(100, settings.tolerance)) / 100) * 110;
+  // Slider 0–100 → 3–63 RGB units (20 ≈ 15: JPEG noise goes, a white bottle on pink stays).
+  const tolerance = 3 + Math.max(0, Math.min(100, settings.tolerance)) * 0.6;
   const mask = new Uint8Array(w * h);
   const reference = new Float32Array(w * h * 3);
 
   // 1. From the border: only border pixels that look like the main background colours.
-  const backgrounds = borderColours(data, w, h);
+  const inset = Math.min(INSET, Math.floor(Math.min(w, h) / 4));
+  const backgrounds = borderColours(data, w, h, inset);
   const seeds: { index: number; colour: RGB }[] = [];
   const trySeed = (x: number, y: number) => {
     const index = y * w + x;
@@ -234,17 +164,24 @@ export function getCutout(image: HTMLImageElement, settings: CutoutSettings): HT
     const match = backgrounds.find((colour) => distance(data[p], data[p + 1], data[p + 2], ...colour) <= tolerance);
     if (match) seeds.push({ index, colour: [data[p], data[p + 1], data[p + 2]] });
   };
-  for (let x = 0; x < w; x += 1) { trySeed(x, 0); trySeed(x, h - 1); }
-  for (let y = 1; y < h - 1; y += 1) { trySeed(0, y); trySeed(w - 1, y); }
+  for (let x = inset; x < w - inset; x += 1) { trySeed(x, inset); trySeed(x, h - 1 - inset); }
+  for (let y = inset + 1; y < h - 1 - inset; y += 1) { trySeed(inset, y); trySeed(w - 1 - inset, y); }
   floodFill(data, w, h, mask, reference, seeds, tolerance);
 
-  // 1b. Layered backgrounds (e.g. a pink square on a white frame): while what is
-  // left is still a flat-coloured rectangle, remove that layer too. A product's
-  // outline is not a rectangle, so it is never eaten this way.
-  for (let pass = 0; pass < 2; pass += 1) {
-    const layer = rectangularLayer(data, w, h, mask, tolerance);
-    if (!layer.length) break;
-    floodFill(data, w, h, mask, reference, layer, tolerance);
+  // The thin edge line outside the start ring goes wherever the background next to it went.
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const depth = Math.min(x, y, w - 1 - x, h - 1 - y);
+      if (depth >= inset) continue;
+      const inner = Math.min(Math.max(y, inset), h - 1 - inset) * w + Math.min(Math.max(x, inset), w - 1 - inset);
+      if (mask[inner]) {
+        const index = y * w + x;
+        mask[index] = 1;
+        reference[index * 3] = reference[inner * 3];
+        reference[index * 3 + 1] = reference[inner * 3 + 1];
+        reference[index * 3 + 2] = reference[inner * 3 + 2];
+      }
+    }
   }
 
   // 2. Magic-eraser spots.
