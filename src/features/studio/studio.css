@@ -12,3 +12,29 @@
 .post-studio__cutout .post-studio__adjust { width: 100%; }
 .post-studio__preview canvas.is-erasing,
 .post-studio__preview canvas.is-erasing.is-over-photo { cursor: crosshair; }
+
+/* Text, stickers & shapes */
+.post-studio__canvas-wrap { position: relative; }
+.post-studio__selection {
+  position: absolute;
+  border: 2px dashed #1677ff;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .8);
+}
+.post-studio__emojis { display: flex; flex-wrap: wrap; gap: 4px; }
+.post-studio__emojis button {
+  width: 34px; height: 34px; border: 1px solid #ece4e0; border-radius: 8px; background: #fff;
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.post-studio__emojis button:hover { border-color: #9b5364; }
+.post-studio__layers { display: flex; flex-direction: column; gap: 2px; border: 1px solid #f0e9e5; border-radius: 8px; padding: 4px; }
+.post-studio__layer { display: flex; align-items: center; gap: 2px; border-radius: 6px; padding: 0 2px; }
+.post-studio__layer.is-active { background: #f6eef0; }
+.post-studio__layer-name {
+  flex: 1; min-width: 0; padding: 4px 6px; border: 0; background: none; text-align: left; font: inherit; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.post-studio__element-editor { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px; border-radius: 8px; background: #faf7f5; }
+.post-studio__colour { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.post-studio__colour input { width: 28px; height: 28px; padding: 0; border: 1px solid #e3dcd8; border-radius: 6px; background: none; cursor: pointer; }

@@ -6,6 +6,7 @@
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/constants/shipping';
 import { getBrandKit } from './brand';
+import { drawElements, type StudioElement } from './elements';
 import { productSize, promoText, suggestBenefits, type InfoMode } from './info';
 import { logoSvg } from './logo';
 
@@ -129,6 +130,8 @@ export interface StudioDesign {
   showLogo: boolean;
   /** 0–80: how much the uploaded background photo is darkened so text stays readable. */
   backgroundDim: number;
+  /** Text boxes, stickers and shapes on top of the layout (later = in front). */
+  elements: StudioElement[];
 }
 
 export interface RenderAssets {
@@ -952,6 +955,10 @@ export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, as
   drawBackground(ctx, theme, design, assets, format.width, format.height);
   TEMPLATE_RENDERERS[design.template](ctx, theme, design, assets, format.width, format.height);
   ctx.restore();
+  // Free items go on top; their boxes are listed last so they are grabbed first.
+  for (const box of drawElements(ctx, design.elements ?? [], format.width, format.height)) {
+    hitBoxes.push({ ...box, id: `el:${box.id}`, spaceW: format.width, spaceH: format.height, source: { x: 0, y: 0, w: 1, h: 1 } });
+  }
   return hitBoxes;
 }
 

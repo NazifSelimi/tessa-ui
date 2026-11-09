@@ -11,10 +11,11 @@ import {
   App, Button, Card, Col, Empty, Input, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  BulbOutlined, ClearOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
+  ArrowDownOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import CropModal from '@/features/studio/CropModal';
 import { cutoutPng, getCutout } from '@/features/studio/cutout';
+import { EMOJIS, SHAPES, elementLabel, makeElement, type ShapeKind, type StudioElement } from '@/features/studio/elements';
 import { INFO_OPTIONS, badgeChoices, benefitChoices, ctaChoices, productSize, suggestBenefits, type InfoMode } from '@/features/studio/info';
 import '@/features/studio/studio.css';
 import PostMockup from '@/features/studio/PostMockup';
@@ -187,6 +188,7 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   oldPrice: '',
   showLogo: true,
   backgroundDim: 45,
+  elements: [],
 });
 
 export default function AdminPostStudioPage() {
@@ -205,6 +207,11 @@ export default function AdminPostStudioPage() {
   const [cropping, setCropping] = useState<string | null>(null);
   /** Product whose background is being erased by clicking on the preview. */
   const [erasingId, setErasingId] = useState<string | null>(null);
+  /** Selected text / sticker / shape on the preview. */
+  const [selectedEl, setSelectedEl] = useState<string | null>(null);
+  const [renderVersion, setRenderVersion] = useState(0);
+  /** Where the selected item is on the image, for its dashed outline. */
+  const [selectionBox, setSelectionBox] = useState<PhotoHitBox | null>(null);
   const [social, setSocial] = useState<SocialState>(() => initialSocial());
   const [profile, setProfile] = useState<SocialProfile>(() => readProfile());
   const [ideaGroup, setIdeaGroup] = useState<IdeaGroup | 'all'>('all');
@@ -285,7 +292,107 @@ export default function AdminPostStudioPage() {
 
   /* --------------------------------------------- drag / Shift+drag / wheel on the preview */
 
-  const pointer = useRef<{ id: string; resize: boolean; startX: number; startY: number; scale: number; offsetX: number; offsetY: number; spaceW: number; spaceH: number } | null>(null);
+  const pointer = useRef<{
+    id: string; resize: boolean; startX: number; startY: number; scale: number; offsetX: number; offsetY: number; spaceW: number; spaceH: number;
+    /** Set when a text / sticker / shape is being dragged. */
+    element?: { x: number; y: number; size: number };
+  } | null>(null);
+
+  /* ------------------------------------------------------------ text, stickers, shapes */
+
+  const elements = design.elements ?? [];
+  const selectedElement = elements.find((item) => item.id === selectedEl) ?? null;
+
+  const updateElement = useCallback((id: string, change: Partial<StudioElement>) => {
+    setDesign((current) => ({ ...current, elements: (current.elements ?? []).map((item) => (item.id === id ? { ...item, ...change } : item)) }));
+  }, []);
+
+  const addElement = (element: StudioElement) => {
+    setDesign((current) => ({ ...current, elements: [...(current.elements ?? []), element] }));
+    setSelectedEl(element.id);
+  };
+
+  const removeElement = useCallback((id: string) => {
+    setDesign((current) => ({ ...current, elements: (current.elements ?? []).filter((item) => item.id !== id) }));
+    setSelectedEl((current) => (current === id ? null : current));
+  }, []);
+
+  /** +1 = bring forward, -1 = send back. */
+  const moveLayer = (id: string, direction: 1 | -1) => {
+    setDesign((current) => {
+      const list = [...(current.elements ?? [])];
+      const index = list.findIndex((item) => item.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= list.length) return current;
+      [list[index], list[target]] = [list[target], list[index]];
+      return { ...current, elements: list };
+    });
+  };
+
+  useEffect(() => {
+    setSelectionBox(selectedEl ? hitBoxesRef.current.find((item) => item.id === `el:${selectedEl}`) ?? null : null);
+  }, [selectedEl, renderVersion]);
+
+  /* ------------------------------------------------------------ undo / redo */
+
+  type Snapshot = { design: StudioDesign; products: StudioProduct[] };
+  const history = useRef<{ past: Snapshot[]; future: Snapshot[]; last: Snapshot | null; skip: boolean }>({ past: [], future: [], last: null, skip: false });
+  const [historyCount, setHistoryCount] = useState({ undo: 0, redo: 0 });
+
+  // Changes are recorded once things are quiet for a moment, so a drag is one step.
+  useEffect(() => {
+    const h = history.current;
+    if (h.skip) {
+      h.skip = false;
+      h.last = { design, products };
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      const current = { design, products };
+      if (h.last && JSON.stringify(h.last) !== JSON.stringify(current)) {
+        h.past.push(h.last);
+        if (h.past.length > 60) h.past.shift();
+        h.future = [];
+      }
+      h.last = current;
+      setHistoryCount({ undo: h.past.length, redo: h.future.length });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [design, products]);
+
+  const restore = useCallback((from: 'past' | 'future') => {
+    const h = history.current;
+    const snapshot = h[from].pop();
+    if (!snapshot) return;
+    if (h.last) (from === 'past' ? h.future : h.past).push(h.last);
+    h.skip = true;
+    setDesign(snapshot.design);
+    setProducts(snapshot.products);
+    setHistoryCount({ undo: h.past.length, redo: h.future.length });
+  }, []);
+  const undo = useCallback(() => restore('past'), [restore]);
+  const redo = useCallback(() => restore('future'), [restore]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const mod = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+      if (mod && key === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) redo(); else undo();
+      } else if (mod && key === 'y') {
+        event.preventDefault();
+        redo();
+      } else if ((event.key === 'Delete' || event.key === 'Backspace') && selectedEl) {
+        event.preventDefault();
+        removeElement(selectedEl);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo, removeElement, selectedEl]);
   const [hovering, setHovering] = useState(false);
 
   const canvasPoint = (event: { clientX: number; clientY: number }) => {
@@ -315,6 +422,19 @@ export default function AdminPostStudioPage() {
       return;
     }
     const box = hitAt(point.x, point.y);
+    if (box?.id.startsWith('el:')) {
+      const element = elements.find((item) => `el:${item.id}` === box.id);
+      if (!element) return;
+      event.preventDefault();
+      try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* optional */ }
+      setSelectedEl(element.id);
+      pointer.current = {
+        id: box.id, resize: event.shiftKey, startX: point.x, startY: point.y, scale: 1, offsetX: 0, offsetY: 0,
+        spaceW: box.spaceW, spaceH: box.spaceH, element: { x: element.x, y: element.y, size: element.size },
+      };
+      return;
+    }
+    setSelectedEl(null);
     const product = box && products.find((item) => item.id === box.id);
     if (!box || !product) return;
     event.preventDefault();
@@ -346,6 +466,19 @@ export default function AdminPostStudioPage() {
     }
     const dx = point.x - drag.startX;
     const dy = point.y - drag.startY;
+    if (drag.element) {
+      const elementId = drag.id.slice(3);
+      if (drag.resize || event.shiftKey) {
+        const unit = Math.min(drag.spaceW, drag.spaceH);
+        updateElement(elementId, { size: Math.min(1.2, Math.max(0.015, drag.element.size * Math.exp((dx - dy) / (unit * 0.5)))) });
+      } else {
+        updateElement(elementId, {
+          x: Math.min(1, Math.max(0, drag.element.x + dx / drag.spaceW)),
+          y: Math.min(1, Math.max(0, drag.element.y + dy / drag.spaceH)),
+        });
+      }
+      return;
+    }
     if (drag.resize || event.shiftKey) {
       // Up or right = bigger, down or left = smaller.
       const canvas = canvasRef.current;
@@ -535,6 +668,7 @@ export default function AdminPostStudioPage() {
       if (token !== renderToken.current) return;
       hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo, before, after });
       setRendering(false);
+      setRenderVersion((version) => version + 1);
     });
   }, [design, products, backgroundUrl, beforeAfterUrls, fontsReady]);
 
@@ -725,6 +859,8 @@ export default function AdminPostStudioPage() {
           <Text type="secondary">Ready Instagram & Facebook posts from your products: pick an idea, check the feed preview, download the image and copy the caption.</Text>
         </div>
         <Space wrap>
+          <Tooltip title="Undo (Ctrl+Z)"><Button icon={<UndoOutlined />} disabled={!historyCount.undo} onClick={undo} aria-label="Undo" /></Tooltip>
+          <Tooltip title="Redo (Ctrl+Shift+Z)"><Button icon={<RedoOutlined />} disabled={!historyCount.redo} onClick={redo} aria-label="Redo" /></Tooltip>
           <Button icon={<ReloadOutlined />} onClick={reset}>Start over</Button>
           <Button icon={<SaveOutlined />} onClick={saveDraft}>Save draft</Button>
         </Space>
@@ -1086,6 +1222,80 @@ export default function AdminPostStudioPage() {
                 </Space>
               </Space>
             </Card>
+
+            <Card size="small" title={<Space><FontSizeOutlined />4 · Text, stickers & shapes</Space>}>
+              <Space direction="vertical" size={10} style={{ width: '100%' }}>
+                <Space wrap size={6}>
+                  <Button size="small" icon={<PlusOutlined />} onClick={() => addElement(makeElement('text', { text: design.headline || 'Your text', y: 0.2 }))}>Text</Button>
+                  {SHAPES.map((shape) => (
+                    <Button key={shape.value} size="small" onClick={() => addElement(makeElement('shape', { shape: shape.value as ShapeKind, y: 0.3 }))}>{shape.label}</Button>
+                  ))}
+                </Space>
+                <div className="post-studio__emojis">
+                  {EMOJIS.map((emoji) => (
+                    <button key={emoji} type="button" onClick={() => addElement(makeElement('emoji', { text: emoji, x: 0.8, y: 0.2 }))} aria-label={`Add ${emoji} sticker`}>{emoji}</button>
+                  ))}
+                </div>
+                {elements.length > 0 && (
+                  <div className="post-studio__layers">
+                    {[...elements].reverse().map((item) => (
+                      <div key={item.id} className={`post-studio__layer${item.id === selectedEl ? ' is-active' : ''}`}>
+                        <button type="button" className="post-studio__layer-name" onClick={() => setSelectedEl(item.id)}>{elementLabel(item)}</button>
+                        <Tooltip title="Bring forward"><Button size="small" type="text" icon={<ArrowUpOutlined />} onClick={() => moveLayer(item.id, 1)} aria-label="Bring forward" /></Tooltip>
+                        <Tooltip title="Send back"><Button size="small" type="text" icon={<ArrowDownOutlined />} onClick={() => moveLayer(item.id, -1)} aria-label="Send back" /></Tooltip>
+                        <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={() => removeElement(item.id)} aria-label="Delete" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedElement && (
+                  <div className="post-studio__element-editor">
+                    {selectedElement.kind !== 'emoji' && (selectedElement.kind === 'text' || ['ribbon', 'burst', 'circle'].includes(selectedElement.shape ?? '')) && (
+                      <TextArea
+                        value={selectedElement.text}
+                        onChange={(event) => updateElement(selectedElement.id, { text: event.target.value })}
+                        autoSize={{ minRows: 1, maxRows: 4 }}
+                        maxLength={120}
+                        aria-label="Item text"
+                      />
+                    )}
+                    <div className="post-studio__adjust">
+                      <Text type="secondary" style={{ fontSize: 12, width: 34 }}>Size</Text>
+                      <Slider min={2} max={100} value={Math.round(selectedElement.size * 100)} onChange={(value) => updateElement(selectedElement.id, { size: value / 100 })} style={{ flex: 1, margin: '0 6px' }} />
+                    </div>
+                    <Space wrap size={8}>
+                      {selectedElement.kind !== 'emoji' && (
+                        <label className="post-studio__colour">
+                          <input type="color" value={selectedElement.color} onChange={(event) => updateElement(selectedElement.id, { color: event.target.value })} />
+                          <span>{selectedElement.kind === 'text' ? 'Colour' : 'Fill'}</span>
+                        </label>
+                      )}
+                      {selectedElement.kind === 'shape' && selectedElement.text && (
+                        <label className="post-studio__colour">
+                          <input type="color" value={selectedElement.ink} onChange={(event) => updateElement(selectedElement.id, { ink: event.target.value })} />
+                          <span>Text</span>
+                        </label>
+                      )}
+                      {selectedElement.kind !== 'emoji' && (
+                        <Segmented size="small" value={selectedElement.font} onChange={(value) => updateElement(selectedElement.id, { font: value as 'serif' | 'sans' })} options={[{ value: 'serif', label: 'Serif' }, { value: 'sans', label: 'Sans' }]} />
+                      )}
+                      {selectedElement.kind === 'text' && (
+                        <Segmented size="small" value={selectedElement.align} onChange={(value) => updateElement(selectedElement.id, { align: value as StudioElement['align'] })} options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Centre' }, { value: 'right', label: 'Right' }]} />
+                      )}
+                      {selectedElement.kind !== 'emoji' && (
+                        <Space size={4}>
+                          <Switch size="small" checked={selectedElement.bold} onChange={(checked) => updateElement(selectedElement.id, { bold: checked })} />
+                          <Text style={{ fontSize: 12 }}>Bold</Text>
+                        </Space>
+                      )}
+                    </Space>
+                  </div>
+                )}
+                <Paragraph type="secondary" style={{ margin: 0, fontSize: 12 }}>
+                  Drag items on the preview · Shift + drag to resize · Delete key removes the selected item · Ctrl+Z undo, Ctrl+Shift+Z redo.
+                </Paragraph>
+              </Space>
+            </Card>
           </Space>
         </Col>
 
@@ -1116,6 +1326,7 @@ export default function AdminPostStudioPage() {
             >
               <div className="post-studio__preview">
                 <PostMockup platform={social.platform} format={design.format} handle={profile.handle} pageName={profile.pageName} caption={caption}>
+                <div className="post-studio__canvas-wrap">
                 <canvas
                   ref={canvasRef}
                   className={`${rendering ? 'is-rendering' : ''}${hovering ? ' is-over-photo' : ''}${erasingId ? ' is-erasing' : ''}`}
@@ -1127,6 +1338,18 @@ export default function AdminPostStudioPage() {
                   style={{ aspectRatio: `${format.width} / ${format.height}` }}
                   aria-label="Post preview"
                 />
+                {selectionBox && (
+                  <span
+                    className="post-studio__selection"
+                    style={{
+                      left: `${(selectionBox.x / format.width) * 100}%`,
+                      top: `${(selectionBox.y / format.height) * 100}%`,
+                      width: `${(selectionBox.w / format.width) * 100}%`,
+                      height: `${(selectionBox.h / format.height) * 100}%`,
+                    }}
+                  />
+                )}
+                </div>
                 </PostMockup>
               </div>
               <div className="post-studio__actions">
