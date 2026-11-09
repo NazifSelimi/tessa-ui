@@ -6,6 +6,7 @@ import { useGetBundlesQuery } from '@/features/products/api';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import type { StoreBundle } from '@/types';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { formatPrice } from '@/shared/utils/formatPrice';
 
 const { Text, Title } = Typography;
@@ -31,9 +32,11 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
   const { data: bundles = [], isLoading, error, refetch } = useGetBundlesQuery();
   const { addItem, applyBundle } = useCart();
   const { isProfessional } = useAuth();
+  const bundlesOn = useFeature('bundles');
 
   const visibleBundles = bundleIds?.length ? bundles.filter((bundle) => bundleIds.includes(String(bundle.id))) : bundles;
 
+  if (!bundlesOn) return null;
   if (showEmpty && (isLoading || error)) return <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />;
   if (!visibleBundles.length) return showEmpty ? <p className="nl-no-offers">{t('newLook.noOffers')}</p> : null;
 

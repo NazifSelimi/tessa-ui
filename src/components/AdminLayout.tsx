@@ -33,9 +33,13 @@ import {
   ExperimentOutlined,
   LayoutOutlined,
   InstagramOutlined,
+  MailOutlined,
+  AppstoreOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetDashboardStatsQuery } from '@/features/admin/api';
+import { ADMIN_PATH_FEATURE, useFeatureStates } from '@/features/admin/platformApi';
 import Logo from './Logo';
 
 const { Sider, Content, Header } = Layout;
@@ -47,10 +51,10 @@ const pageTitles: Record<string, string> = {
   '/admin/products': 'Products',
   '/admin/orders': 'Orders',
   '/admin/users': 'Users',
-  '/admin/stylist-requests': 'Stylist Requests',
-  '/admin/stylist-invitations': 'Stylist Invitations',
+  '/admin/stylist-requests': 'Business applications',
+  '/admin/stylist-invitations': 'Business invitations',
   '/admin/coupons': 'Coupons',
-  '/admin/referrals': 'Stylist Referrals',
+  '/admin/referrals': 'Referral codes',
   '/admin/distributors': 'Distributors',
   '/admin/bundles': 'Offers & Bundles',
   '/admin/content-blocks': 'Editable Sections',
@@ -58,6 +62,9 @@ const pageTitles: Record<string, string> = {
   '/admin/catalogue-review': 'Supplier list (old)',
   '/admin/hair-quiz': 'Hair Quiz',
   '/admin/studio': 'Post Studio',
+  '/admin/emails': 'Emails',
+  '/admin/features': 'Features',
+  '/admin/business': 'Business profile',
 };
 
 export default function AdminLayout() {
@@ -69,6 +76,8 @@ export default function AdminLayout() {
   const { data: stats } = useGetDashboardStatsQuery(undefined, { pollingInterval: 120_000 });
   const pendingCount = stats?.pendingStylistRequests ?? 0;
   const pendingOrders = stats?.pendingOrders ?? 0;
+  const failedEmails = stats?.todo?.failedEmails ?? 0;
+  const features = useFeatureStates();
 
   // Sidebar menu items, with live badges for work waiting.
   const menuItems = useMemo(() => [
@@ -93,23 +102,38 @@ export default function AdminLayout() {
       label: (
         <Link to="/admin/stylist-requests">
           <Space>
-            Stylist Requests
+            Business applications
             {pendingCount > 0 && <Badge count={pendingCount} size="small" />}
           </Space>
         </Link>
       ),
     },
-    { key: '/admin/stylist-invitations', icon: <QrcodeOutlined />, label: <Link to="/admin/stylist-invitations">Stylist Invitations</Link> },
+    { key: '/admin/stylist-invitations', icon: <QrcodeOutlined />, label: <Link to="/admin/stylist-invitations">Business invitations</Link> },
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
-    { key: '/admin/referrals', icon: <ShareAltOutlined />, label: <Link to="/admin/referrals">Stylist Referrals</Link> },
+    { key: '/admin/referrals', icon: <ShareAltOutlined />, label: <Link to="/admin/referrals">Referral codes</Link> },
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
+    {
+      key: '/admin/emails',
+      icon: <MailOutlined />,
+      label: (
+        <Link to="/admin/emails">
+          <Space>
+            Emails
+            {failedEmails > 0 && <Badge count={failedEmails} size="small" title={`${failedEmails} not sent`} />}
+          </Space>
+        </Link>
+      ),
+    },
     { key: '/admin/studio', icon: <InstagramOutlined />, label: <Link to="/admin/studio">Post Studio</Link> },
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
     { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },
     { key: '/admin/hair-quiz', icon: <ExperimentOutlined />, label: <Link to="/admin/hair-quiz">Hair Quiz</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
-  ], [pendingCount, pendingOrders]);
+    { key: '/admin/business', icon: <IdcardOutlined />, label: <Link to="/admin/business">Business profile</Link> },
+    { key: '/admin/features', icon: <AppstoreOutlined />, label: <Link to="/admin/features">Features</Link> },
+  ].filter((item) => !ADMIN_PATH_FEATURE[item.key] || features?.[ADMIN_PATH_FEATURE[item.key]]?.enabled !== false && features?.[ADMIN_PATH_FEATURE[item.key]]?.included !== false),
+  [pendingCount, pendingOrders, failedEmails, features]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);

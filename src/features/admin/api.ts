@@ -32,6 +32,8 @@ interface AdminOrdersQueryParams {
   date_from?: string;
   date_to?: string;
   search?: string;
+  /** 'only' lists the Trash. */
+  trashed?: 'only';
 }
 
 interface AdminStylistRequestsQueryParams {
@@ -214,6 +216,7 @@ export const adminApi = baseApi.injectEndpoints({
             outOfStock: data.todo?.outOfStock ?? 0,
             pendingOrders: data.todo?.pendingOrders ?? 0,
             pendingStylistRequests: data.todo?.pendingStylistRequests ?? 0,
+            failedEmails: data.todo?.failedEmails ?? 0,
           },
           recentOrders: (data.recentOrders || []).map((o: any) => ({
             id: o.id,

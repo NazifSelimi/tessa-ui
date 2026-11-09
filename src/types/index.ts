@@ -191,6 +191,7 @@ export interface CartItem {
 export interface ShippingAddress {
   fullName: string;
   phone: string;
+  email?: string;
   address: string;
   city: string;
   state: string;
@@ -253,6 +254,8 @@ export interface Order {
   statusHistory?: OrderStatusHistory[];
   createdAt: string;
   updatedAt: string;
+  /** Admin: set when the order is in the Trash. */
+  deletedAt?: string | null;
 }
 
 // ==================== STYLIST REQUESTS ====================
@@ -448,6 +451,7 @@ export interface AdminTodoCounts {
   outOfStock: number;
   pendingOrders: number;
   pendingStylistRequests: number;
+  failedEmails: number;
 }
 
 export interface DashboardStats {

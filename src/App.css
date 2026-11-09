@@ -4432,3 +4432,79 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   .post-studio__ideas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .post-studio__profile { display: none; }
 }
+
+/* ============================================================================
+   Features, Business profile, Emails (admin)
+   ============================================================================ */
+.admin-feature-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #f0ebe6;
+}
+.admin-feature-row:first-child { border-top: 0; }
+.admin-code {
+  margin: 6px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #1f1b1d;
+  color: #f4ece9;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.email-frame {
+  display: block;
+  width: 100%;
+  border: 1px solid #ece6e2;
+  border-radius: 10px;
+  background: #f5f1ee;
+}
+.email-error {
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fdecea;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.email-segments {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.email-segments .ant-radio-button-wrapper {
+  height: auto;
+  padding: 8px 12px;
+  border-radius: 10px !important;
+  border-inline-start-width: 1px;
+  line-height: 1.3;
+}
+.email-segments .ant-radio-button-wrapper::before { display: none; }
+.email-segments .ant-radio-button-wrapper strong { display: block; font-size: 13px; }
+.email-segments .ant-radio-button-wrapper small { display: block; font-size: 11px; color: #8a7f7b; }
+.email-template-row > button {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.email-template-row.is-selected { background: #faf6f3; margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 8px; }
+.business-preview { padding: 16px; border-radius: 10px; background: #f5f1ee; }
+.business-preview__logo { display: flex; justify-content: center; margin-bottom: 12px; font-size: 20px; letter-spacing: 2px; }
+.business-preview__logo img { max-height: 36px; max-width: 200px; }
+.business-preview__card { padding: 18px; border-radius: 10px; background: #fff; border-top: 4px solid #9b5364; }
+.business-preview__card p { margin: 6px 0 14px; color: #555; }
+.business-preview__button { display: inline-block; padding: 8px 18px; border-radius: 999px; color: #fff; font-weight: 700; font-size: 13px; }
+.business-preview__footer { margin-top: 12px; text-align: center; font-size: 12px; color: #6f6a6a; line-height: 1.6; }
+@media (max-width: 575px) {
+  .email-segments { grid-template-columns: 1fr; }
+}
+.admin-feature-row.is-locked { opacity: .72; }

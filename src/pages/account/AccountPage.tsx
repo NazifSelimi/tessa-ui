@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeading } from '@/components/storefront/DesignPrimitives';
 import { Headphones, LogOut, Sparkles } from 'lucide-react';
+import { useFeature } from '@/shared/hooks/useFeature';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
@@ -25,6 +26,7 @@ const { Title, Text } = Typography;
 
 export default function AccountPage() {
   const { t } = useTranslation();
+  const quizOn = useFeature('hair_quiz');
   const navigate = useNavigate();
   const { user, currentRole, updateProfile, changePassword, isLoading, logout } = useAuth();
   const [form] = Form.useForm();
@@ -81,7 +83,7 @@ export default function AccountPage() {
                   {t('auth.myOrders')}
                 </Button>
               </Link>
-              <Link to="/quiz"><Button icon={<Sparkles size={16} />} block>{t('newLook.myHair')}</Button></Link>
+              {quizOn && <Link to="/quiz"><Button icon={<Sparkles size={16} />} block>{t('newLook.myHair')}</Button></Link>}
               <Link to="/contact"><Button icon={<Headphones size={16} />} block>{t('newLook.support')}</Button></Link>
               <Button icon={<LogOut size={16} />} block onClick={() => void logout().then(() => navigate('/'))}>{t('auth.logout')}</Button>
               {(currentRole === 'user' || currentRole === 'guest') && (

@@ -57,7 +57,8 @@ const AdminDashboardPage: React.FC = () => {
   // Each item opens the admin list already filtered to the work it describes.
   const todoItems = todo ? [
     { key: 'orders', count: todo.pendingOrders, label: 'Orders waiting for confirmation', to: '/admin/orders?status=pending', tone: 'urgent' },
-    { key: 'stylists', count: todo.pendingStylistRequests, label: 'Stylist requests to approve', to: '/admin/stylist-requests', tone: 'urgent' },
+    { key: 'stylists', count: todo.pendingStylistRequests, label: 'Business account applications to approve', to: '/admin/stylist-requests', tone: 'urgent' },
+    { key: 'emails', count: todo.failedEmails, label: 'Emails that were not sent', to: '/admin/emails?tab=outbox', tone: 'urgent' },
     { key: 'review-stock', count: todo.inReviewInStock, label: 'In-stock products hidden (no photo, brand or category)', to: '/admin/products?review=in_review', tone: 'urgent' },
     { key: 'price', count: todo.missingPrice, label: 'Products missing a retail or salon price', to: '/admin/products?queue=missing_price', tone: 'warn' },
     { key: 'low', count: todo.lowStock, label: 'Products running low (1–3 left)', to: '/admin/products?queue=low_stock', tone: 'warn' },
@@ -297,7 +298,7 @@ const AdminDashboardPage: React.FC = () => {
                   block
                   type={pendingRequests > 0 ? 'primary' : 'default'}
                 >
-                  Stylist Requests {pendingRequests > 0 && `(${pendingRequests})`}
+                  Business applications {pendingRequests > 0 && `(${pendingRequests})`}
                 </Button>
               </Link>
               <Link to="/admin/coupons" style={{ display: 'block' }}>
@@ -307,7 +308,7 @@ const AdminDashboardPage: React.FC = () => {
               </Link>
               <Link to="/admin/referrals" style={{ display: 'block' }}>
                 <Button icon={<ShareAltOutlined />} block>
-                  Stylist Referrals &amp; Credit
+                  Referral codes &amp; credit
                 </Button>
               </Link>
               <Link to="/admin/users" style={{ display: 'block' }}>

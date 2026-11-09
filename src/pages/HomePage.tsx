@@ -10,10 +10,12 @@ import ContentBlocks from '@/components/storefront/ContentBlocks';
 import HomePageEditor from '@/components/storefront/HomePageEditor';
 import Seo from '@/shared/components/Seo';
 import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { useGetPublishedContentBlocksQuery } from '@/features/admin/api';
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const quizTo = useFeature('hair_quiz') ? '/quiz' : '/shop';
   const { user, isStylist, isAdmin } = useAuth();
   // In-stock only, so the home page shows buyable products with real photos.
   const { data, isLoading, error, refetch } = useGetProductsQuery({ perPage: 12, in_stock: 1 }, { skip: isStylist });
@@ -31,13 +33,13 @@ export default function HomePage() {
     <Seo title={t('seo.homeTitle')} description={t('seo.homeDescription')} path="/" />
     <PageHeading eyebrow={t('newLook.home')} title={user ? t('newLook.hello', { name: user.firstName || user.name.split(' ')[0] }) : t('newLook.welcome')} action={<Link className="nl-profile-link" to={user ? '/account' : '/login'}><UserRound size={17} />{t('auth.myAccount')}</Link>} />
     <section className="nl-consumer-hero">
-      <div className="nl-hero-copy"><span className="nl-eyebrow">{t('newLook.heroEyebrow')}</span><h2>{t('newLook.heroTitle')}<br /><i>{t('newLook.heroAccent')}</i></h2><p>{t('newLook.heroCopy')}</p><Link className="nl-button nl-button-dark" to="/quiz">{t('newLook.discoverRoutine')}<ArrowUpRight size={18} /></Link></div>
+      <div className="nl-hero-copy"><span className="nl-eyebrow">{t('newLook.heroEyebrow')}</span><h2>{t('newLook.heroTitle')}<br /><i>{t('newLook.heroAccent')}</i></h2><p>{t('newLook.heroCopy')}</p><Link className="nl-button nl-button-dark" to={quizTo}>{t('newLook.discoverRoutine')}<ArrowUpRight size={18} /></Link></div>
       <div className="nl-hero-art"><div className="nl-art-orbit" />{hero ? <ProductImage product={hero} priority /> : <div className="nl-hero-monogram" aria-hidden="true">t<span>care, beautifully.</span></div>}<span className="nl-art-caption">TESSA / HAIR RITUALS</span><Sparkles className="nl-art-sparkle" size={28} aria-hidden="true" /></div>
     </section>
     {hero && <div className="nl-admin-hero"><AdminProductShortcuts product={hero} variant="page" /></div>}
     <ContentBlocks blocks={contentBlocks} />
     <section className="nl-section">
-      <SectionHeading eyebrow={t('newLook.yourHair')} title={t('newLook.whereToStart')} to="/quiz" action={t('newLook.takeQuiz')} />
+      <SectionHeading eyebrow={t('newLook.yourHair')} title={t('newLook.whereToStart')} to={quizTo} action={t('newLook.takeQuiz')} />
       <div className="nl-concern-grid">{concerns.map((slug, i) => <Link key={slug} to={`/collections/${slug}`} className={`nl-concern nl-concern-${i + 1}`}><span className="nl-concern-art" aria-hidden="true" /><strong>{t(`newLook.concerns.${slug}`)}</strong><small>{t('newLook.exploreCare')}<ArrowUpRight size={15} /></small></Link>)}</div>
       <div className="nl-collection-links">{['colour', 'extensions-and-tools'].map(slug => <Link key={slug} to={`/collections/${slug}`}>{t(`newLook.concerns.${slug}`)}<ChevronRight size={15} /></Link>)}</div>
     </section>

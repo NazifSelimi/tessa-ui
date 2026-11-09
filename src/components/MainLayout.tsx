@@ -12,6 +12,7 @@ import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import './storefront/new-look.css';
 import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { captureReferralCode } from '@/shared/utils/referral';
 
 const CartDrawer = lazy(() => import('./CartDrawer'));
@@ -32,6 +33,9 @@ export default function MainLayout() {
   useEffect(() => { setSearch(new URLSearchParams(location.search).get('search') || ''); }, [location.search]);
   useEffect(() => { captureReferralCode(location.search); }, [location.search]);
 
+  const quizOn = useFeature('hair_quiz');
+  const quickOrderOn = useFeature('quick_order');
+  const referralsOn = useFeature('referrals');
   const home = professionalShell ? '/stylist/workspace' : '/';
   const navigation = professionalShell ? [
     { to: home, label: t('newLook.home'), icon: Home },
@@ -40,13 +44,13 @@ export default function MainLayout() {
     { to: '/stylist/referral', label: t('referral.navLabel'), icon: Gift },
     { to: '/account/orders', label: t('newLook.orders'), icon: ClipboardList },
     { to: '/cart', label: t('newLook.cart'), icon: ShoppingBag },
-  ] : [
+  ].filter(({ to }) => (to !== '/stylist/quick-order' || quickOrderOn) && (to !== '/stylist/referral' || referralsOn)) : [
     { to: '/', label: t('newLook.home'), icon: Home },
     { to: '/shop', label: t('newLook.products'), icon: Package },
     { to: '/quiz', label: t('newLook.myHair'), icon: Sparkles },
     { to: '/cart', label: t('newLook.cart'), icon: ShoppingBag },
     { to: user ? '/account' : '/login', label: t('newLook.profile'), icon: UserRound },
-  ];
+  ].filter(({ to }) => to !== '/quiz' || quizOn);
   const navLinks = () => navigation.map(({ to, label, icon: Icon }) => (
     <NavLink key={to} to={to} end={to === '/' || to === home} className={({ isActive }) => `${isActive ? 'is-active ' : ''}${to.includes('quick-order') ? 'nl-quick-link' : ''}`}>
       <Icon size={20} /><span>{label}</span>

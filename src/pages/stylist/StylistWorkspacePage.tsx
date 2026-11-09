@@ -10,6 +10,7 @@ import ProductCard from '@/components/ProductCard';
 import BundleDealRail from '@/components/BundleDealRail';
 import StatusBadge from '@/components/StatusBadge';
 import { CatalogState, PageHeading, SectionHeading } from '@/components/storefront/DesignPrimitives';
+import { useFeature } from '@/shared/hooks/useFeature';
 import Seo from '@/shared/components/Seo';
 
 export default function StylistWorkspacePage() {
@@ -21,13 +22,16 @@ export default function StylistWorkspacePage() {
   const { data: brands = [] } = useGetBrandsQuery();
   const { data: categories = [] } = useGetCategoriesQuery();
   const { reorder, isReordering } = useReorder();
+  const quickOrderOn = useFeature('quick_order');
+  const referralsOn = useFeature('referrals');
+  const bundlesOn = useFeature('bundles');
   const shortcuts = [
     { to: '/stylist/quick-order', icon: Zap, title: t('nav.quickOrder'), copy: t('newLook.quickCopy') },
     { to: '/stylist/referral', icon: Gift, title: t('referral.title'), copy: t('referral.shortcutCopy') },
     { to: '/shop?view=consumer', icon: Package, title: 'View Tessa Store', copy: 'Browse the customer-facing Tessa store layout.' },
     { to: '/account/orders', icon: RotateCcw, title: t('newLook.buyAgain'), copy: t('newLook.reorderCopy') },
     { to: '#salon-offers', icon: Sparkles, title: t('newLook.offers'), copy: t('newLook.offersCopy') },
-  ];
+  ].filter(({ to }) => (to !== '/stylist/quick-order' || quickOrderOn) && (to !== '/stylist/referral' || referralsOn) && (to !== '#salon-offers' || bundlesOn));
   return <>
     <Seo title={t('nav.stylistWorkspace')} description={t('newLook.professionalSubtitle')} noIndex />
     <PageHeading eyebrow={t('newLook.home')} title={t('newLook.hello', { name: user?.firstName || user?.name.split(' ')[0] || '' })} description={t('newLook.professionalSubtitle')} action={<Link className="nl-button" to="/stylist/quick-order"><Zap size={18} />{t('newLook.startQuickOrder')}</Link>} />

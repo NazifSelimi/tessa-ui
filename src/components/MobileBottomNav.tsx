@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
+import { useFeature } from '@/shared/hooks/useFeature';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function MobileBottomNav() {
@@ -28,6 +29,8 @@ export default function MobileBottomNav() {
   const { itemCount, openDrawer } = useCart();
   const { isStylist } = useAuth();
   const { t } = useTranslation();
+  const quizOn = useFeature('hair_quiz');
+  const quickOrderOn = useFeature('quick_order');
 
   const path = location.pathname;
   const isHome = path === '/';
@@ -63,7 +66,7 @@ export default function MobileBottomNav() {
       </button>
 
       {/* Stylists get a fast path to Quick Order; everyone else gets the Quiz */}
-      {isStylist ? (
+      {isStylist ? (quickOrderOn && (
         <button
           className={`mobile-bottom-nav__item ${isQuickOrder ? 'mobile-bottom-nav__item--active' : ''}`}
           onClick={() => go('/stylist/quick-order')}
@@ -72,7 +75,7 @@ export default function MobileBottomNav() {
           <ThunderboltOutlined className="mobile-bottom-nav__icon" />
           <span className="mobile-bottom-nav__label">{t('mobile.order')}</span>
         </button>
-      ) : (
+      )) : (quizOn && (
         <button
           className={`mobile-bottom-nav__item ${isQuiz ? 'mobile-bottom-nav__item--active' : ''}`}
           onClick={() => go('/hair-survey')}
@@ -81,7 +84,7 @@ export default function MobileBottomNav() {
           <ExperimentOutlined className="mobile-bottom-nav__icon" />
           <span className="mobile-bottom-nav__label">{t('mobile.quiz')}</span>
         </button>
-      )}
+      ))}
 
       <button
         className="mobile-bottom-nav__item"

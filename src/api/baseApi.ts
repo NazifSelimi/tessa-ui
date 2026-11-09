@@ -142,6 +142,11 @@ export const API_TAGS = {
   PricingSettings: 'PricingSettings',
   ContentBlocks: 'ContentBlocks',
   Referrals: 'Referrals',
+  Features: 'Features',
+  Business: 'Business',
+  Emails: 'Emails',
+  EmailSettings: 'EmailSettings',
+  AiTokens: 'AiTokens',
 } as const;
 
 export type ApiTag = typeof API_TAGS[keyof typeof API_TAGS];

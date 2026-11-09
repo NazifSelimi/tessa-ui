@@ -55,6 +55,10 @@ const AdminCatalogImagesPage = lazy(() => import('./pages/admin/ProductImagesWor
 const AdminCatalogueReviewPage = lazy(() => import('./pages/admin/AdminCatalogueReviewPage'));
 const AdminHairQuizPage = lazy(() => import('./pages/admin/AdminHairQuizPage'));
 const AdminPostStudioPage = lazy(() => import('./pages/admin/AdminPostStudioPage'));
+import FeatureGate from '@/shared/components/FeatureGate';
+const AdminEmailsPage = lazy(() => import('./pages/admin/AdminEmailsPage'));
+const AdminFeaturesPage = lazy(() => import('./pages/admin/AdminFeaturesPage'));
+const AdminBusinessPage = lazy(() => import('./pages/admin/AdminBusinessPage'));
 const StylistWorkspacePage = lazy(() => import('./pages/stylist/StylistWorkspacePage'));
 const DistributorPortalPage = lazy(() => import('./pages/distributor/DistributorPortalPage'));
 const DistributorProductsPage = lazy(() => import('./pages/distributor/DistributorProductsPage'));
@@ -144,10 +148,10 @@ function App() {
                 <Route path="/product/show-product/:id" element={<LegacyProductRedirect />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/hair-survey" element={<HairSurveyPage />} />
+                <Route path="/hair-survey" element={<FeatureGate feature="hair_quiz"><HairSurveyPage /></FeatureGate>} />
                 {/* /quiz is the canonical, shareable alias for the hair survey */}
-                <Route path="/quiz" element={<HairSurveyPage />} />
-                <Route path="/recommendations" element={<RecommendationsPage />} />
+                <Route path="/quiz" element={<FeatureGate feature="hair_quiz"><HairSurveyPage /></FeatureGate>} />
+                <Route path="/recommendations" element={<FeatureGate feature="hair_quiz"><RecommendationsPage /></FeatureGate>} />
 
                 {/* Account routes (auth required) */}
                 <Route path="/account" element={
@@ -191,13 +195,15 @@ function App() {
                 } />
 
               <Route path="/stylist/workspace" element={<ProtectedRoute requiredRole={['stylist', 'admin']}><StylistWorkspacePage /></ProtectedRoute>} />
-              <Route path="/stylist/referral" element={<ProtectedRoute requiredRole="stylist"><StylistReferralPage /></ProtectedRoute>} />
+              <Route path="/stylist/referral" element={<FeatureGate feature="referrals" fallback="/stylist/workspace"><ProtectedRoute requiredRole="stylist"><StylistReferralPage /></ProtectedRoute></FeatureGate>} />
 
                 {/* Stylist quick-order – stylist role required */}
                 <Route path="/stylist/quick-order" element={
-                  <ProtectedRoute requiredRole={['stylist', 'admin']}>
-                    <StylistQuickOrderPage />
-                  </ProtectedRoute>
+                  <FeatureGate feature="quick_order">
+                    <ProtectedRoute requiredRole={['stylist', 'admin']}>
+                      <StylistQuickOrderPage />
+                    </ProtectedRoute>
+                  </FeatureGate>
                 } />
               </Route>
 
@@ -231,16 +237,19 @@ function App() {
                 <Route path="/admin/orders" element={<AdminOrdersPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/coupons" element={<AdminCouponsPage />} />
-                <Route path="/admin/referrals" element={<AdminReferralsPage />} />
-                <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
+                <Route path="/admin/referrals" element={<FeatureGate feature="referrals" fallback="/admin/features"><AdminReferralsPage /></FeatureGate>} />
+                <Route path="/admin/distributors" element={<FeatureGate feature="distributors" fallback="/admin/features"><AdminDistributorsPage /></FeatureGate>} />
                 <Route path="/admin/stylist-requests" element={<AdminStylistRequestsPage />} />
-                <Route path="/admin/stylist-invitations" element={<AdminStylistInvitationsPage />} />
-                <Route path="/admin/bundles" element={<AdminBundlesPage />} />
-                <Route path="/admin/content-blocks" element={<AdminContentBlocksPage />} />
-                <Route path="/admin/catalog-images" element={<AdminCatalogImagesPage />} />
-                <Route path="/admin/catalogue-review" element={<AdminCatalogueReviewPage />} />
-                <Route path="/admin/hair-quiz" element={<AdminHairQuizPage />} />
-                <Route path="/admin/studio" element={<AdminPostStudioPage />} />
+                <Route path="/admin/stylist-invitations" element={<FeatureGate feature="stylist_invitations" fallback="/admin/features"><AdminStylistInvitationsPage /></FeatureGate>} />
+                <Route path="/admin/bundles" element={<FeatureGate feature="bundles" fallback="/admin/features"><AdminBundlesPage /></FeatureGate>} />
+                <Route path="/admin/content-blocks" element={<FeatureGate feature="content_blocks" fallback="/admin/features"><AdminContentBlocksPage /></FeatureGate>} />
+                <Route path="/admin/catalog-images" element={<FeatureGate feature="image_review" fallback="/admin/features"><AdminCatalogImagesPage /></FeatureGate>} />
+                <Route path="/admin/catalogue-review" element={<FeatureGate feature="supplier_list" fallback="/admin/features"><AdminCatalogueReviewPage /></FeatureGate>} />
+                <Route path="/admin/hair-quiz" element={<FeatureGate feature="hair_quiz" fallback="/admin/features"><AdminHairQuizPage /></FeatureGate>} />
+                <Route path="/admin/studio" element={<FeatureGate feature="post_studio" fallback="/admin/features"><AdminPostStudioPage /></FeatureGate>} />
+                <Route path="/admin/emails" element={<AdminEmailsPage />} />
+                <Route path="/admin/features" element={<AdminFeaturesPage />} />
+                <Route path="/admin/business" element={<AdminBusinessPage />} />
               </Route>
 
               {/* Catch-all */}
