@@ -13,7 +13,9 @@ import {
 import {
   ArrowDownOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
+import { QRCodeCanvas } from 'qrcode.react';
 import CropModal from '@/features/studio/CropModal';
+import { getBrandKit } from '@/features/studio/brand';
 import { cutoutPng, getCutout } from '@/features/studio/cutout';
 import { EMOJIS, SHAPES, elementLabel, makeElement, type ShapeKind, type StudioElement } from '@/features/studio/elements';
 import { INFO_OPTIONS, badgeChoices, benefitChoices, ctaChoices, productSize, suggestBenefits, type InfoMode } from '@/features/studio/info';
@@ -189,6 +191,8 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   showLogo: true,
   backgroundDim: 45,
   elements: [],
+  qr: false,
+  qrUrl: '',
 });
 
 export default function AdminPostStudioPage() {
@@ -217,6 +221,7 @@ export default function AdminPostStudioPage() {
   const [ideaGroup, setIdeaGroup] = useState<IdeaGroup | 'all'>('all');
   const [newTag, setNewTag] = useState('');
   const hitBoxesRef = useRef<PhotoHitBox[]>([]);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   const { data: catalogue, isLoading: catalogueLoading } = useGetAllProductsQuery({ perPage: 1000, sort: 'name_asc' });
   const [fetchProduct] = useLazyGetProductByIdQuery();
@@ -667,7 +672,8 @@ export default function AdminPostStudioPage() {
       loadImage(beforeAfterUrls.after),
     ]).then(([withImages, background, logo, before, after]) => {
       if (token !== renderToken.current) return;
-      hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo, before, after });
+      const qr = design.qr ? qrRef.current?.querySelector('canvas') ?? null : null;
+      hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo, before, after, qr });
       setRendering(false);
       setRenderVersion((version) => version + 1);
     });
@@ -723,6 +729,9 @@ export default function AdminPostStudioPage() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     message.success('Cut-out PNG downloaded');
   };
+
+  /** QR link: what the admin typed, else the first product's page, else the shop. */
+  const qrValue = design.qrUrl.trim() || (products[0] ? `${getBrandKit().url}/product/${products[0].id}` : getBrandKit().url);
 
   const caption = captionEdited ?? buildCaption(design, products, {
     platform: social.platform,
@@ -1221,6 +1230,17 @@ export default function AdminPostStudioPage() {
                   <Switch checked={design.showLogo} onChange={(checked) => update('showLogo', checked)} />
                   <Text>Show logo</Text>
                 </Space>
+                <Space wrap>
+                  <Switch checked={design.qr} onChange={(checked) => update('qr', checked)} />
+                  <Text>QR code</Text>
+                  {design.qr && (
+                    <Input size="small" value={design.qrUrl} onChange={(event) => update('qrUrl', event.target.value)} placeholder={qrValue} style={{ width: 240 }} aria-label="QR code link" />
+                  )}
+                </Space>
+                {/* Hidden: the free QR library draws here, the post copies it. */}
+                <div ref={qrRef} style={{ display: 'none' }} aria-hidden>
+                  {design.qr && <QRCodeCanvas value={qrValue} size={512} level="M" marginSize={1} />}
+                </div>
               </Space>
             </Card>
 

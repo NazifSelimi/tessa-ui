@@ -132,6 +132,9 @@ export interface StudioDesign {
   backgroundDim: number;
   /** Text boxes, stickers and shapes on top of the layout (later = in front). */
   elements: StudioElement[];
+  /** QR code in the corner, linking to qrUrl (empty = the product or shop page). */
+  qr: boolean;
+  qrUrl: string;
 }
 
 export interface RenderAssets {
@@ -140,6 +143,8 @@ export interface RenderAssets {
   /** Own photos for the Before / After layout (otherwise the first two products are used). */
   before?: HTMLImageElement | null;
   after?: HTMLImageElement | null;
+  /** Rendered QR code (from the free qrcode.react library). */
+  qr?: HTMLCanvasElement | null;
   logo: HTMLImageElement | null;
 }
 
@@ -955,6 +960,24 @@ export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, as
   drawBackground(ctx, theme, design, assets, format.width, format.height);
   TEMPLATE_RENDERERS[design.template](ctx, theme, design, assets, format.width, format.height);
   ctx.restore();
+  if (design.qr && assets.qr) {
+    // Bottom-right, above the footer, on a white tile so phones can scan it.
+    const unit = Math.min(format.width, format.height);
+    const size = unit * 0.15;
+    const pad = size * 0.08;
+    const x = format.width - unit * 0.07 - size;
+    const y = format.height - unit * 0.07 - unit * 0.1 - size;
+    ctx.save();
+    roundRect(ctx, x - pad, y - pad, size + pad * 2, size + pad * 2, pad * 1.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur = pad * 2;
+    ctx.fill();
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(assets.qr, x, y, size, size);
+    ctx.imageSmoothingEnabled = true;
+  }
   // Free items go on top; their boxes are listed last so they are grabbed first.
   for (const box of drawElements(ctx, design.elements ?? [], format.width, format.height)) {
     hitBoxes.push({ ...box, id: `el:${box.id}`, spaceW: format.width, spaceH: format.height, source: { x: 0, y: 0, w: 1, h: 1 } });
