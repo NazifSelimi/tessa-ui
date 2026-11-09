@@ -59,3 +59,10 @@
 .post-studio__gallery-thumb { display: grid; place-items: center; width: 100%; overflow: hidden; border-radius: 6px; background: #f4efec; }
 .post-studio__gallery-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .post-studio__gallery-wait { color: #b9aaa5; font-size: 20px; }
+
+/* Tabs & help */
+.post-studio__tabs > .ant-tabs-nav { margin-bottom: 18px; }
+.post-studio__tabs .ant-tabs-tab { font-weight: 600; }
+.post-studio-help__list { margin: 0; padding-left: 18px; }
+.post-studio-help__list li { margin-bottom: 6px; line-height: 1.5; }
+.post-studio-help__shortcut { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }

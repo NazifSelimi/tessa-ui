@@ -8,13 +8,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  App, Button, Card, Col, Empty, Input, Modal, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
+  App, Button, Card, Col, Empty, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  AppstoreOutlined, ArrowDownOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
+  AppstoreOutlined, ArrowDownOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import CropModal from '@/features/studio/CropModal';
+import StudioHelp from '@/features/studio/StudioHelp';
 import { getBrandKit } from '@/features/studio/brand';
 import { cutoutPng, getCutout } from '@/features/studio/cutout';
 import { EMOJIS, SHAPES, elementLabel, makeElement, type ShapeKind, type StudioElement } from '@/features/studio/elements';
@@ -791,7 +792,9 @@ export default function AdminPostStudioPage() {
 
   /* ------------------------------------------------------------ template gallery */
 
-  const [galleryOpen, setGalleryOpen] = useState(false);
+  type StudioTab = 'create' | 'templates' | 'drafts' | 'help';
+  const [activeTab, setActiveTab] = useState<StudioTab>('create');
+  const galleryOpen = activeTab === 'templates';
   const [galleryThumbs, setGalleryThumbs] = useState<Record<string, string>>({});
 
   /** Designs for every ready idea and every layout, using the products already chosen. */
@@ -840,7 +843,7 @@ export default function AdminPostStudioPage() {
   const pickFromGallery = (item: (typeof galleryItems)[number]) => {
     if (item.idea) applyIdea(item.idea);
     else if (item.template) changeTemplate(item.template);
-    setGalleryOpen(false);
+    setActiveTab('create');
   };
 
   /** Caption products: every product in the carousel, once. */
@@ -979,6 +982,7 @@ export default function AdminPostStudioPage() {
   };
 
   const openDraft = async (draft: Draft) => {
+    setActiveTab('create');
     // Drafts from before the info line showed prices unless the price was off.
     const legacyInfo: InfoMode = draft.design.priceMode === 'none' ? 'none' : 'price';
     setDesign({ ...initialDesign(draft.design.lang), ...draft.design, info: draft.design.info ?? legacyInfo });
@@ -1042,16 +1046,26 @@ export default function AdminPostStudioPage() {
           <Tooltip title="Redo (Ctrl+Shift+Z)"><Button icon={<RedoOutlined />} disabled={!historyCount.redo} onClick={redo} aria-label="Redo" /></Tooltip>
           <Button icon={<ReloadOutlined />} onClick={reset}>Start over</Button>
           <Button icon={<SaveOutlined />} onClick={saveDraft}>Save draft</Button>
+          <Button icon={<QuestionCircleOutlined />} onClick={() => setActiveTab('help')}>How to use</Button>
         </Space>
       </div>
 
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => { if (key === 'templates') setGalleryThumbs({}); setActiveTab(key as StudioTab); }}
+        className="post-studio__tabs"
+        items={[
+          {
+            key: 'create',
+            label: <span><EditOutlined /> Create</span>,
+            children: (
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={10} xl={9}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Card
               size="small"
               title={<Space><BulbOutlined />Ready post ideas</Space>}
-              extra={<Button size="small" icon={<AppstoreOutlined />} onClick={() => { setGalleryThumbs({}); setGalleryOpen(true); }}>Template gallery</Button>}
+              extra={<Button size="small" icon={<AppstoreOutlined />} onClick={() => { setGalleryThumbs({}); setActiveTab('templates'); }}>Template gallery</Button>}
             >
               {coming.length > 0 && (
                 <div className="post-studio__coming">
@@ -1675,7 +1689,38 @@ export default function AdminPostStudioPage() {
               </Space>
             </Card>
 
-            <Card size="small" title={`Drafts in this browser (${drafts.length})`}>
+
+          </div>
+        </Col>
+      </Row>
+            ),
+          },
+          {
+            key: 'templates',
+            label: <span><AppstoreOutlined /> Templates</span>,
+            children: (
+              <div>
+        <Paragraph type="secondary" style={{ marginTop: 0 }}>
+          Previews use your chosen products{products.length ? '' : ' (pick products first to see them here)'}, language and size.
+        </Paragraph>
+        <div className="post-studio__gallery">
+          {galleryItems.map((item) => (
+            <button key={item.key} type="button" className="post-studio__gallery-item" onClick={() => pickFromGallery(item)}>
+              <span className="post-studio__gallery-thumb" style={{ aspectRatio: `${format.width} / ${format.height}` }}>
+                {galleryThumbs[item.key] ? <img src={galleryThumbs[item.key]} alt="" /> : <span className="post-studio__gallery-wait">…</span>}
+              </span>
+              <strong>{item.label}</strong>
+            </button>
+          ))}
+        </div>
+              </div>
+            ),
+          },
+          {
+            key: 'drafts',
+            label: <span><FolderOpenOutlined /> Drafts ({drafts.length})</span>,
+            children: (
+            <Card size="small" title={`Saved in this browser (${drafts.length})`}>
               {drafts.length === 0 ? (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Saved drafts appear here." />
               ) : (
@@ -1692,24 +1737,15 @@ export default function AdminPostStudioPage() {
                 </div>
               )}
             </Card>
-          </div>
-        </Col>
-      </Row>
-      <Modal open={galleryOpen} onCancel={() => setGalleryOpen(false)} footer={null} width={1000} title="Template gallery — click one to start">
-        <Paragraph type="secondary" style={{ marginTop: 0 }}>
-          Previews use your chosen products{products.length ? '' : ' (pick products first to see them here)'}, language and size.
-        </Paragraph>
-        <div className="post-studio__gallery">
-          {galleryItems.map((item) => (
-            <button key={item.key} type="button" className="post-studio__gallery-item" onClick={() => pickFromGallery(item)}>
-              <span className="post-studio__gallery-thumb" style={{ aspectRatio: `${format.width} / ${format.height}` }}>
-                {galleryThumbs[item.key] ? <img src={galleryThumbs[item.key]} alt="" /> : <span className="post-studio__gallery-wait">…</span>}
-              </span>
-              <strong>{item.label}</strong>
-            </button>
-          ))}
-        </div>
-      </Modal>
+            ),
+          },
+          {
+            key: 'help',
+            label: <span><QuestionCircleOutlined /> How to use</span>,
+            children: <StudioHelp />,
+          },
+        ]}
+      />
       <CropModal
         open={cropping !== null}
         imageUrl={(() => {
