@@ -11,9 +11,11 @@ import {
   App, Button, Card, Col, Empty, Input, Radio, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  BulbOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
+  BulbOutlined, ClearOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import CropModal from '@/features/studio/CropModal';
+import { cutoutPng, getCutout } from '@/features/studio/cutout';
+import '@/features/studio/studio.css';
 import PostMockup from '@/features/studio/PostMockup';
 import {
   INSTAGRAM_LIMITS, TONES, buildCaption, countHashtags, previewCut, siteHost, suggestHashtags, toHashtag,
@@ -27,7 +29,7 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 import { site } from '@/shared/config/site';
 import {
   FORMATS, THEMES, ensureFonts, formatById, loadImage, loadLogo, quickBadges, renderDesign, templateDefaults, themeById,
-  DEFAULT_ADJUST,
+  DEFAULT_ADJUST, DEFAULT_CUTOUT,
   type FormatId, type PhotoCrop, type PhotoHitBox, type PriceMode, type StudioDesign, type StudioLang, type StudioProduct, type TemplateId, type ThemeId,
 } from '@/features/studio/render';
 
@@ -97,7 +99,10 @@ interface Draft {
   id: string;
   savedAt: string;
   design: StudioDesign;
-  products: { id: string; photoIndex: number; scale?: number; offsetX?: number; offsetY?: number; crop?: PhotoCrop | null }[];
+  products: {
+    id: string; photoIndex: number; scale?: number; offsetX?: number; offsetY?: number; crop?: PhotoCrop | null;
+    cutout?: boolean; tolerance?: number; erase?: { x: number; y: number }[]; shadow?: boolean;
+  }[];
   social?: SocialState;
   thumbnail: string;
 }
@@ -146,6 +151,8 @@ function toStudioProduct(product: Product): StudioProduct {
     photos: photoUrls(product),
     photoIndex: 0,
     ...DEFAULT_ADJUST,
+    ...DEFAULT_CUTOUT,
+    erase: [],
   };
 }
 
@@ -182,6 +189,8 @@ export default function AdminPostStudioPage() {
   const [fontsReady, setFontsReady] = useState(false);
   const [captionEdited, setCaptionEdited] = useState<string | null>(null);
   const [cropping, setCropping] = useState<string | null>(null);
+  /** Product whose background is being erased by clicking on the preview. */
+  const [erasingId, setErasingId] = useState<string | null>(null);
   const [social, setSocial] = useState<SocialState>(() => initialSocial());
   const [profile, setProfile] = useState<SocialProfile>(() => readProfile());
   const [ideaGroup, setIdeaGroup] = useState<IdeaGroup | 'all'>('all');
@@ -238,6 +247,7 @@ export default function AdminPostStudioPage() {
   }, [catalogue, searchParams, selectProducts]);
 
   const onProductsChange = (ids: string[]) => {
+    if (erasingId && !ids.includes(erasingId)) setErasingId(null);
     const limited = ids.slice(0, template.maxProducts);
     if (ids.length > template.maxProducts) message.info(`${template.label} shows up to ${template.maxProducts} product${template.maxProducts > 1 ? 's' : ''}.`);
     const isFirstForSpotlight = design.template === 'spotlight' && products.length === 0 && limited.length === 1;
@@ -250,11 +260,11 @@ export default function AdminPostStudioPage() {
 
   const nextPhoto = (id: string) => {
     setProducts((current) => current.map((product) => (product.id === id && product.photos.length > 1
-      ? { ...product, photoIndex: (product.photoIndex + 1) % product.photos.length, crop: null }
+      ? { ...product, photoIndex: (product.photoIndex + 1) % product.photos.length, crop: null, erase: [] }
       : product)));
   };
 
-  const adjustProduct = useCallback((id: string, change: Partial<Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop'>>) => {
+  const adjustProduct = useCallback((id: string, change: Partial<Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop' | 'cutout' | 'tolerance' | 'erase' | 'shadow'>>) => {
     setProducts((current) => current.map((product) => (product.id === id ? { ...product, ...change } : product)));
   }, []);
 
@@ -274,6 +284,21 @@ export default function AdminPostStudioPage() {
 
   const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const point = canvasPoint(event);
+    if (erasingId) {
+      // Magic eraser: remove the area around the clicked spot that has a similar colour.
+      const target = [...hitBoxesRef.current].reverse().find((item) => item.id === erasingId
+        && point.x >= item.x && point.x <= item.x + item.w && point.y >= item.y && point.y <= item.y + item.h);
+      const product = products.find((item) => item.id === erasingId);
+      if (target && product) {
+        event.preventDefault();
+        const spot = {
+          x: target.source.x + ((point.x - target.x) / target.w) * target.source.w,
+          y: target.source.y + ((point.y - target.y) / target.h) * target.source.h,
+        };
+        adjustProduct(product.id, { cutout: true, erase: [...product.erase, spot] });
+      }
+      return;
+    }
     const box = hitAt(point.x, point.y);
     const product = box && products.find((item) => item.id === box.id);
     if (!box || !product) return;
@@ -301,7 +326,7 @@ export default function AdminPostStudioPage() {
     const point = canvasPoint(event);
     const drag = pointer.current;
     if (!drag) {
-      setHovering(Boolean(hitAt(point.x, point.y)));
+      if (!erasingId) setHovering(Boolean(hitAt(point.x, point.y)));
       return;
     }
     const dx = point.x - drag.startX;
@@ -474,7 +499,12 @@ export default function AdminPostStudioPage() {
     const theme = themeById(design.theme);
     const logoInk = backgroundUrl || theme.photo === 'card' ? '#ffffff' : '#242124';
     Promise.all([
-      Promise.all(products.map(async (product) => ({ ...product, image: await loadImage(product.photos[product.photoIndex]) }))),
+      Promise.all(products.map(async (product) => {
+        const photo = await loadImage(product.photos[product.photoIndex]);
+        // Background removal runs here, in the browser; results are cached per photo + settings.
+        const image = product.cutout && photo ? getCutout(photo, { tolerance: product.tolerance, erase: product.erase }) ?? photo : photo;
+        return { ...product, image };
+      })),
       loadImage(backgroundUrl),
       loadLogo(logoInk),
     ]).then(([withImages, background, logo]) => {
@@ -515,6 +545,24 @@ export default function AdminPostStudioPage() {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     message.success(`Downloaded ${format.width}×${format.height} PNG`);
+  };
+
+  /** Transparent, trimmed, full-size PNG of one product (not saved to the shop's photos). */
+  const downloadCutout = async (product: StudioProduct) => {
+    const photo = await loadImage(product.photos[product.photoIndex]);
+    const cut = photo ? getCutout(photo, { tolerance: product.tolerance, erase: product.erase }) : null;
+    const blob = cut ? await cutoutPng(cut) : null;
+    if (!blob) {
+      message.error('Could not make a cut-out of this photo.');
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${product.name.toLowerCase().replace(/[^a-z0-9а-ш]+/gi, '-').replace(/^-|-$/g, '').slice(0, 50) || 'product'}-cutout.png`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    message.success('Cut-out PNG downloaded');
   };
 
   const caption = captionEdited ?? buildCaption(design, products, {
@@ -578,7 +626,9 @@ export default function AdminPostStudioPage() {
       id: `${Date.now()}`,
       savedAt: new Date().toISOString(),
       design,
-      products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop }) => ({ id, photoIndex, scale, offsetX, offsetY, crop })),
+      products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow }) => ({
+        id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow,
+      })),
       social,
       thumbnail,
     };
@@ -606,6 +656,10 @@ export default function AdminPostStudioPage() {
           offsetX: saved.offsetX ?? 0,
           offsetY: saved.offsetY ?? 0,
           crop: saved.crop ?? null,
+          cutout: saved.cutout ?? false,
+          tolerance: saved.tolerance ?? DEFAULT_CUTOUT.tolerance,
+          erase: saved.erase ?? [],
+          shadow: saved.shadow ?? true,
         };
       } catch {
         return null;
@@ -831,6 +885,71 @@ export default function AdminPostStudioPage() {
                           />
                         </Tooltip>
                       </div>
+                      <div className="post-studio__cutout">
+                        <Space size={6}>
+                          <Switch
+                            size="small"
+                            checked={product.cutout}
+                            onChange={(checked) => {
+                              adjustProduct(product.id, { cutout: checked });
+                              if (!checked && erasingId === product.id) setErasingId(null);
+                            }}
+                          />
+                          <Text style={{ fontSize: 13 }}>Remove background</Text>
+                        </Space>
+                        {product.cutout && (
+                          <>
+                            <div className="post-studio__adjust">
+                              <Tooltip title="Higher removes more of the background colour; lower keeps more of the product">
+                                <Text type="secondary" style={{ fontSize: 12, width: 64 }}>Tolerance</Text>
+                              </Tooltip>
+                              <Slider
+                                key={`${product.id}-${product.photoIndex}-${product.tolerance}`}
+                                min={0}
+                                max={100}
+                                defaultValue={product.tolerance}
+                                onChangeComplete={(value) => adjustProduct(product.id, { tolerance: value })}
+                                style={{ flex: 1, margin: '0 6px' }}
+                              />
+                            </div>
+                            <Space size={6} wrap>
+                              <Tooltip title="Then click a spot on the preview to remove that colour area too">
+                                <Button
+                                  size="small"
+                                  icon={<HighlightOutlined />}
+                                  type={erasingId === product.id ? 'primary' : 'default'}
+                                  onClick={() => setErasingId(erasingId === product.id ? null : product.id)}
+                                >
+                                  {erasingId === product.id ? 'Erasing: click the preview' : 'Magic eraser'}
+                                </Button>
+                              </Tooltip>
+                              <Button
+                                size="small"
+                                icon={<UndoOutlined />}
+                                disabled={!product.erase.length}
+                                onClick={() => adjustProduct(product.id, { erase: product.erase.slice(0, -1) })}
+                              >
+                                Undo spot
+                              </Button>
+                              <Button
+                                size="small"
+                                icon={<ClearOutlined />}
+                                disabled={!product.erase.length}
+                                onClick={() => adjustProduct(product.id, { erase: [] })}
+                              >
+                                Restore
+                              </Button>
+                              <Space size={4}>
+                                <Switch size="small" checked={product.shadow} onChange={(checked) => adjustProduct(product.id, { shadow: checked })} />
+                                <Text style={{ fontSize: 12 }}>Shadow</Text>
+                              </Space>
+                            </Space>
+                            <Button size="small" icon={<DownloadOutlined />} onClick={() => downloadCutout(product)}>
+                              Download cutout PNG
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -908,7 +1027,7 @@ export default function AdminPostStudioPage() {
                 <PostMockup platform={social.platform} format={design.format} handle={profile.handle} pageName={profile.pageName} caption={caption}>
                 <canvas
                   ref={canvasRef}
-                  className={`${rendering ? 'is-rendering' : ''}${hovering ? ' is-over-photo' : ''}`}
+                  className={`${rendering ? 'is-rendering' : ''}${hovering ? ' is-over-photo' : ''}${erasingId ? ' is-erasing' : ''}`}
                   onPointerDown={onCanvasPointerDown}
                   onPointerMove={onCanvasPointerMove}
                   onPointerUp={onCanvasPointerUp}

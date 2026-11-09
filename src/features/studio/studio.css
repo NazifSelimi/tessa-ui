@@ -1,0 +1,14 @@
+/* Post Studio: background remover controls (kept here so Post Studio styles ship with its files). */
+.post-studio__cutout {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #faf7f5;
+}
+.post-studio__cutout .post-studio__adjust { width: 100%; }
+.post-studio__preview canvas.is-erasing,
+.post-studio__preview canvas.is-erasing.is-over-photo { cursor: crosshair; }

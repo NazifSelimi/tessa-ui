@@ -65,13 +65,31 @@ export interface StudioProduct {
   offsetY: number;
   /** Manual crop of the photo (0–1 of its width/height); null = auto-trim white margins. */
   crop: PhotoCrop | null;
+  /** Remove the photo's background (in the browser) so the product sits on the design. */
+  cutout: boolean;
+  /** 0–100 colour tolerance of the background remover. */
+  tolerance: number;
+  /** Magic-eraser spots (0–1 of the photo). */
+  erase: { x: number; y: number }[];
+  /** Soft shadow under a cut-out product. */
+  shadow: boolean;
 }
 
 export interface PhotoCrop { x: number; y: number; w: number; h: number }
 
 export const DEFAULT_ADJUST = { scale: 1, offsetX: 0, offsetY: 0, crop: null } as const;
+export const DEFAULT_CUTOUT = { cutout: false, tolerance: 32, erase: [] as { x: number; y: number }[], shadow: true };
 
-type DrawnProduct = StudioProduct & { image: HTMLImageElement | null };
+/** A loaded photo, or its cut-out (a canvas with a transparent background). */
+export type PhotoSource = HTMLImageElement | HTMLCanvasElement;
+
+type DrawnProduct = StudioProduct & { image: PhotoSource | null };
+
+const sizeOf = (source: PhotoSource) => source instanceof HTMLImageElement
+  ? { width: source.naturalWidth, height: source.naturalHeight }
+  : { width: source.width, height: source.height };
+
+const isCutout = (product: DrawnProduct | undefined) => Boolean(product?.cutout && product.image instanceof HTMLCanvasElement);
 
 /** Where each product photo was drawn, so the page can drag / resize it on the preview. */
 export interface PhotoHitBox {
@@ -80,6 +98,8 @@ export interface PhotoHitBox {
   /** Size of the space the photo is placed in; offsets are a share of it. */
   spaceW: number;
   spaceH: number;
+  /** Part of the photo that was drawn, as 0–1 of the photo (for the magic eraser). */
+  source: { x: number; y: number; w: number; h: number };
 }
 let hitBoxes: PhotoHitBox[] = [];
 
@@ -234,20 +254,21 @@ function drawText(ctx: CanvasRenderingContext2D, box: TextBox): number {
 }
 
 interface SourceRect { sx: number; sy: number; sw: number; sh: number }
-const trimCache = new WeakMap<HTMLImageElement, SourceRect>();
+const trimCache = new WeakMap<PhotoSource, SourceRect>();
 
 /**
  * The part of a product photo that isn't white or transparent margin, so the
  * bottle fills its space instead of floating small in a big white square.
  */
-function trimmedRect(image: HTMLImageElement): SourceRect {
+function trimmedRect(image: PhotoSource): SourceRect {
+  const { width: naturalWidth, height: naturalHeight } = sizeOf(image);
   const cached = trimCache.get(image);
   if (cached) return cached;
-  const full = { sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight };
+  const full = { sx: 0, sy: 0, sw: naturalWidth, sh: naturalHeight };
   try {
-    const scale = Math.min(1, 240 / Math.max(image.naturalWidth, image.naturalHeight));
-    const w = Math.max(1, Math.round(image.naturalWidth * scale));
-    const h = Math.max(1, Math.round(image.naturalHeight * scale));
+    const scale = Math.min(1, 240 / Math.max(naturalWidth, naturalHeight));
+    const w = Math.max(1, Math.round(naturalWidth * scale));
+    const h = Math.max(1, Math.round(naturalHeight * scale));
     const probe = document.createElement('canvas');
     probe.width = w;
     probe.height = h;
@@ -273,11 +294,11 @@ function trimmedRect(image: HTMLImageElement): SourceRect {
     const rect = {
       sx: Math.max(0, (minX - pad) / scale),
       sy: Math.max(0, (minY - pad) / scale),
-      sw: Math.min(image.naturalWidth, (maxX - minX + 1 + pad * 2) / scale),
-      sh: Math.min(image.naturalHeight, (maxY - minY + 1 + pad * 2) / scale),
+      sw: Math.min(naturalWidth, (maxX - minX + 1 + pad * 2) / scale),
+      sh: Math.min(naturalHeight, (maxY - minY + 1 + pad * 2) / scale),
     };
-    rect.sw = Math.min(rect.sw, image.naturalWidth - rect.sx);
-    rect.sh = Math.min(rect.sh, image.naturalHeight - rect.sy);
+    rect.sw = Math.min(rect.sw, naturalWidth - rect.sx);
+    rect.sh = Math.min(rect.sh, naturalHeight - rect.sy);
     trimCache.set(image, rect);
     return rect;
   } catch {
@@ -288,19 +309,21 @@ function trimmedRect(image: HTMLImageElement): SourceRect {
 /** Fits an image inside a box (no cropping). */
 function drawContain(
   ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
+  image: PhotoSource,
   x: number, y: number, w: number, h: number,
   mode: 'multiply' | 'normal' = 'normal',
   adjust?: Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop'> & { id?: string },
   clip?: { x: number; y: number; w: number; h: number; r: number },
+  shadow = false,
 ) {
   const crop = adjust?.crop;
+  const natural = sizeOf(image);
   const { sx, sy, sw, sh } = crop
     ? {
-      sx: crop.x * image.naturalWidth,
-      sy: crop.y * image.naturalHeight,
-      sw: Math.max(1, crop.w * image.naturalWidth),
-      sh: Math.max(1, crop.h * image.naturalHeight),
+      sx: crop.x * natural.width,
+      sy: crop.y * natural.height,
+      sw: Math.max(1, crop.w * natural.width),
+      sh: Math.max(1, crop.h * natural.height),
     }
     : trimmedRect(image);
   const fit = Math.min(w / sw, h / sh) * (adjust?.scale ?? 1);
@@ -314,9 +337,20 @@ function drawContain(
     ctx.clip();
   }
   if (mode === 'multiply') ctx.globalCompositeOperation = 'multiply';
+  if (shadow) {
+    // A cut-out casts a soft shadow that follows its shape.
+    ctx.shadowColor = 'rgba(30, 18, 22, 0.28)';
+    ctx.shadowBlur = Math.max(6, dh * 0.05);
+    ctx.shadowOffsetY = Math.max(3, dh * 0.025);
+  }
   ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
   ctx.restore();
-  if (adjust?.id) hitBoxes.push({ id: adjust.id, x: dx, y: dy, w: dw, h: dh, spaceW: w, spaceH: h });
+  if (adjust?.id) {
+    hitBoxes.push({
+      id: adjust.id, x: dx, y: dy, w: dw, h: dh, spaceW: w, spaceH: h,
+      source: { x: sx / natural.width, y: sy / natural.height, w: sw / natural.width, h: sh / natural.height },
+    });
+  }
 }
 
 /** Fills a box with an image, cropping the overflow. */
@@ -335,7 +369,9 @@ function drawPhoto(
   forceCard = false,
 ) {
   const image = product?.image ?? null;
-  const card = forceCard || theme.photo === 'card';
+  const cutout = isCutout(product);
+  // A cut-out sits straight on the design; other photos get a white tile on dark themes.
+  const card = !cutout && (forceCard || theme.photo === 'card');
   if (card) {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.18)';
@@ -359,9 +395,10 @@ function drawPhoto(
   }
   const pad = card ? Math.min(w, h) * 0.08 : 0;
   drawContain(
-    ctx, image, x + pad, y + pad, w - pad * 2, h - pad * 2, card ? 'normal' : 'multiply', product,
+    ctx, image, x + pad, y + pad, w - pad * 2, h - pad * 2, card || cutout ? 'normal' : 'multiply', product,
     // On a white tile the photo stays inside the tile; on plain backgrounds it may spill out.
     card ? { x, y, w, h, r: Math.min(w, h) * 0.07 } : undefined,
+    cutout && Boolean(product?.shadow),
   );
 }
 
@@ -601,8 +638,9 @@ function grid(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioD
     ctx.fill();
     ctx.restore();
     if (product.image) {
-      drawContain(ctx, product.image, x + cellW * 0.08, cy + cellH * 0.05, cellW * 0.84, cellH - labelH - cellH * 0.06, 'multiply', product,
-        { x, y: cy, w: cellW, h: cellH - labelH, r: unit * 0.03 });
+      const cut = isCutout(product);
+      drawContain(ctx, product.image, x + cellW * 0.08, cy + cellH * 0.05, cellW * 0.84, cellH - labelH - cellH * 0.06, cut ? 'normal' : 'multiply', product,
+        { x, y: cy, w: cellW, h: cellH - labelH, r: unit * 0.03 }, cut && product.shadow);
     }
     const textInk = '#242124';
     const ty = drawText(ctx, { text: product.name, x: x + cellW / 2, y: cy + cellH - labelH + unit * 0.008, maxWidth: cellW * 0.88, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.026, maxLines: 2, color: textInk, align: 'center', lineHeight: 1.15 });
