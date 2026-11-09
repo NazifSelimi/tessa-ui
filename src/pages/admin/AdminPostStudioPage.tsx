@@ -248,6 +248,37 @@ export default function AdminPostStudioPage() {
     ensureFonts().finally(() => setFontsReady(true));
   }, []);
 
+  // A photo dragged from the computer must never make the browser open it (that
+  // leaves the page and loses the post): stop it everywhere on this page and use
+  // a dropped image as the background photo instead. Also warn before leaving.
+  useEffect(() => {
+    const stop = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+    };
+    const drop = (event: DragEvent) => {
+      if (!event.dataTransfer?.files.length) return;
+      event.preventDefault();
+      const file = [...event.dataTransfer.files].find((item) => item.type.startsWith('image/'));
+      if (!file) return;
+      setBackgroundUrl((old) => {
+        if (old) URL.revokeObjectURL(old);
+        return URL.createObjectURL(file);
+      });
+      message.success('Photo added as the background');
+    };
+    const leave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('dragover', stop);
+    window.addEventListener('drop', drop);
+    window.addEventListener('beforeunload', leave);
+    return () => {
+      window.removeEventListener('dragover', stop);
+      window.removeEventListener('drop', drop);
+      window.removeEventListener('beforeunload', leave);
+    };
+  }, [message]);
+
   /* ------------------------------------------------------------ products */
 
   const productOptions = useMemo(() => (catalogue?.data ?? []).map((product) => ({
