@@ -33,6 +33,7 @@ import {
   ExperimentOutlined,
   LayoutOutlined,
   InstagramOutlined,
+  ContactsOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetDashboardStatsQuery } from '@/features/admin/api';
@@ -47,6 +48,7 @@ const pageTitles: Record<string, string> = {
   '/admin/products': 'Products',
   '/admin/orders': 'Orders',
   '/admin/users': 'Users',
+  '/admin/customers': 'Customers',
   '/admin/stylist-requests': 'Stylist Requests',
   '/admin/stylist-invitations': 'Stylist Invitations',
   '/admin/coupons': 'Coupons',
@@ -86,6 +88,7 @@ export default function AdminLayout() {
         </Link>
       ),
     },
+    { key: '/admin/customers', icon: <ContactsOutlined />, label: <Link to="/admin/customers">Customers</Link> },
     { key: '/admin/users', icon: <UserOutlined />, label: <Link to="/admin/users">Users</Link> },
     {
       key: '/admin/stylist-requests',
