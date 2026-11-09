@@ -42,6 +42,11 @@ const TEMPLATES: { id: TemplateId; label: string; hint: string; maxProducts: num
   { id: 'offer', label: 'Offer / sale', hint: 'Huge -20% or 1+1, up to 3 products', maxProducts: 3 },
   { id: 'grid', label: 'Product grid', hint: '2–4 products with names and prices', maxProducts: 4 },
   { id: 'announcement', label: 'Announcement', hint: 'Text first: delivery, holidays, news', maxProducts: 1 },
+  { id: 'beforeAfter', label: 'Before / After', hint: 'Two photos side by side: results', maxProducts: 2 },
+  { id: 'review', label: 'Review card', hint: 'Customer quote with stars and name', maxProducts: 1 },
+  { id: 'steps', label: 'Tip steps', hint: 'Numbered steps (one per line)', maxProducts: 1 },
+  { id: 'thisOrThat', label: 'This or that', hint: 'Two products, let people vote', maxProducts: 2 },
+  { id: 'lineup', label: 'Product lineup', hint: 'One line, all sizes, no prices', maxProducts: 6 },
 ];
 
 const LANGS: { value: StudioLang; label: string }[] = [
@@ -191,6 +196,8 @@ export default function AdminPostStudioPage() {
   const [design, setDesign] = useState<StudioDesign>(() => initialDesign());
   const [products, setProducts] = useState<StudioProduct[]>([]);
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+  /** Own photos for the Before / After layout (stay on this computer). */
+  const [beforeAfterUrls, setBeforeAfterUrls] = useState<{ before: string | null; after: string | null }>({ before: null, after: null });
   const [rendering, setRendering] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>(() => readDrafts());
   const [fontsReady, setFontsReady] = useState(false);
@@ -522,12 +529,14 @@ export default function AdminPostStudioPage() {
       })),
       loadImage(backgroundUrl),
       loadLogo(logoInk),
-    ]).then(([withImages, background, logo]) => {
+      loadImage(beforeAfterUrls.before),
+      loadImage(beforeAfterUrls.after),
+    ]).then(([withImages, background, logo, before, after]) => {
       if (token !== renderToken.current) return;
-      hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo });
+      hitBoxesRef.current = renderDesign(canvas, design, { products: withImages, background, logo, before, after });
       setRendering(false);
     });
-  }, [design, products, backgroundUrl, fontsReady]);
+  }, [design, products, backgroundUrl, beforeAfterUrls, fontsReady]);
 
   /* ------------------------------------------------------------ output */
 
@@ -791,6 +800,26 @@ export default function AdminPostStudioPage() {
                       </Radio.Button>
                     ))}
                   </Radio.Group>
+                  {design.template === 'beforeAfter' && (
+                    <Space wrap style={{ marginTop: 8 }}>
+                      {(['before', 'after'] as const).map((slot) => (
+                        <Upload
+                          key={slot}
+                          accept="image/*"
+                          showUploadList={false}
+                          beforeUpload={(file) => {
+                            const old = beforeAfterUrls[slot];
+                            if (old) URL.revokeObjectURL(old);
+                            setBeforeAfterUrls((current) => ({ ...current, [slot]: URL.createObjectURL(file) }));
+                            return false;
+                          }}
+                        >
+                          <Button size="small" icon={<UploadOutlined />}>{beforeAfterUrls[slot] ? `Change ${slot} photo` : `${slot === 'before' ? 'Before' : 'After'} photo`}</Button>
+                        </Upload>
+                      ))}
+                      <Text type="secondary" style={{ fontSize: 12 }}>Without photos, the first two products are used.</Text>
+                    </Space>
+                  )}
                 </div>
                 <div>
                   <Text strong className="post-studio__label">Colours</Text>
@@ -1039,7 +1068,7 @@ export default function AdminPostStudioPage() {
                 <Segmented block value={design.lang} onChange={(value) => changeLang(value as StudioLang)} options={LANGS} />
                 <Input addonBefore="Small title" value={design.eyebrow} onChange={(event) => update('eyebrow', event.target.value)} maxLength={40} />
                 <TextArea value={design.headline} onChange={(event) => update('headline', event.target.value)} placeholder="Headline" autoSize={{ minRows: 1, maxRows: 3 }} maxLength={90} showCount />
-                <TextArea value={design.subline} onChange={(event) => update('subline', event.target.value)} placeholder="Second line (optional)" autoSize={{ minRows: 1, maxRows: 4 }} maxLength={160} />
+                <TextArea value={design.subline} onChange={(event) => update('subline', event.target.value)} placeholder={design.template === 'steps' ? 'Steps, one per line (up to 5)' : design.template === 'review' ? 'Customer name' : 'Second line (optional)'} autoSize={{ minRows: design.template === 'steps' ? 3 : 1, maxRows: 6 }} maxLength={design.template === 'steps' ? 400 : 160} />
                 <div>
                   <Input addonBefore="Sticker" value={design.badge} onChange={(event) => update('badge', event.target.value)} placeholder="-20%, NEW, 1+1…" maxLength={14} />
                   <Space wrap size={4} style={{ marginTop: 6 }}>

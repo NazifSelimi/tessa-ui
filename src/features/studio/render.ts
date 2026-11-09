@@ -15,7 +15,7 @@ const SHOP = getBrandKit().name;
 const HOST = getBrandKit().host;
 
 export type FormatId = 'square' | 'portrait' | 'story' | 'landscape';
-export type TemplateId = 'spotlight' | 'offer' | 'grid' | 'announcement';
+export type TemplateId = 'spotlight' | 'offer' | 'grid' | 'announcement' | 'beforeAfter' | 'review' | 'steps' | 'thisOrThat' | 'lineup';
 export type ThemeId = 'blush' | 'cream' | 'rose' | 'noir' | 'white';
 export type PriceMode = 'retail' | 'salon' | 'custom' | 'none';
 export type StudioLang = 'mk' | 'sq' | 'en';
@@ -134,6 +134,9 @@ export interface StudioDesign {
 export interface RenderAssets {
   products: DrawnProduct[];
   background: HTMLImageElement | null;
+  /** Own photos for the Before / After layout (otherwise the first two products are used). */
+  before?: HTMLImageElement | null;
+  after?: HTMLImageElement | null;
   logo: HTMLImageElement | null;
 }
 
@@ -761,7 +764,180 @@ function announcement(ctx: CanvasRenderingContext2D, theme: StudioTheme, design:
   drawFooter(ctx, theme, design, assets, W, H, m);
 }
 
-const TEMPLATE_RENDERERS: Record<TemplateId, typeof spotlight> = { spotlight, offer, grid, announcement };
+
+const WORDS: Record<StudioLang, { before: string; after: string; or: string }> = {
+  mk: { before: 'ПРЕД', after: 'ПОТОА', or: 'ИЛИ' },
+  sq: { before: 'PARA', after: 'PAS', or: 'APO' },
+  en: { before: 'BEFORE', after: 'AFTER', or: 'OR' },
+};
+
+const eyebrowColour = (theme: StudioTheme) => (theme.accent === '#ffffff' ? theme.muted : theme.accent);
+
+/** Title block shared by the new layouts; returns the y below it. */
+function heading(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, W: number, y: number, m: number, unit: number, size = 0.085): number {
+  y = drawText(ctx, { text: design.eyebrow.toUpperCase(), x: W / 2, y, maxWidth: W - m * 2, font: (s) => `800 ${s}px ${SANS}`, size: unit * 0.03, maxLines: 1, color: eyebrowColour(theme), align: 'center', letterSpacing: 4 }) + unit * 0.02;
+  return drawText(ctx, { text: design.headline, x: W / 2, y, maxWidth: W - m * 2, font: (s) => `600 ${s}px ${SERIF}`, size: unit * size, maxLines: 2, color: theme.ink, align: 'center', lineHeight: 1.05 }) + unit * 0.03;
+}
+
+/** A photo filling a rounded box (cropped), with a label tag. */
+function photoPanel(ctx: CanvasRenderingContext2D, theme: StudioTheme, source: PhotoSource | null, x: number, y: number, w: number, h: number, label: string, unit: number) {
+  ctx.save();
+  roundRect(ctx, x, y, w, h, unit * 0.03);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.clip();
+  if (source) {
+    const { width, height } = sizeOf(source);
+    const scale = Math.max(w / width, h / height);
+    ctx.drawImage(source, x + (w - width * scale) / 2, y + (h - height * scale) / 2, width * scale, height * scale);
+  }
+  ctx.restore();
+  const size = unit * 0.03;
+  ctx.font = `800 ${size}px ${SANS}`;
+  const tw = ctx.measureText(label).width + size * 1.6;
+  roundRect(ctx, x + unit * 0.02, y + unit * 0.02, tw, size * 2, size);
+  ctx.fillStyle = theme.accent;
+  ctx.fill();
+  ctx.fillStyle = theme.accentInk;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + unit * 0.02 + size * 0.8, y + unit * 0.02 + size + size * 0.04);
+}
+
+function beforeAfter(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, assets: RenderAssets, W: number, H: number) {
+  const unit = Math.min(W, H);
+  const m = unit * 0.06;
+  const tall = H / W > 1.5;
+  const y = heading(ctx, theme, design, W, tall ? H * 0.08 : m, m, unit, 0.075);
+  const words = WORDS[design.lang];
+  const before = assets.before ?? assets.products[0]?.image ?? null;
+  const after = assets.after ?? assets.products[1]?.image ?? null;
+  const footer = unit * 0.11;
+  const gap = unit * 0.025;
+  const areaH = H - y - m - footer;
+  if (tall) {
+    const h = (areaH - gap) / 2;
+    photoPanel(ctx, theme, before, m, y, W - m * 2, h, words.before, unit);
+    photoPanel(ctx, theme, after, m, y + h + gap, W - m * 2, h, words.after, unit);
+  } else {
+    const w = (W - m * 2 - gap) / 2;
+    photoPanel(ctx, theme, before, m, y, w, areaH, words.before, unit);
+    photoPanel(ctx, theme, after, m + w + gap, y, w, areaH, words.after, unit);
+  }
+  drawFooter(ctx, theme, design, assets, W, H, m);
+}
+
+function review(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, assets: RenderAssets, W: number, H: number) {
+  const unit = Math.min(W, H);
+  const m = unit * 0.09;
+  const product = assets.products[0];
+  const tall = H / W > 1.5;
+  let y = tall ? H * 0.2 : H * 0.12;
+  y = drawText(ctx, { text: design.eyebrow.toUpperCase(), x: W / 2, y, maxWidth: W - m * 2, font: (s) => `800 ${s}px ${SANS}`, size: unit * 0.03, maxLines: 1, color: eyebrowColour(theme), align: 'center', letterSpacing: 4 }) + unit * 0.03;
+  const stars = design.badge.trim() || '★★★★★';
+  y = drawText(ctx, { text: stars, x: W / 2, y, maxWidth: W - m * 2, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.06, maxLines: 1, color: '#e0a526', align: 'center' }) + unit * 0.035;
+  y = drawText(ctx, { text: design.headline, x: W / 2, y, maxWidth: W - m * 2, font: (s) => `italic 500 ${s}px ${SERIF}`, size: unit * 0.075, maxLines: 5, color: theme.ink, align: 'center', lineHeight: 1.18 }) + unit * 0.035;
+  y = drawText(ctx, { text: design.subline, x: W / 2, y, maxWidth: W - m * 2, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.036, maxLines: 1, color: theme.muted, align: 'center' }) + unit * 0.04;
+  const space = H - m - unit * 0.11 - y;
+  if (product?.image && space > unit * 0.16) {
+    const h = Math.min(space, unit * 0.36);
+    drawPhoto(ctx, theme, product, (W - h * 0.9) / 2, y, h * 0.9, h);
+  }
+  drawFooter(ctx, theme, design, assets, W, H, m);
+}
+
+function steps(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, assets: RenderAssets, W: number, H: number) {
+  const unit = Math.min(W, H);
+  const m = unit * 0.07;
+  const tall = H / W > 1.5;
+  const product = assets.products[0];
+  let y = heading(ctx, theme, design, W, tall ? H * 0.08 : m, m, unit, 0.075) + unit * 0.01;
+  const list = design.subline.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 5);
+  const photoW = product?.image ? W * 0.32 : 0;
+  const textW = W - m * 2 - photoW - (photoW ? unit * 0.03 : 0);
+  const top = y;
+  list.forEach((step, index) => {
+    const r = unit * 0.035;
+    ctx.beginPath();
+    ctx.arc(m + r, y + r, r, 0, Math.PI * 2);
+    ctx.fillStyle = theme.accent;
+    ctx.fill();
+    ctx.fillStyle = theme.accentInk;
+    ctx.font = `800 ${unit * 0.036}px ${SANS}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(index + 1), m + r, y + r + unit * 0.002);
+    const bottom = drawText(ctx, { text: step, x: m + r * 2 + unit * 0.025, y: y + unit * 0.006, maxWidth: textW - r * 2 - unit * 0.025, font: (s) => `600 ${s}px ${SANS}`, size: unit * 0.038, maxLines: 3, color: theme.ink, lineHeight: 1.25 });
+    y = Math.max(bottom, y + r * 2) + unit * 0.03;
+  });
+  if (product?.image) {
+    const h = Math.max(unit * 0.25, Math.min(H - m - unit * 0.11 - top, unit * 0.6));
+    drawPhoto(ctx, theme, product, W - m - photoW, top, photoW, h);
+  }
+  drawFooter(ctx, theme, design, assets, W, H, m);
+}
+
+function thisOrThat(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, assets: RenderAssets, W: number, H: number) {
+  const unit = Math.min(W, H);
+  const m = unit * 0.06;
+  const tall = H / W > 1.5;
+  const y = heading(ctx, theme, design, W, tall ? H * 0.1 : m, m, unit, 0.08);
+  const footer = unit * 0.11;
+  const gap = unit * 0.05;
+  const w = (W - m * 2 - gap) / 2;
+  const labelH = unit * 0.13;
+  const h = Math.max(unit * 0.25, H - y - m - footer - labelH);
+  [0, 1].forEach((index) => {
+    const product = assets.products[index];
+    const x = m + index * (w + gap);
+    drawPhoto(ctx, theme, product, x, y, w, h);
+    if (product) {
+      const bottom = drawText(ctx, { text: product.name, x: x + w / 2, y: y + h + unit * 0.02, maxWidth: w, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.03, maxLines: 2, color: theme.ink, align: 'center', lineHeight: 1.15 });
+      drawInfo(ctx, theme, infoLine(product, design, true), x + w / 2, bottom + unit * 0.012, unit * 0.026, w, 'center');
+    }
+  });
+  const r = unit * 0.065;
+  const cx = W / 2;
+  const cy = y + h / 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = theme.accent;
+  ctx.shadowColor = 'rgba(0,0,0,0.2)';
+  ctx.shadowBlur = r * 0.4;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = theme.accentInk;
+  ctx.font = `800 ${r * 0.7}px ${SANS}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(WORDS[design.lang].or, cx, cy + r * 0.04);
+  drawFooter(ctx, theme, design, assets, W, H, m);
+}
+
+function lineup(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, assets: RenderAssets, W: number, H: number) {
+  const unit = Math.min(W, H);
+  const m = unit * 0.05;
+  const tall = H / W > 1.5;
+  const y = heading(ctx, theme, design, W, tall ? H * 0.1 : m * 1.2, m, unit, 0.08);
+  const products = assets.products.slice(0, 6);
+  const n = Math.max(1, products.length);
+  const footer = unit * 0.11;
+  const gap = unit * 0.015;
+  const w = (W - m * 2 - gap * (n - 1)) / n;
+  const labelH = unit * 0.12;
+  const h = Math.max(unit * 0.25, Math.min(H - y - m - footer - labelH, unit * 0.75));
+  const top = y + (H - y - m - footer - labelH - h) / 2;
+  products.forEach((product, index) => {
+    const x = m + index * (w + gap);
+    drawPhoto(ctx, theme, product, x, top, w, h);
+    const size = productSize(product.name);
+    drawText(ctx, { text: size || product.name, x: x + w / 2, y: top + h + unit * 0.02, maxWidth: w, font: (s) => `800 ${s}px ${SANS}`, size: unit * (size ? 0.032 : 0.022), maxLines: 2, color: theme.ink, align: 'center', lineHeight: 1.1 });
+  });
+  drawFooter(ctx, theme, design, assets, W, H, m);
+}
+
+const TEMPLATE_RENDERERS: Record<TemplateId, typeof spotlight> = { spotlight, offer, grid, announcement, beforeAfter, review, steps, thisOrThat, lineup };
 
 export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, assets: RenderAssets): PhotoHitBox[] {
   hitBoxes = [];
@@ -790,6 +966,11 @@ const COPY: Record<StudioLang, {
       spotlight: { eyebrow: `Избор на ${SHOP}`, headline: '', subline: '', badge: '' },
       offer: { eyebrow: 'Понуда', headline: 'Специјална понуда', subline: 'Само оваа недела или до истекување на залихите.', badge: '-20%' },
       grid: { eyebrow: SHOP, headline: 'Омилени производи', subline: '', badge: '' },
+      beforeAfter: { eyebrow: 'Резултати', headline: 'Пред и потоа', subline: '', badge: '' },
+      review: { eyebrow: 'Што велат нашите купувачи', headline: '„Залепете ги зборовите на купувачот тука.“', subline: '— Име на купувачот', badge: '★★★★★' },
+      steps: { eyebrow: 'Совет', headline: 'Како да го користите', subline: 'Нанесете на влажна коса\nМасирајте 2 минути\nИсплакнете со млака вода', badge: '' },
+      thisOrThat: { eyebrow: 'Анкета', headline: 'Кој е ваш избор?', subline: '', badge: '' },
+      lineup: { eyebrow: SHOP, headline: 'Сите големини', subline: '', badge: '' },
       announcement: { eyebrow: SHOP, headline: 'Бесплатна достава', subline: `За сите нарачки од ${FREE_FROM} ден. низ цела Македонија.`, badge: HOST },
     },
     quick: [{ label: 'Ново', badge: 'НОВО' }, { label: '-10%', badge: '-10%' }, { label: '-20%', badge: '-20%' }, { label: '1+1', badge: '1+1' }, { label: 'Хит', badge: 'ХИТ' }],
@@ -799,6 +980,11 @@ const COPY: Record<StudioLang, {
       spotlight: { eyebrow: `Zgjedhja e ${SHOP}`, headline: '', subline: '', badge: '' },
       offer: { eyebrow: 'Ofertë', headline: 'Ofertë speciale', subline: 'Vetëm këtë javë ose deri në mbarim të stokut.', badge: '-20%' },
       grid: { eyebrow: SHOP, headline: 'Produktet e preferuara', subline: '', badge: '' },
+      beforeAfter: { eyebrow: 'Rezultate', headline: 'Para dhe pas', subline: '', badge: '' },
+      review: { eyebrow: 'Çfarë thonë klientët tanë', headline: '“Ngjitni fjalët e klientit këtu.”', subline: '— Emri i klientit', badge: '★★★★★' },
+      steps: { eyebrow: 'Këshillë', headline: 'Si ta përdorni', subline: 'Aplikoni në flokë të lagur\nMasazhoni 2 minuta\nShpëlajeni me ujë të vakët', badge: '' },
+      thisOrThat: { eyebrow: 'Sondazh', headline: 'Cila është zgjedhja juaj?', subline: '', badge: '' },
+      lineup: { eyebrow: SHOP, headline: 'Të gjitha madhësitë', subline: '', badge: '' },
       announcement: { eyebrow: SHOP, headline: 'Dërgesë falas', subline: `Për të gjitha porositë nga ${FREE_FROM} den. në gjithë Maqedoninë.`, badge: HOST },
     },
     quick: [{ label: 'E re', badge: 'E RE' }, { label: '-10%', badge: '-10%' }, { label: '-20%', badge: '-20%' }, { label: '1+1', badge: '1+1' }, { label: 'Hit', badge: 'HIT' }],
@@ -808,6 +994,11 @@ const COPY: Record<StudioLang, {
       spotlight: { eyebrow: `${SHOP} picks`, headline: '', subline: '', badge: '' },
       offer: { eyebrow: 'Offer', headline: 'Special offer', subline: 'This week only, or while stocks last.', badge: '-20%' },
       grid: { eyebrow: SHOP, headline: 'Our favourites', subline: '', badge: '' },
+      beforeAfter: { eyebrow: 'Results', headline: 'Before & after', subline: '', badge: '' },
+      review: { eyebrow: 'What our customers say', headline: '“Paste the customer’s words here.”', subline: '— Customer name', badge: '★★★★★' },
+      steps: { eyebrow: 'Tip', headline: 'How to use it', subline: 'Apply to damp hair\nMassage for 2 minutes\nRinse with lukewarm water', badge: '' },
+      thisOrThat: { eyebrow: 'Poll', headline: 'Which one is yours?', subline: '', badge: '' },
+      lineup: { eyebrow: SHOP, headline: 'Every size', subline: '', badge: '' },
       announcement: { eyebrow: SHOP, headline: 'Free delivery', subline: `On every order from ${FREE_SHIPPING_THRESHOLD.toLocaleString('en-US')} MKD across North Macedonia.`, badge: HOST },
     },
     quick: [{ label: 'New', badge: 'NEW' }, { label: '-10%', badge: '-10%' }, { label: '-20%', badge: '-20%' }, { label: '1+1', badge: '1+1' }, { label: 'Best seller', badge: 'HIT' }],
