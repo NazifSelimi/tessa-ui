@@ -112,6 +112,7 @@ interface Draft {
   products: {
     id: string; photoIndex: number; scale?: number; offsetX?: number; offsetY?: number; crop?: PhotoCrop | null;
     cutout?: boolean; tolerance?: number; erase?: { x: number; y: number }[]; shadow?: boolean;
+    rotate?: number; flip?: boolean; brightness?: number; contrast?: number; saturation?: number;
   }[];
   social?: SocialState;
   thumbnail: string;
@@ -222,6 +223,8 @@ export default function AdminPostStudioPage() {
   const [erasingId, setErasingId] = useState<string | null>(null);
   /** Selected text / sticker / shape on the preview. */
   const [selectedEl, setSelectedEl] = useState<string | null>(null);
+  /** Product photo clicked on the preview; its Image panel is open. */
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [renderVersion, setRenderVersion] = useState(0);
   /** Where the selected item is on the image, for its dashed outline. */
   const [selectionBox, setSelectionBox] = useState<PhotoHitBox | null>(null);
@@ -300,7 +303,7 @@ export default function AdminPostStudioPage() {
       : product)));
   };
 
-  const adjustProduct = useCallback((id: string, change: Partial<Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop' | 'cutout' | 'tolerance' | 'erase' | 'shadow'>>) => {
+  const adjustProduct = useCallback((id: string, change: Partial<Omit<StudioProduct, 'id'>>) => {
     setProducts((current) => current.map((product) => (product.id === id ? { ...product, ...change } : product)));
   }, []);
 
@@ -344,8 +347,9 @@ export default function AdminPostStudioPage() {
   };
 
   useEffect(() => {
-    setSelectionBox(selectedEl ? hitBoxesRef.current.find((item) => item.id === `el:${selectedEl}`) ?? null : null);
-  }, [selectedEl, renderVersion]);
+    const id = selectedEl ? `el:${selectedEl}` : selectedImage;
+    setSelectionBox(id ? hitBoxesRef.current.find((item) => item.id === id) ?? null : null);
+  }, [selectedEl, selectedImage, renderVersion]);
 
   /* ------------------------------------------------------------ undo / redo */
 
@@ -400,6 +404,10 @@ export default function AdminPostStudioPage() {
       } else if (mod && key === 'y') {
         event.preventDefault();
         redo();
+      } else if (event.key === 'Escape') {
+        setSelectedEl(null);
+        setSelectedImage(null);
+        setErasingId(null);
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && selectedEl) {
         event.preventDefault();
         removeElement(selectedEl);
@@ -443,6 +451,7 @@ export default function AdminPostStudioPage() {
       event.preventDefault();
       try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* optional */ }
       setSelectedEl(element.id);
+      setSelectedImage(null);
       pointer.current = {
         id: box.id, resize: event.shiftKey, startX: point.x, startY: point.y, scale: 1, offsetX: 0, offsetY: 0,
         spaceW: box.spaceW, spaceH: box.spaceH, element: { x: element.x, y: element.y, size: element.size },
@@ -451,6 +460,7 @@ export default function AdminPostStudioPage() {
     }
     setSelectedEl(null);
     const product = box && products.find((item) => item.id === box.id);
+    setSelectedImage(product ? product.id : null);
     if (!box || !product) return;
     event.preventDefault();
     try {
@@ -966,8 +976,8 @@ export default function AdminPostStudioPage() {
       id: `${Date.now()}`,
       savedAt: new Date().toISOString(),
       design,
-      products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow }) => ({
-        id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow,
+      products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow, rotate, flip, brightness, contrast, saturation }) => ({
+        id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow, rotate, flip, brightness, contrast, saturation,
       })),
       social,
       thumbnail,
@@ -1003,6 +1013,11 @@ export default function AdminPostStudioPage() {
           tolerance: saved.tolerance ?? DEFAULT_CUTOUT.tolerance,
           erase: saved.erase ?? [],
           shadow: saved.shadow ?? true,
+          rotate: saved.rotate ?? 0,
+          flip: saved.flip ?? false,
+          brightness: saved.brightness ?? 100,
+          contrast: saved.contrast ?? 100,
+          saturation: saved.saturation ?? 100,
         };
       } catch {
         return null;
@@ -1593,6 +1608,147 @@ export default function AdminPostStudioPage() {
                 </Space>
               </div>
             </Card>
+
+            {(() => {
+              const image = products.find((item) => item.id === selectedImage);
+              if (!image) {
+                return products.length > 0 ? (
+                  <Text type="secondary" style={{ fontSize: 12 }}>Tip: click a product photo on the preview to edit that image (background, crop, adjust, position, photo).</Text>
+                ) : null;
+              }
+              const box = selectionBox;
+              const align = (where: 'left' | 'center' | 'right') => {
+                if (!box) return;
+                const room = (box.spaceW - box.w) / 2 / Math.max(1, box.spaceW);
+                adjustProduct(image.id, { offsetX: where === 'left' ? -room : where === 'right' ? room : 0 });
+              };
+              const moveProduct = (direction: -1 | 1) => setProducts((current) => {
+                const list = [...current];
+                const index = list.findIndex((item) => item.id === image.id);
+                const target = index + direction;
+                if (index < 0 || target < 0 || target >= list.length) return current;
+                [list[index], list[target]] = [list[target], list[index]];
+                return list;
+              });
+              const slider = (label: string, key: 'brightness' | 'contrast' | 'saturation') => (
+                <div className="post-studio__adjust">
+                  <Text type="secondary" style={{ fontSize: 12, width: 74 }}>{label}</Text>
+                  <Slider min={40} max={160} value={image[key]} onChange={(value) => adjustProduct(image.id, { [key]: value })} style={{ flex: 1, margin: '0 6px' }} />
+                </div>
+              );
+              return (
+                <Card
+                  size="small"
+                  className="post-studio__image-panel"
+                  title={<Space><PictureOutlined />Image: <Text ellipsis style={{ maxWidth: 260 }}>{image.name}</Text></Space>}
+                  extra={<Button size="small" type="text" onClick={() => setSelectedImage(null)}>Done (Esc)</Button>}
+                >
+                  <Tabs
+                    size="small"
+                    items={[
+                      {
+                        key: 'background',
+                        label: 'Background',
+                        children: (
+                          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                            <Space size={6}>
+                              <Switch size="small" checked={image.cutout} onChange={(checked) => adjustProduct(image.id, { cutout: checked })} />
+                              <Text>Remove background</Text>
+                            </Space>
+                            {image.cutout && (
+                              <>
+                                <div className="post-studio__adjust">
+                                  <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Tolerance</Text>
+                                  <Slider key={`${image.id}-${image.tolerance}`} min={0} max={100} defaultValue={image.tolerance} onChangeComplete={(value) => adjustProduct(image.id, { tolerance: value })} style={{ flex: 1, margin: '0 6px' }} />
+                                </div>
+                                <Space size={6} wrap>
+                                  <Button size="small" icon={<HighlightOutlined />} type={erasingId === image.id ? 'primary' : 'default'} onClick={() => setErasingId(erasingId === image.id ? null : image.id)}>
+                                    {erasingId === image.id ? 'Erasing: click the preview' : 'Magic eraser'}
+                                  </Button>
+                                  <Button size="small" icon={<UndoOutlined />} disabled={!image.erase.length} onClick={() => adjustProduct(image.id, { erase: image.erase.slice(0, -1) })}>Undo spot</Button>
+                                  <Button size="small" icon={<ClearOutlined />} disabled={!image.erase.length} onClick={() => adjustProduct(image.id, { erase: [] })}>Restore</Button>
+                                  <Space size={4}>
+                                    <Switch size="small" checked={image.shadow} onChange={(checked) => adjustProduct(image.id, { shadow: checked })} />
+                                    <Text style={{ fontSize: 12 }}>Shadow</Text>
+                                  </Space>
+                                </Space>
+                                <Button size="small" icon={<DownloadOutlined />} onClick={() => downloadCutout(image)}>Download cutout PNG</Button>
+                              </>
+                            )}
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'crop',
+                        label: 'Crop',
+                        children: (
+                          <Space wrap>
+                            <Button icon={<ScissorOutlined />} type={image.crop ? 'primary' : 'default'} onClick={() => setCropping(image.id)}>{image.crop ? 'Change crop' : 'Crop photo'}</Button>
+                            <Button disabled={!image.crop} onClick={() => adjustProduct(image.id, { crop: null })}>Remove crop</Button>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'adjust',
+                        label: 'Adjust',
+                        children: (
+                          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                            <div className="post-studio__adjust">
+                              <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Size</Text>
+                              <Slider min={20} max={300} value={Math.round(image.scale * 100)} onChange={(value) => adjustProduct(image.id, { scale: value / 100 })} style={{ flex: 1, margin: '0 6px' }} />
+                            </div>
+                            <div className="post-studio__adjust">
+                              <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Rotate</Text>
+                              <Slider min={-180} max={180} value={image.rotate} onChange={(value) => adjustProduct(image.id, { rotate: value })} style={{ flex: 1, margin: '0 6px' }} />
+                            </div>
+                            {slider('Brightness', 'brightness')}
+                            {slider('Contrast', 'contrast')}
+                            {slider('Saturation', 'saturation')}
+                            <Space size={6} wrap>
+                              <Button size="small" icon={<SwapOutlined />} onClick={() => adjustProduct(image.id, { flip: !image.flip })}>Flip</Button>
+                              <Button size="small" onClick={() => adjustProduct(image.id, { rotate: 0, flip: false, brightness: 100, contrast: 100, saturation: 100 })}>Reset adjustments</Button>
+                            </Space>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'position',
+                        label: 'Position',
+                        children: (
+                          <Space size={6} wrap>
+                            <Button size="small" onClick={() => align('left')}>Left</Button>
+                            <Button size="small" onClick={() => align('center')}>Centre</Button>
+                            <Button size="small" onClick={() => align('right')}>Right</Button>
+                            <Button size="small" icon={<ArrowUpOutlined />} disabled={products.length < 2} onClick={() => moveProduct(1)}>Forward</Button>
+                            <Button size="small" icon={<ArrowDownOutlined />} disabled={products.length < 2} onClick={() => moveProduct(-1)}>Back</Button>
+                            <Button size="small" icon={<UndoOutlined />} onClick={() => adjustProduct(image.id, { ...DEFAULT_ADJUST })}>Reset</Button>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'photo',
+                        label: `Photo (${image.photos.length})`,
+                        children: (
+                          <div className="post-studio__photo-pick">
+                            {image.photos.map((url, index) => (
+                              <button
+                                key={url}
+                                type="button"
+                                className={index === image.photoIndex ? 'is-active' : ''}
+                                onClick={() => adjustProduct(image.id, { photoIndex: index, crop: null, erase: [] })}
+                                aria-label={`Use photo ${index + 1}`}
+                              >
+                                <img src={url} alt="" />
+                              </button>
+                            ))}
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
+                </Card>
+              );
+            })()}
 
             <Card
               size="small"

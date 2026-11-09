@@ -77,11 +77,17 @@ export interface StudioProduct {
   erase: { x: number; y: number }[];
   /** Soft shadow under a cut-out product. */
   shadow: boolean;
+  /** Image adjustments: degrees, mirror, and 100 = unchanged for the filters. */
+  rotate: number;
+  flip: boolean;
+  brightness: number;
+  contrast: number;
+  saturation: number;
 }
 
 export interface PhotoCrop { x: number; y: number; w: number; h: number }
 
-export const DEFAULT_ADJUST = { scale: 1, offsetX: 0, offsetY: 0, crop: null } as const;
+export const DEFAULT_ADJUST = { scale: 1, offsetX: 0, offsetY: 0, crop: null, rotate: 0, flip: false, brightness: 100, contrast: 100, saturation: 100 } as const;
 export const DEFAULT_CUTOUT = { cutout: false, tolerance: 20, erase: [] as { x: number; y: number }[], shadow: true };
 
 /** A loaded photo, or its cut-out (a canvas with a transparent background). */
@@ -353,7 +359,7 @@ function drawContain(
   image: PhotoSource,
   x: number, y: number, w: number, h: number,
   mode: 'multiply' | 'normal' = 'normal',
-  adjust?: Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop'> & { id?: string },
+  adjust?: Pick<StudioProduct, 'scale' | 'offsetX' | 'offsetY' | 'crop'> & Partial<Pick<StudioProduct, 'rotate' | 'flip' | 'brightness' | 'contrast' | 'saturation'>> & { id?: string },
   clip?: { x: number; y: number; w: number; h: number; r: number },
   shadow = false,
 ) {
@@ -384,7 +390,21 @@ function drawContain(
     ctx.shadowBlur = Math.max(6, dh * 0.05);
     ctx.shadowOffsetY = Math.max(3, dh * 0.025);
   }
-  ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+  const rotate = adjust?.rotate ?? 0;
+  const flip = adjust?.flip ?? false;
+  const b = adjust?.brightness ?? 100;
+  const c = adjust?.contrast ?? 100;
+  const sat = adjust?.saturation ?? 100;
+  if (b !== 100 || c !== 100 || sat !== 100) ctx.filter = `brightness(${b}%) contrast(${c}%) saturate(${sat}%)`;
+  if (rotate || flip) {
+    // Rotate / mirror around the photo's centre.
+    ctx.translate(dx + dw / 2, dy + dh / 2);
+    if (rotate) ctx.rotate((rotate * Math.PI) / 180);
+    if (flip) ctx.scale(-1, 1);
+    ctx.drawImage(image, sx, sy, sw, sh, -dw / 2, -dh / 2, dw, dh);
+  } else {
+    ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
   ctx.restore();
   if (adjust?.id) {
     hitBoxes.push({
