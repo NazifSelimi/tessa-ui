@@ -8,7 +8,8 @@
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/constants/shipping';
 import type { Tone } from './caption';
 import { shopName, siteHost } from './caption';
-import type { FormatId, PriceMode, StudioLang, TemplateId, ThemeId } from './render';
+import type { InfoMode } from './info';
+import type { FormatId, StudioLang, TemplateId, ThemeId } from './render';
 
 export type IdeaGroup = 'sell' | 'seasonal' | 'engage' | 'info';
 
@@ -33,7 +34,8 @@ export interface PostIdea {
   tone: Tone;
   /** Story ideas want 9:16; others follow the chosen network. */
   format?: FormatId;
-  priceMode?: PriceMode;
+  /** What the image shows under the product (default: key benefits). */
+  info?: InfoMode;
   /** Shows a reminder to pick products when none are chosen. */
   wantsProducts?: boolean;
   /** Headline when no product is chosen yet (for ideas whose headline is {product}). */
@@ -63,7 +65,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'weekend-sale', group: 'sell', emoji: '🔥', label: 'Weekend sale', hint: 'Discount until Sunday',
-    template: 'offer', theme: 'rose', tone: 'sale', wantsProducts: true,
+    template: 'offer', theme: 'rose', info: 'price', tone: 'sale', wantsProducts: true,
     text: {
       mk: { eyebrow: 'Викенд акција', headline: 'Само овој викенд', subline: 'Попуст на избрани производи до недела навечер.', badge: '-20%', tags: ['акција', 'попуст', 'викенд'] },
       sq: { eyebrow: 'Aksion fundjave', headline: 'Vetëm këtë fundjavë', subline: 'Zbritje në produkte të zgjedhura deri të dielën në mbrëmje.', badge: '-20%', tags: ['aksion', 'zbritje', 'fundjave'] },
@@ -92,7 +94,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'bundle', group: 'sell', emoji: '🎁', label: 'Bundle / 1+1', hint: 'Products that go together',
-    template: 'offer', theme: 'noir', tone: 'sale', wantsProducts: true,
+    template: 'offer', theme: 'noir', info: 'price', tone: 'sale', wantsProducts: true,
     text: {
       mk: { eyebrow: 'Комплет', headline: 'Подобро заедно', subline: 'Земете ги заедно и заштедете.', badge: '1+1', tags: ['комплет', 'подарок'] },
       sq: { eyebrow: 'Set', headline: 'Më mirë bashkë', subline: 'Merrini bashkë dhe kurseni.', badge: '1+1', tags: ['set', 'dhuratë'] },
@@ -101,7 +103,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'free-delivery', group: 'info', emoji: '🚚', label: 'Free delivery', hint: 'Remind people of the free-delivery amount',
-    template: 'announcement', theme: 'blush', tone: 'friendly', priceMode: 'none',
+    template: 'announcement', theme: 'blush', tone: 'friendly', info: 'none',
     text: {
       mk: { eyebrow: '{shop}', headline: 'Бесплатна достава', subline: 'За сите нарачки од {free} ден. низ цела Македонија.', badge: '{site}', tags: ['бесплатнадостава', 'достава'] },
       sq: { eyebrow: '{shop}', headline: 'Dërgesë falas', subline: 'Për të gjitha porositë nga {free} den. në gjithë Maqedoninë.', badge: '{site}', tags: ['dërgesëFalas'] },
@@ -110,7 +112,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'tip', group: 'info', emoji: '💡', label: 'Tip of the day', hint: 'Teach something useful (edit the text)',
-    template: 'announcement', theme: 'cream', tone: 'tip', priceMode: 'none',
+    template: 'announcement', theme: 'cream', tone: 'tip', info: 'none',
     text: {
       mk: { eyebrow: 'Совет на денот', headline: 'Еден мал совет што прави голема разлика', subline: 'Напишете го вашиот совет тука: како, кога и колку да се користи.', badge: '', tags: ['совет', 'совети'] },
       sq: { eyebrow: 'Këshilla e ditës', headline: 'Një këshillë e vogël që bën diferencë të madhe', subline: 'Shkruani këshillën tuaj këtu: si, kur dhe sa të përdoret.', badge: '', tags: ['këshilla', 'këshillaTëDitës'] },
@@ -119,7 +121,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'thank-you', group: 'engage', emoji: '💐', label: 'Thank you', hint: 'Thank customers and followers',
-    template: 'announcement', theme: 'rose', tone: 'friendly', priceMode: 'none',
+    template: 'announcement', theme: 'rose', tone: 'friendly', info: 'none',
     text: {
       mk: { eyebrow: '{shop}', headline: 'Ви благодариме!', subline: 'Што сте дел од нашата приказна. Без вас ова не би постоело.', badge: '', tags: ['благодарност', 'хвала'] },
       sq: { eyebrow: '{shop}', headline: 'Ju faleminderit!', subline: 'Që jeni pjesë e historisë sonë. Pa ju kjo nuk do të ekzistonte.', badge: '', tags: ['faleminderit'] },
@@ -128,7 +130,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'review', group: 'engage', emoji: '💬', label: 'Customer review', hint: 'Paste a real customer’s words',
-    template: 'announcement', theme: 'white', tone: 'friendly', priceMode: 'none',
+    template: 'announcement', theme: 'white', tone: 'friendly', info: 'none',
     text: {
       mk: { eyebrow: 'Што велат нашите купувачи', headline: '„Залепете ги зборовите на купувачот тука.“', subline: '— Име на купувачот', badge: '★★★★★', tags: ['рецензија', 'задоволникупувачи'] },
       sq: { eyebrow: 'Çfarë thonë klientët tanë', headline: '“Ngjitni fjalët e klientit këtu.”', subline: '— Emri i klientit', badge: '★★★★★', tags: ['vlerësim', 'klientëTëKënaqur'] },
@@ -155,7 +157,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'black-friday', group: 'seasonal', emoji: '🖤', label: 'Black Friday', hint: 'The biggest sale of the year',
-    template: 'offer', theme: 'noir', tone: 'sale', wantsProducts: true, dates: (year) => [blackFriday(year)],
+    template: 'offer', theme: 'noir', info: 'price', tone: 'sale', wantsProducts: true, dates: (year) => [blackFriday(year)],
     text: {
       mk: { eyebrow: 'Black Friday', headline: 'Најголемите попусти во годината', subline: 'Само до полноќ. Количините се ограничени.', badge: '-30%', tags: ['blackfriday', 'попуст'] },
       sq: { eyebrow: 'Black Friday', headline: 'Zbritjet më të mëdha të vitit', subline: 'Vetëm deri në mesnatë. Sasitë janë të kufizuara.', badge: '-30%', tags: ['blackfriday', 'zbritje'] },
@@ -164,7 +166,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'christmas', group: 'seasonal', emoji: '🎄', label: 'Christmas', hint: '25 December and 7 January',
-    template: 'announcement', theme: 'noir', tone: 'premium', priceMode: 'none',
+    template: 'announcement', theme: 'noir', tone: 'premium', info: 'none',
     dates: (year) => [new Date(year, 11, 25), new Date(year, 0, 7)],
     text: {
       mk: { eyebrow: 'Среќни празници', headline: 'Мир, здравје и радост', subline: 'Ви посакуваме топли празници со најмилите. — {shop}', badge: '', tags: ['божиќ', 'празници'] },
@@ -174,7 +176,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'new-year', group: 'seasonal', emoji: '🎆', label: 'New Year', hint: 'Greeting for 1 January',
-    template: 'announcement', theme: 'noir', tone: 'premium', priceMode: 'none',
+    template: 'announcement', theme: 'noir', tone: 'premium', info: 'none',
     dates: (year) => [new Date(year, 0, 1)],
     text: {
       mk: { eyebrow: 'Среќна Нова година', headline: 'Нека {year} биде ваша година', subline: 'Ви благодариме што бевте со нас. — {shop}', badge: '{year}', tags: ['новагодина', 'среќнановагодина'] },
@@ -193,7 +195,7 @@ export const IDEAS: PostIdea[] = [
   },
   {
     id: 'holiday-greeting', group: 'seasonal', emoji: '🕊️', label: 'Holiday greeting', hint: 'Easter, Bajram or any holiday (edit the name)',
-    template: 'announcement', theme: 'blush', tone: 'friendly', priceMode: 'none',
+    template: 'announcement', theme: 'blush', tone: 'friendly', info: 'none',
     text: {
       mk: { eyebrow: 'Честитка', headline: 'Среќен празник!', subline: 'Ви посакуваме мир, здравје и радост со најмилите. — {shop}', badge: '', tags: ['празник', 'честитки'] },
       sq: { eyebrow: 'Urim', headline: 'Gëzuar festën!', subline: 'Ju urojmë paqe, shëndet dhe gëzim me më të dashurit. — {shop}', badge: '', tags: ['urime', 'festa'] },

@@ -8,6 +8,8 @@
  */
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/constants/shipping';
 import { site } from '@/shared/config/site';
+import { getBrandKit } from './brand';
+import { productSize, promoText, suggestBenefits } from './info';
 import { productPrice, type StudioDesign, type StudioLang, type StudioProduct } from './render';
 
 export type Platform = 'instagram' | 'facebook';
@@ -57,8 +59,8 @@ export interface CaptionOptions {
 }
 
 /** Web address without https:// — e.g. "tessa.mk". */
-export const siteHost = (): string => site.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-export const shopName = (): string => site.name;
+export const siteHost = (): string => getBrandKit().host;
+export const shopName = (): string => getBrandKit().name;
 
 const FREE_FROM = FREE_SHIPPING_THRESHOLD.toLocaleString('de-DE');
 
@@ -145,6 +147,7 @@ export function suggestHashtags(design: StudioDesign, products: StudioProduct[],
     toHashtag(shopName().split(/\s+/)[0] ?? ''),
     toHashtag(shopName()),
     ...products.map((product) => toHashtag(product.brand)),
+    ...(products[0] ? suggestBenefits(products[0].description || products[0].name, design.lang, 2).map(toHashtag) : []),
     ...products.map((product) => {
       const key = product.category.toLowerCase();
       return CATEGORY_TAGS[key]?.[design.lang] ?? toHashtag(product.category);
@@ -174,17 +177,29 @@ export function buildCaption(design: StudioDesign, products: StudioProduct[], op
   parts.push(hook);
   if (design.subline.trim()) parts.push(design.subline.trim());
 
+  // Prices only appear when "Price" is the chosen info line.
   const lines = products.map((product) => {
-    const price = productPrice(product, design);
-    const line = `${options.platform === 'instagram' ? '▪️' : '👉'} ${product.name}${price ? ` — ${localPrice(price, design.lang)}` : ''}`;
+    const raw = design.info === 'price' ? productPrice(product, design) : design.info === 'size' ? productSize(product.name) : null;
+    const price = raw && design.info === 'price' ? raw : null;
+    const size = design.info === 'size' ? raw : null;
+    const line = `${options.platform === 'instagram' ? '▪️' : '👉'} ${product.name}${price ? ` — ${localPrice(price, design.lang)}` : ''}${size && !product.name.toLowerCase().includes(size.replace(' ', '')) ? ` (${size})` : ''}`;
     return options.platform === 'facebook' ? `${line}\n${site.url.replace(/\/$/, '')}/product/${product.id}` : line;
   });
   if (lines.length) parts.push(lines.join(options.platform === 'facebook' ? '\n\n' : '\n'));
 
+  if (design.info === 'benefits' && products[0]) {
+    const benefits = design.benefits.length ? design.benefits : suggestBenefits(products[0].description || products[0].name, design.lang);
+    parts.push(benefits.map((item) => `✓ ${item}`).join('\n'));
+  }
+  if (design.info === 'promo' && design.promoCode.trim()) parts.push(`🎟️ ${promoText(design.promoCode, design.lang)}`);
+  if (design.info === 'cta' && design.ctaText.trim()) parts.push(`👉 ${design.ctaText.trim()}`);
+  if (design.info === 'badge' && design.badgeText.trim()) parts.push(`⭐ ${design.badgeText.trim()}`);
+  const showDelivery = design.info === 'price' || design.info === 'promo';
+
   if (options.platform === 'instagram') {
-    parts.push([cta.instagram, design.priceMode !== 'none' ? cta.delivery : '', options.tone === 'tip' ? cta.save : ''].filter(Boolean).join('\n'));
+    parts.push([cta.instagram, showDelivery ? cta.delivery : '', options.tone === 'tip' ? cta.save : ''].filter(Boolean).join('\n'));
   } else {
-    parts.push([fill(cta.facebook, values), design.priceMode !== 'none' ? cta.delivery : ''].filter(Boolean).join('\n'));
+    parts.push([fill(cta.facebook, values), showDelivery ? cta.delivery : ''].filter(Boolean).join('\n'));
   }
 
   const limit = options.platform === 'instagram' ? INSTAGRAM_LIMITS.hashtags : 3;

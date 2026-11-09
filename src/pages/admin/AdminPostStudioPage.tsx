@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import CropModal from '@/features/studio/CropModal';
 import { cutoutPng, getCutout } from '@/features/studio/cutout';
+import { INFO_OPTIONS, badgeChoices, benefitChoices, ctaChoices, productSize, suggestBenefits, type InfoMode } from '@/features/studio/info';
 import '@/features/studio/studio.css';
 import PostMockup from '@/features/studio/PostMockup';
 import {
@@ -150,6 +151,7 @@ function toStudioProduct(product: Product): StudioProduct {
     stylistPrice: Number(product.stylistPrice ?? 0),
     photos: photoUrls(product),
     photoIndex: 0,
+    description: [product.name, nameOf(product.category), product.description ?? '', ...Object.values(product.translations ?? {})].join(' '),
     ...DEFAULT_ADJUST,
     ...DEFAULT_CUTOUT,
     erase: [],
@@ -170,6 +172,11 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   lang,
   ...templateDefaults('spotlight', lang),
   cta: siteHost(),
+  info: 'benefits',
+  benefits: [],
+  promoCode: '',
+  ctaText: ctaChoices(lang)[0],
+  badgeText: badgeChoices(lang)[0],
   priceMode: 'retail',
   customPrice: '',
   oldPrice: '',
@@ -251,6 +258,7 @@ export default function AdminPostStudioPage() {
     const limited = ids.slice(0, template.maxProducts);
     if (ids.length > template.maxProducts) message.info(`${template.label} shows up to ${template.maxProducts} product${template.maxProducts > 1 ? 's' : ''}.`);
     const isFirstForSpotlight = design.template === 'spotlight' && products.length === 0 && limited.length === 1;
+    if (design.benefits.length) update('benefits', []); // new products → suggest their own benefits
     selectProducts(limited).then((chosen) => {
       if (isFirstForSpotlight && chosen[0] && !design.headline.trim()) {
         setDesign((current) => ({ ...current, headline: chosen[0].name, subline: chosen[0].brand }));
@@ -384,7 +392,7 @@ export default function AdminPostStudioPage() {
       ...defaults,
       headline: next === 'spotlight' && first ? first.name : defaults.headline,
       subline: next === 'spotlight' && first ? first.brand : defaults.subline,
-      priceMode: next === 'announcement' ? 'none' : current.priceMode === 'none' ? 'retail' : current.priceMode,
+      info: next === 'announcement' ? 'none' : current.info === 'none' ? 'benefits' : current.info,
     }));
     if (products.length > meta.maxProducts) setProducts(products.slice(0, meta.maxProducts));
     setCaptionEdited(null);
@@ -397,6 +405,9 @@ export default function AdminPostStudioPage() {
       setDesign((current) => ({
         ...current,
         lang,
+        ctaText: ctaChoices(lang)[Math.max(0, ctaChoices(current.lang).indexOf(current.ctaText))] ?? current.ctaText,
+        badgeText: badgeChoices(lang)[Math.max(0, badgeChoices(current.lang).indexOf(current.badgeText))] ?? current.badgeText,
+        benefits: [],
         eyebrow: text.eyebrow,
         headline: text.headline || current.headline,
         subline: text.subline,
@@ -411,6 +422,9 @@ export default function AdminPostStudioPage() {
     setDesign((current) => ({
       ...current,
       lang,
+      ctaText: ctaChoices(lang)[Math.max(0, ctaChoices(current.lang).indexOf(current.ctaText))] ?? current.ctaText,
+      badgeText: badgeChoices(lang)[Math.max(0, badgeChoices(current.lang).indexOf(current.badgeText))] ?? current.badgeText,
+      benefits: [],
       eyebrow: defaults.eyebrow,
       headline: current.template === 'spotlight' && first ? current.headline : defaults.headline,
       subline: current.template === 'spotlight' && first ? current.subline : defaults.subline,
@@ -434,7 +448,8 @@ export default function AdminPostStudioPage() {
       headline: text.headline,
       subline: text.subline,
       badge: text.badge,
-      priceMode: idea.priceMode ?? (current.priceMode === 'none' ? 'retail' : current.priceMode),
+      info: idea.info ?? 'benefits',
+      benefits: [],
     }));
     if (kept.length !== products.length) setProducts(kept);
     setSocial((current) => ({ ...current, tone: idea.tone, ideaId: idea.id, hashtags: null, variant: 0 }));
@@ -642,7 +657,9 @@ export default function AdminPostStudioPage() {
   };
 
   const openDraft = async (draft: Draft) => {
-    setDesign({ ...initialDesign(draft.design.lang), ...draft.design });
+    // Drafts from before the info line showed prices unless the price was off.
+    const legacyInfo: InfoMode = draft.design.priceMode === 'none' ? 'none' : 'price';
+    setDesign({ ...initialDesign(draft.design.lang), ...draft.design, info: draft.design.info ?? legacyInfo });
     setSocial({ ...initialSocial(), ...(draft.social ?? {}) });
     setCaptionEdited(null);
     setProducts([]);
@@ -955,19 +972,64 @@ export default function AdminPostStudioPage() {
                 </div>
               )}
               <div style={{ marginTop: 12 }}>
-                <Text strong className="post-studio__label">Price on the image</Text>
-                <Segmented block size="small" value={design.priceMode} onChange={(value) => update('priceMode', value as PriceMode)} options={priceOptions} />
-                {design.priceMode === 'custom' && (
-                  <Input style={{ marginTop: 8 }} value={design.customPrice} onChange={(event) => update('customPrice', event.target.value)} placeholder="e.g. 790 MKD" />
-                )}
-                {design.priceMode !== 'none' && (
-                  <Input
-                    style={{ marginTop: 8 }}
-                    value={design.oldPrice}
-                    onChange={(event) => update('oldPrice', event.target.value)}
-                    placeholder="Old price, shown crossed out (optional)"
-                    addonBefore="Was"
+                <Text strong className="post-studio__label">What the image shows under the product</Text>
+                <Select
+                  value={design.info}
+                  onChange={(value: InfoMode) => update('info', value)}
+                  options={INFO_OPTIONS}
+                  style={{ width: '100%' }}
+                />
+                {design.info === 'benefits' && (
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%', marginTop: 8 }}
+                    value={design.benefits.length ? design.benefits : (products[0] ? suggestBenefits(products[0].description || products[0].name, design.lang) : [])}
+                    onChange={(value: string[]) => update('benefits', value.slice(0, 3))}
+                    options={benefitChoices(design.lang).map((item) => ({ value: item, label: item }))}
+                    placeholder="Pick or type up to 3 benefits"
+                    maxCount={3}
                   />
+                )}
+                {design.info === 'size' && (
+                  <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
+                    Read from the product name{products[0] ? `: ${productSize(products[0].name) || 'no size in the name'}` : ''}.
+                  </Text>
+                )}
+                {design.info === 'promo' && (
+                  <Input style={{ marginTop: 8 }} value={design.promoCode} onChange={(event) => update('promoCode', event.target.value)} placeholder="e.g. SPRING10" addonBefore="Code" maxLength={24} />
+                )}
+                {design.info === 'cta' && (
+                  <Select
+                    style={{ width: '100%', marginTop: 8 }}
+                    value={design.ctaText}
+                    onChange={(value: string) => update('ctaText', value)}
+                    options={ctaChoices(design.lang).map((item) => ({ value: item, label: item }))}
+                    showSearch
+                    onSearch={(value) => { if (value) update('ctaText', value); }}
+                  />
+                )}
+                {design.info === 'badge' && (
+                  <Select
+                    style={{ width: '100%', marginTop: 8 }}
+                    value={design.badgeText}
+                    onChange={(value: string) => update('badgeText', value)}
+                    options={badgeChoices(design.lang).map((item) => ({ value: item, label: item }))}
+                  />
+                )}
+                {design.info === 'price' && (
+                  <>
+                    <Segmented block size="small" style={{ marginTop: 8 }} value={design.priceMode} onChange={(value) => update('priceMode', value as PriceMode)} options={priceOptions.filter((option) => option.value !== 'none')} />
+                    {design.priceMode === 'custom' && (
+                      <Input style={{ marginTop: 8 }} value={design.customPrice} onChange={(event) => update('customPrice', event.target.value)} placeholder="e.g. 790 MKD" />
+                    )}
+                    <Input
+                      style={{ marginTop: 8 }}
+                      value={design.oldPrice}
+                      onChange={(event) => update('oldPrice', event.target.value)}
+                      placeholder="Old price, shown crossed out (optional)"
+                      addonBefore="Was"
+                    />
+                  </>
                 )}
               </div>
             </Card>

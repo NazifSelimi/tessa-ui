@@ -5,13 +5,14 @@
  */
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/constants/shipping';
-import { site } from '@/shared/config/site';
+import { getBrandKit } from './brand';
+import { productSize, promoText, suggestBenefits, type InfoMode } from './info';
 import { logoSvg } from './logo';
 
 const FREE_FROM = FREE_SHIPPING_THRESHOLD.toLocaleString('de-DE');
 /** Shop name and web address from the site config, so the studio works for any business. */
-const SHOP = site.name;
-const HOST = site.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+const SHOP = getBrandKit().name;
+const HOST = getBrandKit().host;
 
 export type FormatId = 'square' | 'portrait' | 'story' | 'landscape';
 export type TemplateId = 'spotlight' | 'offer' | 'grid' | 'announcement';
@@ -65,6 +66,8 @@ export interface StudioProduct {
   offsetY: number;
   /** Manual crop of the photo (0–1 of its width/height); null = auto-trim white margins. */
   crop: PhotoCrop | null;
+  /** Name, category and description text (all languages), used to suggest benefits. */
+  description: string;
   /** Remove the photo's background (in the browser) so the product sits on the design. */
   cutout: boolean;
   /** 0–100 colour tolerance of the background remover. */
@@ -113,6 +116,13 @@ export interface StudioDesign {
   subline: string;
   badge: string;
   cta: string;
+  /** What the image shows under the product: benefits, size, code, call to action, badge, price or nothing. */
+  info: InfoMode;
+  /** Benefits chosen by the admin; empty = suggested from the product. */
+  benefits: string[];
+  promoCode: string;
+  ctaText: string;
+  badgeText: string;
   priceMode: PriceMode;
   customPrice: string;
   oldPrice: string;
@@ -175,6 +185,26 @@ export function productPrice(product: StudioProduct, design: StudioDesign): stri
     case 'custom': return design.customPrice.trim() || null;
     case 'salon': return product.stylistPrice > 0 ? formatPrice(product.stylistPrice) : null;
     default: return product.price > 0 ? formatPrice(product.price) : null;
+  }
+}
+
+export type InfoLine = { kind: 'pill'; text: string; old: string } | { kind: 'chips'; items: string[] };
+
+/** What to draw under a product for the chosen info mode (null = nothing). */
+export function infoLine(product: StudioProduct | undefined, design: StudioDesign, many = false): InfoLine | null {
+  const pill = (text: string, old = ''): InfoLine | null => (text.trim() ? { kind: 'pill', text: text.trim(), old } : null);
+  switch (design.info) {
+    case 'price': return product ? pill(productPrice(product, design) ?? '', many ? '' : design.oldPrice) : null;
+    case 'size': return product ? pill(productSize(product.name)) : null;
+    case 'promo': return pill(promoText(design.promoCode, design.lang));
+    case 'cta': return pill(design.ctaText);
+    case 'badge': return pill(design.badgeText);
+    case 'benefits': {
+      if (!product) return null;
+      const items = !many && design.benefits.length ? design.benefits : suggestBenefits(product.description || product.name, design.lang, many ? 1 : 3);
+      return items.length ? { kind: 'chips', items } : null;
+    }
+    default: return null;
   }
 }
 
@@ -466,6 +496,45 @@ function drawPrice(
   return y + pillH;
 }
 
+/** Benefit chips in one row (shrinks to fit), or the pill for everything else. Returns the bottom y. */
+function drawInfo(
+  ctx: CanvasRenderingContext2D,
+  theme: StudioTheme,
+  line: InfoLine | null,
+  x: number, y: number, size: number, maxWidth: number,
+  align: 'left' | 'center' = 'left',
+): number {
+  if (!line) return y;
+  if (line.kind === 'pill') return drawPrice(ctx, theme, line.text, line.old, x, y, size, align);
+  let chipSize = size * 0.78;
+  const padX = () => chipSize * 0.75;
+  const gap = () => chipSize * 0.45;
+  const widths = () => {
+    ctx.font = `700 ${chipSize}px ${SANS}`;
+    return line.items.map((item) => ctx.measureText(item).width + padX() * 2);
+  };
+  let list = widths();
+  while (list.reduce((sum, width) => sum + width, 0) + gap() * (list.length - 1) > maxWidth && chipSize > size * 0.4) {
+    chipSize -= 1;
+    list = widths();
+  }
+  const total = list.reduce((sum, width) => sum + width, 0) + gap() * (list.length - 1);
+  let left = align === 'center' ? x - total / 2 : x;
+  const h = chipSize * 2;
+  line.items.forEach((item, index) => {
+    roundRect(ctx, left, y, list[index], h, h / 2);
+    ctx.fillStyle = theme.accent;
+    ctx.fill();
+    ctx.fillStyle = theme.accentInk;
+    ctx.font = `700 ${chipSize}px ${SANS}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item, left + padX(), y + h / 2 + chipSize * 0.04);
+    left += list[index] + gap();
+  });
+  return y + h;
+}
+
 function drawFooter(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioDesign, assets: RenderAssets, W: number, H: number, m: number) {
   const unit = Math.min(W, H);
   const baseline = H - m;
@@ -538,7 +607,7 @@ function spotlight(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: St
     y = drawText(ctx, { text: design.eyebrow.toUpperCase(), x: m, y, maxWidth: textW, font: (s) => `800 ${s}px ${SANS}`, size: unit * 0.04, maxLines: 1, color: theme.accent === '#ffffff' ? theme.muted : theme.accent, letterSpacing: 3 }) + unit * 0.03;
     y = drawText(ctx, { text: design.headline, x: m, y, maxWidth: textW, font: (s) => `600 ${s}px ${SERIF}`, size: unit * 0.12, maxLines: 3, color: theme.ink, lineHeight: 1.05 }) + unit * 0.03;
     y = drawText(ctx, { text: design.subline, x: m, y, maxWidth: textW, font: (s) => `500 ${s}px ${SANS}`, size: unit * 0.045, maxLines: 2, color: theme.muted }) + unit * 0.05;
-    if (product) drawPrice(ctx, theme, productPrice(product, design), design.oldPrice, m, y, unit * 0.05);
+    drawInfo(ctx, theme, infoLine(product, design), m, y, unit * 0.05, textW);
     drawBadge(ctx, theme, design.badge, W - m - unit * 0.02, m + unit * 0.06, unit * 0.11);
     drawFooter(ctx, theme, design, assets, W - photoW - m, H, m);
     return;
@@ -557,7 +626,7 @@ function spotlight(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: St
   const photoW = Math.min(W - m * 2, photoH * (theme.photo === 'card' || assets.background ? 0.92 : 1.2));
   drawPhoto(ctx, theme, product, (W - photoW) / 2, photoTop, photoW, photoH);
   drawBadge(ctx, theme, design.badge, (W + photoW) / 2 - unit * 0.04, photoTop + unit * 0.07, unit * 0.1);
-  if (product) drawPrice(ctx, theme, productPrice(product, design), design.oldPrice, W / 2, photoTop + photoH + unit * 0.035, unit * 0.04, 'center');
+  drawInfo(ctx, theme, infoLine(product, design), W / 2, photoTop + photoH + unit * 0.035, unit * 0.04, W - m * 2, 'center');
   drawFooter(ctx, theme, design, assets, W, H, m);
 }
 
@@ -592,15 +661,12 @@ function offer(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: Studio
   const n = Math.max(1, products.length);
   const gap = unit * 0.03;
   const each = (W - m * 2 - gap * (n - 1)) / n;
-  const priceSpace = design.priceMode === 'none' ? 0 : unit * 0.1;
+  const priceSpace = design.info === 'none' ? 0 : unit * 0.1;
   const photoH = Math.max(unit * 0.2, bottom - top - priceSpace);
   products.forEach((product, index) => {
     const x = m + index * (each + gap);
     drawPhoto(ctx, theme, product, x, top, each, photoH);
-    const price = productPrice(product, design);
-    if (price) {
-      drawPrice(ctx, theme, price, n === 1 ? design.oldPrice : '', x + each / 2, top + photoH + unit * 0.025, unit * (n === 1 ? 0.04 : 0.032), 'center');
-    }
+    drawInfo(ctx, theme, infoLine(product, design, n > 1), x + each / 2, top + photoH + unit * 0.025, unit * (n === 1 ? 0.04 : 0.032), each, 'center');
   });
   drawFooter(ctx, theme, design, assets, W, H, m);
 }
@@ -644,7 +710,8 @@ function grid(ctx: CanvasRenderingContext2D, theme: StudioTheme, design: StudioD
     }
     const textInk = '#242124';
     const ty = drawText(ctx, { text: product.name, x: x + cellW / 2, y: cy + cellH - labelH + unit * 0.008, maxWidth: cellW * 0.88, font: (s) => `700 ${s}px ${SANS}`, size: unit * 0.026, maxLines: 2, color: textInk, align: 'center', lineHeight: 1.15 });
-    const price = productPrice(product, design);
+    const line = infoLine(product, design, true);
+    const price = line?.kind === 'pill' ? line.text : line?.kind === 'chips' ? line.items[0] : null;
     if (price) {
       ctx.font = `800 ${unit * 0.028}px ${SANS}`;
       ctx.fillStyle = theme.photo === 'card' ? '#9b5364' : theme.accent === '#ffffff' ? '#9b5364' : theme.accent;
