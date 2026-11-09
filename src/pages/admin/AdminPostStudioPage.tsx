@@ -1057,6 +1057,42 @@ export default function AdminPostStudioPage() {
     setProducts(list.filter((item): item is StudioProduct => item !== null));
   };
 
+  // Autosave: the post being made is kept in this browser and comes back after a
+  // reload (own uploaded photos cannot be kept; products and texts are).
+  const AUTOSAVE_KEY = 'postStudio.autosave.v1';
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    if (searchParams.get('product')) return;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(AUTOSAVE_KEY) ?? 'null') as Draft | null;
+      if (saved?.design) {
+        openDraft(saved);
+        message.info('Your last post was restored.');
+      }
+    } catch {
+      // nothing saved / storage blocked
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const draft: Draft = {
+          id: 'autosave', savedAt: new Date().toISOString(), design, social, thumbnail: '',
+          products: products.map(({ id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow, rotate, flip, brightness, contrast, saturation }) => ({
+            id, photoIndex, scale, offsetX, offsetY, crop, cutout, tolerance, erase, shadow, rotate, flip, brightness, contrast, saturation,
+          })),
+        };
+        window.localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
+      } catch {
+        // storage full or blocked: autosave is a convenience only
+      }
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [design, products, social]);
+
   const deleteDraft = (id: string) => {
     const next = drafts.filter((draft) => draft.id !== id);
     writeDrafts(next);
