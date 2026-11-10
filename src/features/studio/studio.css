@@ -87,3 +87,31 @@
     scrollbar-width: thin;
   }
 }
+
+/* Figma-style resize dots on the selected photo / item. */
+.post-studio__selection { border-style: solid; border-width: 1.5px; }
+.post-studio__dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: #fff;
+  border: 1.5px solid #1677ff;
+  border-radius: 2px;
+  pointer-events: auto;
+  touch-action: none;
+}
+@media (pointer: coarse) { .post-studio__dot { width: 18px; height: 18px; margin: -9px 0 0 -9px; } }
+.post-studio__dot--nw { left: 0; top: 0; cursor: nwse-resize; }
+.post-studio__dot--n { left: 50%; top: 0; cursor: ns-resize; }
+.post-studio__dot--ne { left: 100%; top: 0; cursor: nesw-resize; }
+.post-studio__dot--e { left: 100%; top: 50%; cursor: ew-resize; }
+.post-studio__dot--se { left: 100%; top: 100%; cursor: nwse-resize; }
+.post-studio__dot--s { left: 50%; top: 100%; cursor: ns-resize; }
+.post-studio__dot--sw { left: 0; top: 100%; cursor: nesw-resize; }
+.post-studio__dot--w { left: 0; top: 50%; cursor: ew-resize; }
+
+/* Centre lines while dragging (like Instagram stories). */
+.post-studio__guide { position: absolute; pointer-events: none; z-index: 2; }
+.post-studio__guide--v { left: 50%; top: 0; bottom: 0; border-left: 1.5px dashed #ff4d1f; }
+.post-studio__guide--h { top: 50%; left: 0; right: 0; border-top: 1.5px dashed #ff4d1f; }

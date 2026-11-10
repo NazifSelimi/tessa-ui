@@ -17,6 +17,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import CropModal from '@/features/studio/CropModal';
 import StudioHelp from '@/features/studio/StudioHelp';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { lazyWithReload } from '@/shared/utils/chunkReload';
 import { getBrandKit } from '@/features/studio/brand';
 import { cutoutPng, getCutout } from '@/features/studio/cutout';
@@ -359,7 +360,13 @@ export default function AdminPostStudioPage() {
     id: string; resize: boolean; startX: number; startY: number; scale: number; offsetX: number; offsetY: number; spaceW: number; spaceH: number;
     /** Set when a text / sticker / shape is being dragged. */
     element?: { x: number; y: number; size: number };
+    /** Centre of the photo / item when the drag started (canvas pixels), for centre guides. */
+    cx?: number; cy?: number;
   } | null>(null);
+  /** Orange-red centre lines shown while something sits in the middle (like Instagram stories). */
+  const [centreGuides, setCentreGuides] = useState<{ v: boolean; h: boolean }>({ v: false, h: false });
+  /** Dragging a corner / side dot of the selected photo or item. */
+  const handleDrag = useRef<{ id: string; element: boolean; cx: number; cy: number; startDist: number; start: number } | null>(null);
 
   /* ------------------------------------------------------------ text, stickers, shapes */
 
@@ -501,6 +508,7 @@ export default function AdminPostStudioPage() {
       pointer.current = {
         id: box.id, resize: event.shiftKey, startX: point.x, startY: point.y, scale: 1, offsetX: 0, offsetY: 0,
         spaceW: box.spaceW, spaceH: box.spaceH, element: { x: element.x, y: element.y, size: element.size },
+        cx: box.x + box.w / 2, cy: box.y + box.h / 2,
       };
       return;
     }
@@ -525,6 +533,8 @@ export default function AdminPostStudioPage() {
       offsetY: product.offsetY,
       spaceW: box.spaceW,
       spaceH: box.spaceH,
+      cx: box.x + box.w / 2,
+      cy: box.y + box.h / 2,
     };
   };
 
@@ -535,8 +545,20 @@ export default function AdminPostStudioPage() {
       if (!erasingId) setHovering(Boolean(hitAt(point.x, point.y)));
       return;
     }
-    const dx = point.x - drag.startX;
-    const dy = point.y - drag.startY;
+    let dx = point.x - drag.startX;
+    let dy = point.y - drag.startY;
+    const moving = !(drag.resize || event.shiftKey);
+    if (moving && drag.cx !== undefined && drag.cy !== undefined) {
+      const canvas = canvasRef.current;
+      const W = canvas?.width ?? 1080;
+      const H = canvas?.height ?? 1350;
+      const near = Math.min(W, H) * 0.015;
+      const v = Math.abs(drag.cx + dx - W / 2) < near;
+      const h = Math.abs(drag.cy + dy - H / 2) < near;
+      if (v) dx = W / 2 - drag.cx;
+      if (h) dy = H / 2 - drag.cy;
+      if (v !== centreGuides.v || h !== centreGuides.h) setCentreGuides({ v, h });
+    }
     if (drag.element) {
       const elementId = drag.id.slice(3);
       if (drag.resize || event.shiftKey) {
@@ -566,6 +588,37 @@ export default function AdminPostStudioPage() {
 
   const onCanvasPointerUp = () => {
     pointer.current = null;
+    setCentreGuides({ v: false, h: false });
+  };
+
+  /* Corner / side dots: drag away from the centre to grow, towards it to shrink (keeps proportions, like photos in Figma with Shift). */
+  const onHandleDown = (event: React.PointerEvent<HTMLSpanElement>) => {
+    const box = selectionBox;
+    if (!box) return;
+    event.stopPropagation();
+    event.preventDefault();
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* optional */ }
+    const point = canvasPoint(event);
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    const isElement = box.id.startsWith('el:');
+    const id = isElement ? box.id.slice(3) : box.id;
+    const start = isElement ? elements.find((item) => item.id === id)?.size : products.find((item) => item.id === id)?.scale;
+    if (start === undefined) return;
+    handleDrag.current = { id, element: isElement, cx, cy, startDist: Math.max(4, Math.hypot(point.x - cx, point.y - cy)), start };
+  };
+  const onHandleMove = (event: React.PointerEvent<HTMLSpanElement>) => {
+    const drag = handleDrag.current;
+    if (!drag) return;
+    event.stopPropagation();
+    const point = canvasPoint(event);
+    const factor = Math.hypot(point.x - drag.cx, point.y - drag.cy) / drag.startDist;
+    if (drag.element) updateElement(drag.id, { size: Math.min(1.2, Math.max(0.015, drag.start * factor)) });
+    else adjustProduct(drag.id, { scale: Math.min(4, Math.max(0.2, drag.start * factor)) });
+  };
+  const onHandleUp = (event: React.PointerEvent<HTMLSpanElement>) => {
+    event.stopPropagation();
+    handleDrag.current = null;
   };
 
   // Mouse wheel / trackpad pinch over a product resizes it (needs a non-passive listener).
@@ -1218,7 +1271,7 @@ export default function AdminPostStudioPage() {
                           <Space direction="vertical" size={4} style={{ width: '100%' }}>
                             <div className="post-studio__adjust">
                               <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Size</Text>
-                              <Slider min={20} max={300} value={Math.round(image.scale * 100)} onChange={(value) => adjustProduct(image.id, { scale: value / 100 })} style={{ flex: 1, margin: '0 6px' }} />
+                              <Slider min={20} max={400} value={Math.min(400, Math.max(20, Math.round(image.scale * 100)))} onChange={(value) => adjustProduct(image.id, { scale: value / 100 })} style={{ flex: 1, margin: '0 6px' }} />
                             </div>
                             <div className="post-studio__adjust">
                               <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Rotate</Text>
@@ -1395,7 +1448,7 @@ export default function AdminPostStudioPage() {
             key: 'create',
             label: <span><EditOutlined /> Create</span>,
             children: (
-      <>
+      <ErrorBoundary resetKey={`create:${activeTab}`}>
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={10} xl={7} className="post-studio__side">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -1812,8 +1865,22 @@ export default function AdminPostStudioPage() {
                       width: `${(selectionBox.w / format.width) * 100}%`,
                       height: `${(selectionBox.h / format.height) * 100}%`,
                     }}
-                  />
+                  >
+                    {(['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((corner) => (
+                      <span
+                        key={corner}
+                        className={`post-studio__dot post-studio__dot--${corner}`}
+                        onPointerDown={onHandleDown}
+                        onPointerMove={onHandleMove}
+                        onPointerUp={onHandleUp}
+                        onPointerCancel={onHandleUp}
+                        aria-hidden
+                      />
+                    ))}
+                  </span>
                 )}
+                {centreGuides.v && <span className="post-studio__guide post-studio__guide--v" aria-hidden />}
+                {centreGuides.h && <span className="post-studio__guide post-studio__guide--h" aria-hidden />}
                 </div>
                 </PostMockup>
               </div>
@@ -1886,7 +1953,7 @@ export default function AdminPostStudioPage() {
           {imagePanel}
         </Drawer>
       )}
-      </>
+      </ErrorBoundary>
             ),
           },
           {
@@ -1914,6 +1981,7 @@ export default function AdminPostStudioPage() {
             key: 'canvas',
             label: <span><BgColorsOutlined /> Canvas (free editing)</span>,
             children: (
+              <ErrorBoundary resetKey={`canvas:${activeTab}`}>
               <Suspense fallback={<Spin style={{ display: 'block', margin: '80px auto' }} />}>
                 <CanvasEditor
                   active={activeTab === 'canvas'}
@@ -1926,6 +1994,7 @@ export default function AdminPostStudioPage() {
                   }}
                 />
               </Suspense>
+              </ErrorBoundary>
             ),
           },
           {

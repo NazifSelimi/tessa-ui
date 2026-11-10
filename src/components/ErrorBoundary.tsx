@@ -92,6 +92,18 @@ export class ErrorBoundary extends Component<Props, State> {
               Try Again
             </button>}
           </div>
+          {!newVersion && this.state.error && (
+            <p style={{ marginTop: 16, color: '#999', fontSize: 12 }}>
+              Error: {String(this.state.error.message || this.state.error).slice(0, 200)}{' '}
+              <button
+                type="button"
+                onClick={() => { void navigator.clipboard?.writeText(`${this.state.error?.stack ?? this.state.error}\n${this.state.errorInfo?.componentStack ?? ''}`); }}
+                style={{ border: 0, background: 'none', color: '#1a1a2e', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
+              >
+                Copy details
+              </button>
+            </p>
+          )}
           {import.meta.env.DEV && this.state.error && (
             <details style={{ marginTop: 20, textAlign: 'left' }}>
               <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Error Details</summary>
