@@ -5,18 +5,19 @@
  * written for the chosen network. Everything renders in the browser; nothing is
  * saved on the server. Drafts are kept in this browser only.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useUrlState, writeUrlParam } from '@/shared/hooks/useUrlState';
 import {
-  App, Button, Card, Col, Empty, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
+  App, Button, Card, Col, Empty, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Spin, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  AppstoreOutlined, ArrowDownOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
+  AppstoreOutlined, ArrowDownOutlined, BgColorsOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import CropModal from '@/features/studio/CropModal';
 import StudioHelp from '@/features/studio/StudioHelp';
+import { lazyWithReload } from '@/shared/utils/chunkReload';
 import { getBrandKit } from '@/features/studio/brand';
 import { cutoutPng, getCutout } from '@/features/studio/cutout';
 import { EMOJIS, SHAPES, elementLabel, makeElement, type ShapeKind, type StudioElement } from '@/features/studio/elements';
@@ -206,8 +207,11 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   qrUrl: '',
 });
 
-type StudioTab = 'create' | 'templates' | 'drafts' | 'help';
-const STUDIO_TABS: StudioTab[] = ['create', 'templates', 'drafts', 'help'];
+type StudioTab = 'create' | 'canvas' | 'templates' | 'drafts' | 'help';
+const STUDIO_TABS: StudioTab[] = ['create', 'canvas', 'templates', 'drafts', 'help'];
+// The Figma-style editor is a big piece of code: only load it when its tab opens.
+const CanvasEditor = lazyWithReload(() => import('@/features/studio/canvas/CanvasEditor'));
+const CANVAS_FRAMES = FORMATS.map((format) => ({ id: format.id, label: format.label, width: format.width, height: format.height }));
 
 export default function AdminPostStudioPage() {
   const { message } = App.useApp();
@@ -1948,6 +1952,24 @@ export default function AdminPostStudioPage() {
           ))}
         </div>
               </div>
+            ),
+          },
+          {
+            key: 'canvas',
+            label: <span><BgColorsOutlined /> Canvas (free editing)</span>,
+            children: (
+              <Suspense fallback={<Spin style={{ display: 'block', margin: '80px auto' }} />}>
+                <CanvasEditor
+                  active={activeTab === 'canvas'}
+                  frames={CANVAS_FRAMES}
+                  productPhotos={products.flatMap((product) => (product.photos[product.photoIndex] ? [{ name: product.name, src: product.photos[product.photoIndex] }] : []))}
+                  onImportPost={async () => {
+                    const [{ docFromPost }, assets] = await Promise.all([import('@/features/studio/canvas/fromPost'), loadAssets(design, products)]);
+                    const qr = design.qr ? qrRef.current?.querySelector('canvas') ?? null : null;
+                    return docFromPost(design, { ...assets, qr });
+                  }}
+                />
+              </Suspense>
             ),
           },
           {

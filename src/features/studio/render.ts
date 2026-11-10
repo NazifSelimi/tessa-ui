@@ -270,6 +270,22 @@ interface TextBox {
   letterSpacing?: number;
 }
 
+/** A text block the layout would have drawn, for turning the post into editable layers. */
+export interface CapturedText {
+  text: string;
+  /** Left edge of the text box, top of the first line. */
+  x: number;
+  y: number;
+  width: number;
+  fontSize: number;
+  font: string;
+  color: string;
+  align: CanvasTextAlign;
+  lineHeight: number;
+  letterSpacing: number;
+}
+let textCapture: CapturedText[] | null = null;
+
 /** Draws wrapped text, shrinking the font until it fits in maxLines. Returns the bottom y. */
 function drawText(ctx: CanvasRenderingContext2D, box: TextBox): number {
   if (!box.text.trim()) return box.y;
@@ -287,6 +303,15 @@ function drawText(ctx: CanvasRenderingContext2D, box: TextBox): number {
     lines[lines.length - 1] = `${lines[lines.length - 1].replace(/\s*\S*$/, '')}…`;
   }
   const lineHeight = size * (box.lineHeight ?? 1.12);
+  if (textCapture) {
+    const align = box.align ?? 'left';
+    const left = align === 'center' ? box.x - box.maxWidth / 2 : align === 'right' || align === 'end' ? box.x - box.maxWidth : box.x;
+    textCapture.push({
+      text: lines.join('\n'), x: left, y: box.y, width: box.maxWidth, fontSize: size, font: box.font(size),
+      color: box.color, align, lineHeight: box.lineHeight ?? 1.12, letterSpacing: box.letterSpacing ?? 0,
+    });
+    return box.y + lines.length * lineHeight;
+  }
   ctx.fillStyle = box.color;
   ctx.textAlign = box.align ?? 'left';
   ctx.textBaseline = 'top';
@@ -1057,3 +1082,18 @@ const COPY: Record<StudioLang, {
 
 export const templateDefaults = (template: TemplateId, lang: StudioLang) => COPY[lang].defaults[template];
 export const quickBadges = (lang: StudioLang) => COPY[lang].quick;
+
+/**
+ * Draws the post without its text blocks and free items, and returns the text
+ * blocks that were left out, so the canvas editor can show them as editable
+ * text layers on top of this picture.
+ */
+export function renderDesignWithoutText(canvas: HTMLCanvasElement, design: StudioDesign, assets: RenderAssets): CapturedText[] {
+  textCapture = [];
+  try {
+    renderDesign(canvas, { ...design, elements: [] }, assets);
+    return textCapture;
+  } finally {
+    textCapture = null;
+  }
+}
