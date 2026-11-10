@@ -1089,8 +1089,9 @@ export default function AdminPostStudioPage() {
     }
   };
 
-  const openDraft = async (draft: Draft) => {
-    setActiveTab('create');
+  /** Opens a draft; the autosave restore after a refresh stays on the tab that was open. */
+  const openDraft = async (draft: Draft, switchTab = true) => {
+    if (switchTab) setActiveTab('create');
     // Drafts from before the info line showed prices unless the price was off.
     const legacyInfo: InfoMode = draft.design.priceMode === 'none' ? 'none' : 'price';
     setDesign({ ...initialDesign(draft.design.lang), ...draft.design, info: draft.design.info ?? legacyInfo });
@@ -1139,7 +1140,7 @@ export default function AdminPostStudioPage() {
       const saved = JSON.parse(window.localStorage.getItem(AUTOSAVE_KEY) ?? 'null') as Draft | null;
       if (saved?.design) {
         restoringRef.current = true;
-        void Promise.resolve(openDraft(saved)).finally(() => { restoringRef.current = false; });
+        void Promise.resolve(openDraft(saved, false)).finally(() => { restoringRef.current = false; });
         message.info('Your last post was restored.');
       }
     } catch {

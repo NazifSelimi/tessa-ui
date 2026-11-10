@@ -175,7 +175,9 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
     return { x: (clientX - (rect?.left ?? 0) - p.x) / z, y: (clientY - (rect?.top ?? 0) - p.y) / z };
   }, []);
 
+  const userZoomed = useRef(false);
   const fit = useCallback(() => {
+    userZoomed.current = false;
     const el = viewportRef.current;
     if (!el) return;
     const { width, height } = el.getBoundingClientRect();
@@ -202,6 +204,7 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
     const sx = clientX === undefined ? rect.width / 2 : clientX - rect.left;
     const sy = clientY === undefined ? rect.height / 2 : clientY - rect.top;
     const { zoom: z, pan: p } = view.current;
+    userZoomed.current = true;
     const nz = clampZoom(next);
     const np = { x: sx - ((sx - p.x) / z) * nz, y: sy - ((sy - p.y) / z) * nz };
     view.current = { zoom: nz, pan: np };
@@ -210,18 +213,27 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
   }, []);
 
   // Fit the frame when the editor first gets a size, and when the frame size changes.
-  const fitted = useRef(false);
+  // Refit when the editor changes size (window, phone rotation, full screen), unless the user zoomed by hand.
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(() => {
-      if (!fitted.current && el.clientWidth > 0) {
-        fitted.current = true;
-        fit();
+    let last = '';
+    const check = () => {
+      const size = `${el.clientWidth}x${el.clientHeight}`;
+      if (el.clientWidth > 0 && size !== last) {
+        last = size;
+        if (!userZoomed.current) fit();
       }
-    });
+    };
+    const observer = new ResizeObserver(check);
     observer.observe(el);
-    return () => observer.disconnect();
+    // Also on window resize / phone rotation (some browsers pause size observers in background tabs).
+    window.addEventListener('resize', check);
+    check();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', check);
+    };
   }, [fit]);
   const frameKey = `${doc.width}x${doc.height}`;
   const lastFrame = useRef(frameKey);
