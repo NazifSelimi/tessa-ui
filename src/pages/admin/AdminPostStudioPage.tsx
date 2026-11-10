@@ -299,6 +299,17 @@ export default function AdminPostStudioPage() {
     label: `${product.name} · ${nameOf(product.brand)}${Number(product.price) > 0 ? ` · ${formatPrice(product.price)}` : ''}`,
   })), [catalogue]);
 
+  // The picker gets the same list object until the chosen products change, so moving or
+  // resizing a photo (which updates `products` many times a second) does not re-measure it.
+  const pickedKey = products.map((product) => product.id).join('|');
+  const pickedIds = useMemo(() => (pickedKey ? pickedKey.split('|') : []), [pickedKey]);
+  const benefitSource = products[0] ? products[0].description || products[0].name : '';
+  const benefitsValue = useMemo(
+    () => (design.benefits.length ? design.benefits : (benefitSource ? suggestBenefits(benefitSource, design.lang) : [])),
+    [design.benefits, benefitSource, design.lang],
+  );
+  const benefitOptions = useMemo(() => benefitChoices(design.lang).map((item) => ({ value: item, label: item })), [design.lang]);
+
   /** Loads full product details (all photos) for the chosen ids, keeping the photo already picked. */
   const selectProducts = useCallback(async (ids: string[], photoIndexes: Record<string, number> = {}) => {
     const list = await Promise.all(ids.map(async (id) => {
@@ -1599,11 +1610,14 @@ export default function AdminPostStudioPage() {
                 allowClear
                 loading={catalogueLoading}
                 placeholder="Search a product by name or brand…"
-                value={products.map((product) => product.id)}
+                value={pickedIds}
                 onChange={onProductsChange}
                 options={productOptions}
                 optionFilterProp="label"
-                maxTagCount="responsive"
+                // Not "responsive": antd's responsive tag counting can loop forever
+                // ("Minified React error #185") while the page re-renders during a photo drag.
+                maxTagCount={2}
+                maxTagTextLength={28}
                 style={{ width: '100%' }}
               />
               {products.length > 0 && (
@@ -1655,9 +1669,9 @@ export default function AdminPostStudioPage() {
                   <Select
                     mode="tags"
                     style={{ width: '100%', marginTop: 8 }}
-                    value={design.benefits.length ? design.benefits : (products[0] ? suggestBenefits(products[0].description || products[0].name, design.lang) : [])}
+                    value={benefitsValue}
                     onChange={(value: string[]) => update('benefits', value.slice(0, 3))}
-                    options={benefitChoices(design.lang).map((item) => ({ value: item, label: item }))}
+                    options={benefitOptions}
                     placeholder="Pick or type up to 3 benefits"
                     maxCount={3}
                   />
