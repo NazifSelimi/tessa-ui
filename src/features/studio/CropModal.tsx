@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Modal, Space, Typography } from 'antd';
 import type { PhotoCrop } from './render';
 
-type Handle = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'new';
+type Handle = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w' | 'new';
 
 interface CropModalProps {
   open: boolean;
@@ -25,6 +25,7 @@ const FULL: PhotoCrop = { x: 0.05, y: 0.05, w: 0.9, h: 0.9 };
 export default function CropModal({ open, imageUrl, initial, onCancel, onApply }: CropModalProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [crop, setCrop] = useState<PhotoCrop>(initial ?? FULL);
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const drag = useRef<{ handle: Handle; startX: number; startY: number; start: PhotoCrop } | null>(null);
 
   useEffect(() => {
@@ -86,13 +87,14 @@ export default function CropModal({ open, imageUrl, initial, onCancel, onApply }
   };
 
   const valid = crop.w >= MIN && crop.h >= MIN;
+  const box = { left: `${crop.x * 100}%`, top: `${crop.y * 100}%`, width: `${crop.w * 100}%`, height: `${crop.h * 100}%` };
 
   return (
     <Modal
       open={open}
       title="Crop photo"
       onCancel={onCancel}
-      width={720}
+      width={860}
       destroyOnHidden
       footer={(
         <Space wrap>
@@ -103,7 +105,7 @@ export default function CropModal({ open, imageUrl, initial, onCancel, onApply }
       )}
     >
       <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
-        Drag the box to move it, drag a corner to resize, or drag across the photo to draw a new box.
+        Drag inside the white box to move it, drag a dot to resize it, or drag across the photo to draw a new box. The dark part is cut away.
       </Typography.Paragraph>
       {imageUrl && (
         <div className="studio-crop">
@@ -115,17 +117,33 @@ export default function CropModal({ open, imageUrl, initial, onCancel, onApply }
             onPointerUp={end}
             onPointerCancel={end}
           >
-            <img src={imageUrl} alt="" draggable={false} />
-            <div
-              className="studio-crop__box"
-              style={{ left: `${crop.x * 100}%`, top: `${crop.y * 100}%`, width: `${crop.w * 100}%`, height: `${crop.h * 100}%` }}
-              onPointerDown={(event) => begin('move', event)}
-            >
-              {(['nw', 'ne', 'sw', 'se'] as const).map((handle) => (
+            <img src={imageUrl} alt="" draggable={false} onLoad={(event) => setNatural({ w: event.currentTarget.naturalWidth, h: event.currentTarget.naturalHeight })} />
+            <div className="studio-crop__shade">
+              <div className="studio-crop__hole" style={box} />
+            </div>
+            <div className="studio-crop__box" style={box} onPointerDown={(event) => begin('move', event)}>
+              {natural && valid && (
+                <span className="studio-crop__size">{Math.round(crop.w * natural.w)} × {Math.round(crop.h * natural.h)} px</span>
+              )}
+              {(['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((handle) => (
                 <span key={handle} className={`studio-crop__handle studio-crop__handle--${handle}`} onPointerDown={(event) => begin(handle, event)} />
               ))}
             </div>
           </div>
+          {valid && (
+            <div className="studio-crop__result">
+              <div
+                className="studio-crop__result-box"
+                style={{
+                  aspectRatio: natural ? `${crop.w * natural.w} / ${crop.h * natural.h}` : `${crop.w} / ${crop.h}`,
+                  backgroundImage: `url("${imageUrl}")`,
+                  backgroundSize: `${100 / crop.w}% ${100 / crop.h}%`,
+                  backgroundPosition: `${crop.w < 1 ? (crop.x / (1 - crop.w)) * 100 : 0}% ${crop.h < 1 ? (crop.y / (1 - crop.h)) * 100 : 0}%`,
+                }}
+              />
+              Result
+            </div>
+          )}
         </div>
       )}
     </Modal>
