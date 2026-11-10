@@ -9,7 +9,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useSearchParams } from 'react-router-dom';
 import { useUrlState, writeUrlParam } from '@/shared/hooks/useUrlState';
 import {
-  App, Button, Card, Col, Empty, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Spin, Switch, Tag, Tooltip, Typography, Upload,
+  App, Button, Card, Col, Drawer, Empty, Grid, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Spin, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
   AppstoreOutlined, ArrowDownOutlined, BgColorsOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
@@ -233,6 +233,10 @@ export default function AdminPostStudioPage() {
   const [selectedEl, setSelectedEl] = useState<string | null>(null);
   /** Product photo clicked on the preview; its Image panel is open. */
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // Wide screens get Figma-style side panels; smaller ones open the photo tools in a drawer.
+  const screens = Grid.useBreakpoint();
+  const wide = !!screens.xl;
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [renderVersion, setRenderVersion] = useState(0);
   /** Where the selected item is on the image, for its dashed outline. */
   const [selectionBox, setSelectionBox] = useState<PhotoHitBox | null>(null);
@@ -1131,6 +1135,241 @@ export default function AdminPostStudioPage() {
     { value: 'none', label: 'No price' },
   ];
 
+  /** Photo tools for the selected product: background remover, crop, adjust, position, photo. */
+  const imagePanel = (() => {
+              const image = products.find((item) => item.id === selectedImage);
+              if (!image) return null;
+              const box = selectionBox;
+              const align = (where: 'left' | 'center' | 'right') => {
+                if (!box) return;
+                const room = (box.spaceW - box.w) / 2 / Math.max(1, box.spaceW);
+                adjustProduct(image.id, { offsetX: where === 'left' ? -room : where === 'right' ? room : 0 });
+              };
+              const moveProduct = (direction: -1 | 1) => setProducts((current) => {
+                const list = [...current];
+                const index = list.findIndex((item) => item.id === image.id);
+                const target = index + direction;
+                if (index < 0 || target < 0 || target >= list.length) return current;
+                [list[index], list[target]] = [list[target], list[index]];
+                return list;
+              });
+              const slider = (label: string, key: 'brightness' | 'contrast' | 'saturation') => (
+                <div className="post-studio__adjust">
+                  <Text type="secondary" style={{ fontSize: 12, width: 74 }}>{label}</Text>
+                  <Slider min={40} max={160} value={image[key]} onChange={(value) => adjustProduct(image.id, { [key]: value })} style={{ flex: 1, margin: '0 6px' }} />
+                </div>
+              );
+              return (
+                <Card
+                  size="small"
+                  className="post-studio__image-panel"
+                  title={<Space><PictureOutlined />Image: <Text ellipsis style={{ maxWidth: 260 }}>{image.name}</Text></Space>}
+                  extra={<Button size="small" type="text" onClick={() => setSelectedImage(null)}>Done (Esc)</Button>}
+                >
+                  <Tabs
+                    size="small"
+                    items={[
+                      {
+                        key: 'background',
+                        label: 'Background',
+                        children: (
+                          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                            <Space size={6}>
+                              <Switch size="small" checked={image.cutout} onChange={(checked) => adjustProduct(image.id, { cutout: checked })} />
+                              <Text>Remove background</Text>
+                            </Space>
+                            {image.cutout && (
+                              <>
+                                <div className="post-studio__adjust">
+                                  <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Tolerance</Text>
+                                  <Slider key={`${image.id}-${image.tolerance}`} min={0} max={100} defaultValue={image.tolerance} onChangeComplete={(value) => adjustProduct(image.id, { tolerance: value })} style={{ flex: 1, margin: '0 6px' }} />
+                                </div>
+                                <Space size={6} wrap>
+                                  <Button size="small" icon={<HighlightOutlined />} type={erasingId === image.id ? 'primary' : 'default'} onClick={() => setErasingId(erasingId === image.id ? null : image.id)}>
+                                    {erasingId === image.id ? 'Erasing: click the preview' : 'Magic eraser'}
+                                  </Button>
+                                  <Button size="small" icon={<UndoOutlined />} disabled={!image.erase.length} onClick={() => adjustProduct(image.id, { erase: image.erase.slice(0, -1) })}>Undo spot</Button>
+                                  <Button size="small" icon={<ClearOutlined />} disabled={!image.erase.length} onClick={() => adjustProduct(image.id, { erase: [] })}>Restore</Button>
+                                  <Space size={4}>
+                                    <Switch size="small" checked={image.shadow} onChange={(checked) => adjustProduct(image.id, { shadow: checked })} />
+                                    <Text style={{ fontSize: 12 }}>Shadow</Text>
+                                  </Space>
+                                </Space>
+                                <Button size="small" icon={<DownloadOutlined />} onClick={() => downloadCutout(image)}>Download cutout PNG</Button>
+                              </>
+                            )}
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'crop',
+                        label: 'Crop',
+                        children: (
+                          <Space wrap>
+                            <Button icon={<ScissorOutlined />} type={image.crop ? 'primary' : 'default'} onClick={() => setCropping(image.id)}>{image.crop ? 'Change crop' : 'Crop photo'}</Button>
+                            <Button disabled={!image.crop} onClick={() => adjustProduct(image.id, { crop: null })}>Remove crop</Button>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'adjust',
+                        label: 'Adjust',
+                        children: (
+                          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                            <div className="post-studio__adjust">
+                              <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Size</Text>
+                              <Slider min={20} max={300} value={Math.round(image.scale * 100)} onChange={(value) => adjustProduct(image.id, { scale: value / 100 })} style={{ flex: 1, margin: '0 6px' }} />
+                            </div>
+                            <div className="post-studio__adjust">
+                              <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Rotate</Text>
+                              <Slider min={-180} max={180} value={image.rotate} onChange={(value) => adjustProduct(image.id, { rotate: value })} style={{ flex: 1, margin: '0 6px' }} />
+                            </div>
+                            {slider('Brightness', 'brightness')}
+                            {slider('Contrast', 'contrast')}
+                            {slider('Saturation', 'saturation')}
+                            <Space size={6} wrap>
+                              <Button size="small" icon={<SwapOutlined />} onClick={() => adjustProduct(image.id, { flip: !image.flip })}>Flip</Button>
+                              <Button size="small" onClick={() => adjustProduct(image.id, { rotate: 0, flip: false, brightness: 100, contrast: 100, saturation: 100 })}>Reset adjustments</Button>
+                            </Space>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'position',
+                        label: 'Position',
+                        children: (
+                          <Space size={6} wrap>
+                            <Button size="small" onClick={() => align('left')}>Left</Button>
+                            <Button size="small" onClick={() => align('center')}>Centre</Button>
+                            <Button size="small" onClick={() => align('right')}>Right</Button>
+                            <Button size="small" icon={<ArrowUpOutlined />} disabled={products.length < 2} onClick={() => moveProduct(1)}>Forward</Button>
+                            <Button size="small" icon={<ArrowDownOutlined />} disabled={products.length < 2} onClick={() => moveProduct(-1)}>Back</Button>
+                            <Button size="small" icon={<UndoOutlined />} onClick={() => adjustProduct(image.id, { ...DEFAULT_ADJUST })}>Reset</Button>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: 'photo',
+                        label: `Photo (${image.photos.length})`,
+                        children: (
+                          <div className="post-studio__photo-pick">
+                            {image.photos.map((url, index) => (
+                              <button
+                                key={url}
+                                type="button"
+                                className={index === image.photoIndex ? 'is-active' : ''}
+                                onClick={() => adjustProduct(image.id, { photoIndex: index, crop: null, erase: [] })}
+                                aria-label={`Use photo ${index + 1}`}
+                              >
+                                <img src={url} alt="" />
+                              </button>
+                            ))}
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
+                </Card>
+              );
+  })();
+
+  const captionCard = (
+            <Card
+              size="small"
+              title={`Caption for ${social.platform === 'instagram' ? 'Instagram' : 'Facebook'}`}
+              extra={(
+                <Space size={6} wrap>
+                  {captionEdited !== null && <Button size="small" type="link" onClick={() => setCaptionEdited(null)}>Rebuild</Button>}
+                  <Button size="small" icon={<CopyOutlined />} onClick={copyHashtags} disabled={!hashtags.length}>Hashtags</Button>
+                  <Button size="small" type="primary" icon={<CopyOutlined />} onClick={copyCaption}>Copy caption</Button>
+                </Space>
+              )}
+            >
+              <Space direction="vertical" size={10} style={{ width: '100%' }}>
+                <div className="post-studio__caption-tools">
+                  <Segmented size="small" value={social.tone} onChange={(value) => changeSocial({ tone: value as Tone, variant: 0 })} options={TONES} />
+                  <Tooltip title="Same facts, different first line">
+                    <Button size="small" icon={<SyncOutlined />} onClick={() => changeSocial({ variant: social.variant + 1 })}>New wording</Button>
+                  </Tooltip>
+                  <Space size={6}>
+                    <Switch size="small" checked={social.emojis} onChange={(checked) => changeSocial({ emojis: checked })} />
+                    <Text style={{ fontSize: 13 }}>Emojis</Text>
+                  </Space>
+                </div>
+
+                <TextArea
+                  value={caption}
+                  onChange={(event) => setCaptionEdited(event.target.value)}
+                  autoSize={{ minRows: 5, maxRows: 14 }}
+                  aria-label="Caption"
+                />
+                {captionEdited !== null && (
+                  <Text type="secondary" style={{ fontSize: 12 }}>Your edits are kept. “Rebuild” writes it again from the design.</Text>
+                )}
+
+                <div className="post-studio__counters">
+                  {social.platform === 'instagram' ? (
+                    <>
+                      <Tag color={caption.length > INSTAGRAM_LIMITS.characters ? 'red' : 'default'}>
+                        {caption.length.toLocaleString('en-US')} / {INSTAGRAM_LIMITS.characters.toLocaleString('en-US')} characters
+                      </Tag>
+                      <Tag color={captionTags > INSTAGRAM_LIMITS.hashtags ? 'red' : 'default'}>
+                        {captionTags} / {INSTAGRAM_LIMITS.hashtags} hashtags
+                      </Tag>
+                      <Tag color={firstLine.length > INSTAGRAM_LIMITS.preview ? 'orange' : 'green'}>
+                        First line {firstLine.length > INSTAGRAM_LIMITS.preview ? 'is cut before “more”' : 'fits before “more”'}
+                      </Tag>
+                    </>
+                  ) : (
+                    <>
+                      <Tag>{caption.length.toLocaleString('en-US')} characters</Tag>
+                      <Tag color={facebookCut ? 'orange' : 'green'}>
+                        {facebookCut ? 'Long: Facebook shows “See more”' : 'Fits without “See more”'}
+                      </Tag>
+                      <Tag color={captionTags > 3 ? 'orange' : 'default'}>{captionTags} hashtags (2–3 work best)</Tag>
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <Text strong className="post-studio__label">Hashtags</Text>
+                  <div className="post-studio__tags">
+                    {hashtags.map((tag) => (
+                      <Tag key={tag} closable color="magenta" onClose={(event) => { event.preventDefault(); setHashtags(hashtags.filter((item) => item !== tag)); }}>
+                        {tag}
+                      </Tag>
+                    ))}
+                    <Space.Compact size="small">
+                      <Input
+                        size="small"
+                        value={newTag}
+                        onChange={(event) => setNewTag(event.target.value)}
+                        onPressEnter={addTag}
+                        placeholder="#add"
+                        style={{ width: 120 }}
+                        aria-label="Add a hashtag"
+                      />
+                      <Button size="small" icon={<PlusOutlined />} onClick={addTag} aria-label="Add hashtag" />
+                    </Space.Compact>
+                  </div>
+                  {moreTags.length > 0 && (
+                    <div className="post-studio__tags post-studio__tags--suggested">
+                      <Text type="secondary" style={{ fontSize: 12 }}>Suggested:</Text>
+                      {moreTags.slice(0, 16).map((tag) => (
+                        <Tag key={tag} className="post-studio__tag-add" onClick={() => setHashtags([...hashtags, tag])}>+ {tag}</Tag>
+                      ))}
+                    </div>
+                  )}
+                  {social.platform === 'instagram' && (
+                    <Paragraph type="secondary" style={{ margin: '6px 0 0', fontSize: 12 }}>
+                      Tip: copy the hashtags separately and paste them as the first comment for a cleaner caption.
+                    </Paragraph>
+                  )}
+                </div>
+              </Space>
+            </Card>
+  );
+
   return (
     <div className="post-studio">
       <div className="post-studio__head">
@@ -1156,8 +1395,9 @@ export default function AdminPostStudioPage() {
             key: 'create',
             label: <span><EditOutlined /> Create</span>,
             children: (
+      <>
       <Row gutter={[24, 24]}>
-        <Col xs={24} lg={10} xl={9}>
+        <Col xs={24} lg={10} xl={7} className="post-studio__side">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Card
               size="small"
@@ -1314,7 +1554,7 @@ export default function AdminPostStudioPage() {
               />
               {products.length > 0 && (
                 <Paragraph type="secondary" style={{ margin: '8px 0 0', fontSize: 12 }}>
-                  On the preview: drag a product to move it · Shift + drag (or mouse wheel / pinch) to resize it.
+                  On the preview: click a product to select it, drag to move, Shift + drag (or mouse wheel / pinch) to resize, double-click for the photo tools.
                 </Paragraph>
               )}
               {products.length > 0 && (
@@ -1336,96 +1576,15 @@ export default function AdminPostStudioPage() {
                           {product.photoIndex + 1}/{Math.max(1, product.photos.length)}
                         </Button>
                       </Tooltip>
-                      <div className="post-studio__adjust">
-                        <Text type="secondary" style={{ fontSize: 12, width: 34 }}>Size</Text>
-                        <Slider
-                          min={20}
-                          max={300}
-                          value={Math.round(product.scale * 100)}
-                          onChange={(value) => adjustProduct(product.id, { scale: value / 100 })}
-                          tooltip={{ formatter: (value) => `${value}%` }}
-                          style={{ flex: 1, margin: '0 6px' }}
-                        />
-                        <Tooltip title="Crop the photo">
-                          <Button size="small" icon={<ScissorOutlined />} type={product.crop ? 'primary' : 'default'} disabled={!product.photos.length} onClick={() => setCropping(product.id)}>
-                            Crop
+                      <Space size={4} wrap>
+                        <Tooltip title="Background remover, crop, size, colours and position (or double-click the photo on the preview)">
+                          <Button size="small" type={selectedImage === product.id ? 'primary' : 'default'} icon={<ScissorOutlined />} disabled={!product.photos.length} onClick={() => { const open = selectedImage !== product.id || !toolsOpen; setSelectedImage(open ? product.id : null); setToolsOpen(open); }}>
+                            Edit photo
                           </Button>
                         </Tooltip>
-                        <Tooltip title="Reset size, position and crop">
-                          <Button
-                            size="small"
-                            icon={<UndoOutlined />}
-                            aria-label="Reset size, position and crop"
-                            disabled={product.scale === 1 && product.offsetX === 0 && product.offsetY === 0 && !product.crop}
-                            onClick={() => adjustProduct(product.id, { ...DEFAULT_ADJUST })}
-                          />
-                        </Tooltip>
-                      </div>
-                      <div className="post-studio__cutout">
-                        <Space size={6}>
-                          <Switch
-                            size="small"
-                            checked={product.cutout}
-                            onChange={(checked) => {
-                              adjustProduct(product.id, { cutout: checked });
-                              if (!checked && erasingId === product.id) setErasingId(null);
-                            }}
-                          />
-                          <Text style={{ fontSize: 13 }}>Remove background</Text>
-                        </Space>
-                        {product.cutout && (
-                          <>
-                            <div className="post-studio__adjust">
-                              <Tooltip title="Higher removes more of the background colour; lower keeps more of the product">
-                                <Text type="secondary" style={{ fontSize: 12, width: 64 }}>Tolerance</Text>
-                              </Tooltip>
-                              <Slider
-                                key={`${product.id}-${product.photoIndex}-${product.tolerance}`}
-                                min={0}
-                                max={100}
-                                defaultValue={product.tolerance}
-                                onChangeComplete={(value) => adjustProduct(product.id, { tolerance: value })}
-                                style={{ flex: 1, margin: '0 6px' }}
-                              />
-                            </div>
-                            <Space size={6} wrap>
-                              <Tooltip title="Then click a spot on the preview to remove that colour area too">
-                                <Button
-                                  size="small"
-                                  icon={<HighlightOutlined />}
-                                  type={erasingId === product.id ? 'primary' : 'default'}
-                                  onClick={() => setErasingId(erasingId === product.id ? null : product.id)}
-                                >
-                                  {erasingId === product.id ? 'Erasing: click the preview' : 'Magic eraser'}
-                                </Button>
-                              </Tooltip>
-                              <Button
-                                size="small"
-                                icon={<UndoOutlined />}
-                                disabled={!product.erase.length}
-                                onClick={() => adjustProduct(product.id, { erase: product.erase.slice(0, -1) })}
-                              >
-                                Undo spot
-                              </Button>
-                              <Button
-                                size="small"
-                                icon={<ClearOutlined />}
-                                disabled={!product.erase.length}
-                                onClick={() => adjustProduct(product.id, { erase: [] })}
-                              >
-                                Restore
-                              </Button>
-                              <Space size={4}>
-                                <Switch size="small" checked={product.shadow} onChange={(checked) => adjustProduct(product.id, { shadow: checked })} />
-                                <Text style={{ fontSize: 12 }}>Shadow</Text>
-                              </Space>
-                            </Space>
-                            <Button size="small" icon={<DownloadOutlined />} onClick={() => downloadCutout(product)}>
-                              Download cutout PNG
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                        {product.cutout && <Tag color="purple" style={{ margin: 0 }}>No background</Tag>}
+                        {product.crop && <Tag style={{ margin: 0 }}>Cropped</Tag>}
+                      </Space>
                     </div>
                   ))}
                 </div>
@@ -1604,7 +1763,7 @@ export default function AdminPostStudioPage() {
           </Space>
         </Col>
 
-        <Col xs={24} lg={14} xl={15}>
+        <Col xs={24} lg={14} xl={10}>
           <div className="post-studio__preview-wrap">
             <Card
               size="small"
@@ -1640,6 +1799,7 @@ export default function AdminPostStudioPage() {
                   onPointerUp={onCanvasPointerUp}
                   onPointerCancel={onCanvasPointerUp}
                   onPointerLeave={() => { if (!pointer.current) setHovering(false); }}
+                  onDoubleClick={() => { if (selectedImage) setToolsOpen(true); }}
                   style={{ aspectRatio: `${format.width} / ${format.height}` }}
                   aria-label="Post preview"
                 />
@@ -1691,246 +1851,42 @@ export default function AdminPostStudioPage() {
               </div>
             </Card>
 
-            {(() => {
-              const image = products.find((item) => item.id === selectedImage);
-              if (!image) {
-                return products.length > 0 ? (
-                  <Text type="secondary" style={{ fontSize: 12 }}>Tip: click a product photo on the preview to edit that image (background, crop, adjust, position, photo).</Text>
-                ) : null;
-              }
-              const box = selectionBox;
-              const align = (where: 'left' | 'center' | 'right') => {
-                if (!box) return;
-                const room = (box.spaceW - box.w) / 2 / Math.max(1, box.spaceW);
-                adjustProduct(image.id, { offsetX: where === 'left' ? -room : where === 'right' ? room : 0 });
-              };
-              const moveProduct = (direction: -1 | 1) => setProducts((current) => {
-                const list = [...current];
-                const index = list.findIndex((item) => item.id === image.id);
-                const target = index + direction;
-                if (index < 0 || target < 0 || target >= list.length) return current;
-                [list[index], list[target]] = [list[target], list[index]];
-                return list;
-              });
-              const slider = (label: string, key: 'brightness' | 'contrast' | 'saturation') => (
-                <div className="post-studio__adjust">
-                  <Text type="secondary" style={{ fontSize: 12, width: 74 }}>{label}</Text>
-                  <Slider min={40} max={160} value={image[key]} onChange={(value) => adjustProduct(image.id, { [key]: value })} style={{ flex: 1, margin: '0 6px' }} />
-                </div>
-              );
-              return (
-                <Card
-                  size="small"
-                  className="post-studio__image-panel"
-                  title={<Space><PictureOutlined />Image: <Text ellipsis style={{ maxWidth: 260 }}>{image.name}</Text></Space>}
-                  extra={<Button size="small" type="text" onClick={() => setSelectedImage(null)}>Done (Esc)</Button>}
-                >
-                  <Tabs
-                    size="small"
-                    items={[
-                      {
-                        key: 'background',
-                        label: 'Background',
-                        children: (
-                          <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                            <Space size={6}>
-                              <Switch size="small" checked={image.cutout} onChange={(checked) => adjustProduct(image.id, { cutout: checked })} />
-                              <Text>Remove background</Text>
-                            </Space>
-                            {image.cutout && (
-                              <>
-                                <div className="post-studio__adjust">
-                                  <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Tolerance</Text>
-                                  <Slider key={`${image.id}-${image.tolerance}`} min={0} max={100} defaultValue={image.tolerance} onChangeComplete={(value) => adjustProduct(image.id, { tolerance: value })} style={{ flex: 1, margin: '0 6px' }} />
-                                </div>
-                                <Space size={6} wrap>
-                                  <Button size="small" icon={<HighlightOutlined />} type={erasingId === image.id ? 'primary' : 'default'} onClick={() => setErasingId(erasingId === image.id ? null : image.id)}>
-                                    {erasingId === image.id ? 'Erasing: click the preview' : 'Magic eraser'}
-                                  </Button>
-                                  <Button size="small" icon={<UndoOutlined />} disabled={!image.erase.length} onClick={() => adjustProduct(image.id, { erase: image.erase.slice(0, -1) })}>Undo spot</Button>
-                                  <Button size="small" icon={<ClearOutlined />} disabled={!image.erase.length} onClick={() => adjustProduct(image.id, { erase: [] })}>Restore</Button>
-                                  <Space size={4}>
-                                    <Switch size="small" checked={image.shadow} onChange={(checked) => adjustProduct(image.id, { shadow: checked })} />
-                                    <Text style={{ fontSize: 12 }}>Shadow</Text>
-                                  </Space>
-                                </Space>
-                                <Button size="small" icon={<DownloadOutlined />} onClick={() => downloadCutout(image)}>Download cutout PNG</Button>
-                              </>
-                            )}
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: 'crop',
-                        label: 'Crop',
-                        children: (
-                          <Space wrap>
-                            <Button icon={<ScissorOutlined />} type={image.crop ? 'primary' : 'default'} onClick={() => setCropping(image.id)}>{image.crop ? 'Change crop' : 'Crop photo'}</Button>
-                            <Button disabled={!image.crop} onClick={() => adjustProduct(image.id, { crop: null })}>Remove crop</Button>
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: 'adjust',
-                        label: 'Adjust',
-                        children: (
-                          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                            <div className="post-studio__adjust">
-                              <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Size</Text>
-                              <Slider min={20} max={300} value={Math.round(image.scale * 100)} onChange={(value) => adjustProduct(image.id, { scale: value / 100 })} style={{ flex: 1, margin: '0 6px' }} />
-                            </div>
-                            <div className="post-studio__adjust">
-                              <Text type="secondary" style={{ fontSize: 12, width: 74 }}>Rotate</Text>
-                              <Slider min={-180} max={180} value={image.rotate} onChange={(value) => adjustProduct(image.id, { rotate: value })} style={{ flex: 1, margin: '0 6px' }} />
-                            </div>
-                            {slider('Brightness', 'brightness')}
-                            {slider('Contrast', 'contrast')}
-                            {slider('Saturation', 'saturation')}
-                            <Space size={6} wrap>
-                              <Button size="small" icon={<SwapOutlined />} onClick={() => adjustProduct(image.id, { flip: !image.flip })}>Flip</Button>
-                              <Button size="small" onClick={() => adjustProduct(image.id, { rotate: 0, flip: false, brightness: 100, contrast: 100, saturation: 100 })}>Reset adjustments</Button>
-                            </Space>
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: 'position',
-                        label: 'Position',
-                        children: (
-                          <Space size={6} wrap>
-                            <Button size="small" onClick={() => align('left')}>Left</Button>
-                            <Button size="small" onClick={() => align('center')}>Centre</Button>
-                            <Button size="small" onClick={() => align('right')}>Right</Button>
-                            <Button size="small" icon={<ArrowUpOutlined />} disabled={products.length < 2} onClick={() => moveProduct(1)}>Forward</Button>
-                            <Button size="small" icon={<ArrowDownOutlined />} disabled={products.length < 2} onClick={() => moveProduct(-1)}>Back</Button>
-                            <Button size="small" icon={<UndoOutlined />} onClick={() => adjustProduct(image.id, { ...DEFAULT_ADJUST })}>Reset</Button>
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: 'photo',
-                        label: `Photo (${image.photos.length})`,
-                        children: (
-                          <div className="post-studio__photo-pick">
-                            {image.photos.map((url, index) => (
-                              <button
-                                key={url}
-                                type="button"
-                                className={index === image.photoIndex ? 'is-active' : ''}
-                                onClick={() => adjustProduct(image.id, { photoIndex: index, crop: null, erase: [] })}
-                                aria-label={`Use photo ${index + 1}`}
-                              >
-                                <img src={url} alt="" />
-                              </button>
-                            ))}
-                          </div>
-                        ),
-                      },
-                    ]}
-                  />
-                </Card>
-              );
-            })()}
-
-            <Card
-              size="small"
-              title={`Caption for ${social.platform === 'instagram' ? 'Instagram' : 'Facebook'}`}
-              extra={(
-                <Space size={6} wrap>
-                  {captionEdited !== null && <Button size="small" type="link" onClick={() => setCaptionEdited(null)}>Rebuild</Button>}
-                  <Button size="small" icon={<CopyOutlined />} onClick={copyHashtags} disabled={!hashtags.length}>Hashtags</Button>
-                  <Button size="small" type="primary" icon={<CopyOutlined />} onClick={copyCaption}>Copy caption</Button>
-                </Space>
-              )}
-            >
-              <Space direction="vertical" size={10} style={{ width: '100%' }}>
-                <div className="post-studio__caption-tools">
-                  <Segmented size="small" value={social.tone} onChange={(value) => changeSocial({ tone: value as Tone, variant: 0 })} options={TONES} />
-                  <Tooltip title="Same facts, different first line">
-                    <Button size="small" icon={<SyncOutlined />} onClick={() => changeSocial({ variant: social.variant + 1 })}>New wording</Button>
-                  </Tooltip>
-                  <Space size={6}>
-                    <Switch size="small" checked={social.emojis} onChange={(checked) => changeSocial({ emojis: checked })} />
-                    <Text style={{ fontSize: 13 }}>Emojis</Text>
-                  </Space>
-                </div>
-
-                <TextArea
-                  value={caption}
-                  onChange={(event) => setCaptionEdited(event.target.value)}
-                  autoSize={{ minRows: 5, maxRows: 14 }}
-                  aria-label="Caption"
-                />
-                {captionEdited !== null && (
-                  <Text type="secondary" style={{ fontSize: 12 }}>Your edits are kept. “Rebuild” writes it again from the design.</Text>
-                )}
-
-                <div className="post-studio__counters">
-                  {social.platform === 'instagram' ? (
-                    <>
-                      <Tag color={caption.length > INSTAGRAM_LIMITS.characters ? 'red' : 'default'}>
-                        {caption.length.toLocaleString('en-US')} / {INSTAGRAM_LIMITS.characters.toLocaleString('en-US')} characters
-                      </Tag>
-                      <Tag color={captionTags > INSTAGRAM_LIMITS.hashtags ? 'red' : 'default'}>
-                        {captionTags} / {INSTAGRAM_LIMITS.hashtags} hashtags
-                      </Tag>
-                      <Tag color={firstLine.length > INSTAGRAM_LIMITS.preview ? 'orange' : 'green'}>
-                        First line {firstLine.length > INSTAGRAM_LIMITS.preview ? 'is cut before “more”' : 'fits before “more”'}
-                      </Tag>
-                    </>
-                  ) : (
-                    <>
-                      <Tag>{caption.length.toLocaleString('en-US')} characters</Tag>
-                      <Tag color={facebookCut ? 'orange' : 'green'}>
-                        {facebookCut ? 'Long: Facebook shows “See more”' : 'Fits without “See more”'}
-                      </Tag>
-                      <Tag color={captionTags > 3 ? 'orange' : 'default'}>{captionTags} hashtags (2–3 work best)</Tag>
-                    </>
-                  )}
-                </div>
-
-                <div>
-                  <Text strong className="post-studio__label">Hashtags</Text>
-                  <div className="post-studio__tags">
-                    {hashtags.map((tag) => (
-                      <Tag key={tag} closable color="magenta" onClose={(event) => { event.preventDefault(); setHashtags(hashtags.filter((item) => item !== tag)); }}>
-                        {tag}
-                      </Tag>
-                    ))}
-                    <Space.Compact size="small">
-                      <Input
-                        size="small"
-                        value={newTag}
-                        onChange={(event) => setNewTag(event.target.value)}
-                        onPressEnter={addTag}
-                        placeholder="#add"
-                        style={{ width: 120 }}
-                        aria-label="Add a hashtag"
-                      />
-                      <Button size="small" icon={<PlusOutlined />} onClick={addTag} aria-label="Add hashtag" />
-                    </Space.Compact>
-                  </div>
-                  {moreTags.length > 0 && (
-                    <div className="post-studio__tags post-studio__tags--suggested">
-                      <Text type="secondary" style={{ fontSize: 12 }}>Suggested:</Text>
-                      {moreTags.slice(0, 16).map((tag) => (
-                        <Tag key={tag} className="post-studio__tag-add" onClick={() => setHashtags([...hashtags, tag])}>+ {tag}</Tag>
-                      ))}
-                    </div>
-                  )}
-                  {social.platform === 'instagram' && (
-                    <Paragraph type="secondary" style={{ margin: '6px 0 0', fontSize: 12 }}>
-                      Tip: copy the hashtags separately and paste them as the first comment for a cleaner caption.
-                    </Paragraph>
-                  )}
-                </div>
-              </Space>
-            </Card>
 
 
+
+            {!wide && captionCard}
           </div>
         </Col>
+        {wide && (
+          <Col xl={7} className="post-studio__side">
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              {imagePanel ?? (
+                <Card size="small" title={<Space><PictureOutlined />Photo tools</Space>}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {products.length ? 'Click a product photo on the preview (or “Edit photo” in the list) to remove its background, crop, resize or adjust it.' : 'Pick products on the left; their photo tools appear here.'}
+                  </Text>
+                </Card>
+              )}
+              {captionCard}
+            </Space>
+          </Col>
+        )}
       </Row>
+      {!wide && (
+        <Drawer
+          open={!!imagePanel && toolsOpen}
+          onClose={() => setToolsOpen(false)}
+          placement={screens.md ? 'right' : 'bottom'}
+          size={screens.md ? 400 : '70vh'}
+          mask={false}
+          title={null}
+          closable={false}
+          styles={{ body: { padding: 12 } }}
+        >
+          {imagePanel}
+        </Drawer>
+      )}
+      </>
             ),
           },
           {

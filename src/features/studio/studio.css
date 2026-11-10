@@ -73,3 +73,17 @@
 .post-studio__photo-pick button { width: 64px; height: 64px; padding: 2px; border: 2px solid #ece4e0; border-radius: 8px; background: #fff; cursor: pointer; }
 .post-studio__photo-pick button.is-active { border-color: #9b5364; }
 .post-studio__photo-pick img { width: 100%; height: 100%; object-fit: contain; }
+
+/* Wide screens: settings and photo tools are side panels that scroll on their own,
+   so the post stays in front in the middle (like Figma). */
+@media (min-width: 1200px) {
+  .post-studio__side {
+    position: sticky;
+    top: 72px;
+    align-self: flex-start;
+    max-height: calc(100vh - 88px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
