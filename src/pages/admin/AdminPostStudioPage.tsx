@@ -1985,6 +1985,7 @@ export default function AdminPostStudioPage() {
               <Suspense fallback={<Spin style={{ display: 'block', margin: '80px auto' }} />}>
                 <CanvasEditor
                   active={activeTab === 'canvas'}
+                  onOpenIdeas={() => setActiveTab('create')}
                   frames={CANVAS_FRAMES}
                   productPhotos={products.flatMap((product) => (product.photos[product.photoIndex] ? [{ name: product.name, src: product.photos[product.photoIndex] }] : []))}
                   onImportPost={async () => {

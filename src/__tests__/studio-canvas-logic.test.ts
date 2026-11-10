@@ -195,3 +195,24 @@ describe('text, images, frames and saving', () => {
     expect(parseDoc(docWith(rect(0, 0)))?.layers).toHaveLength(1);
   });
 });
+
+describe('widgets', () => {
+  it('every widget builds layers inside the frame; badges come as a group', async () => {
+    const { widgets } = await import('@/features/studio/canvas/widgets');
+    for (const widget of widgets()) {
+      const made = widget.make(540, 675, 1080);
+      if (widget.id === 'shade') continue;
+      expect(made.layers.length, widget.id).toBeGreaterThan(0);
+      for (const layer of made.layers) {
+        expect(layer.w, widget.id).toBeGreaterThan(0);
+        expect(layer.x + layer.w / 2, widget.id).toBeGreaterThan(0);
+      }
+      if (made.layers.length > 1) expect(made.groupName, widget.id).toBeTruthy();
+    }
+  });
+
+  it('keeps proportions when Shift-dragging a side dot of a picture', () => {
+    const box = resizeBox({ x: 0, y: 0, w: 648, h: 810 }, 0, 'e', 102, 0, { keepRatio: true });
+    expect(box.w / box.h).toBeCloseTo(648 / 810);
+  });
+});

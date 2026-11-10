@@ -9,7 +9,7 @@ import {
   AimOutlined, BorderOutlined, CompressOutlined, DownloadOutlined, DragOutlined, ExpandOutlined, FontSizeOutlined,
   ImportOutlined, PictureOutlined, QuestionOutlined, RedoOutlined, UndoOutlined, ZoomInOutlined, ZoomOutOutlined,
 } from '@ant-design/icons';
-import { Circle, MousePointer2 } from 'lucide-react';
+import { Circle, FilePlus2, History, MousePointer2, PanelLeft, PanelRight } from 'lucide-react';
 import { blankDoc, makeImage, makeShape, makeText, parseDoc, type Box, type CanvasDoc, type ImageLayer, type Layer } from './model';
 import { HANDLES, boxFromPoints, resizeBox, boxesIntersect, layerBounds, rotationFromPointer, snapBox, snapToGrid, type Guide, type Handle } from './geometry';
 import {
@@ -20,6 +20,11 @@ import { historyReducer, initHistory } from './history';
 import { exportDocPng, imagePlacement } from './draw';
 import LayersPanel from './LayersPanel';
 import PropertiesPanel from './PropertiesPanel';
+import ContextBubble, { type BubbleActions } from './ContextBubble';
+import StartScreen from './StartScreen';
+import AddPanel from './AddPanel';
+import { overlayLayer, widgets, type Widget } from './widgets';
+import { hasPlainBackground, removeBackground as cutBackground, type WithOriginal } from './imageTools';
 import './canvas.css';
 
 export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'hand';
@@ -37,6 +42,8 @@ export interface CanvasEditorProps {
   storageKey?: string;
   /** False while the tab is hidden, so its keyboard shortcuts don't fire. */
   active?: boolean;
+  /** Opens the ready post ideas (in the Create tab). */
+  onOpenIdeas?: () => void;
 }
 
 const MIN_ZOOM = 0.05;
@@ -101,8 +108,8 @@ export const SHORTCUTS: [string, string][] = [
   ["'", 'Show / hide grid'], ['⌘/Ctrl + E', 'Export PNG'], ['?', 'This list'],
 ];
 
-export default function CanvasEditor({ frames, onImportPost, productPhotos = [], storageKey = 'postStudio.canvas.v1', active = true }: CanvasEditorProps) {
-  const { message, modal } = App.useApp();
+export default function CanvasEditor({ frames, onImportPost, productPhotos = [], storageKey = 'postStudio.canvas.v1', active = true, onOpenIdeas }: CanvasEditorProps) {
+  const { message } = App.useApp();
   const [history, dispatch] = useReducer(historyReducer, storageKey, (key) => initHistory(loadSavedDoc(key) ?? blankDoc()));
   const doc = history.present;
   const docRef = useRef(doc);
@@ -132,6 +139,21 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
   const [helpOpen, setHelpOpen] = useState(false);
   const [natural, setNatural] = useState<Record<string, { w: number; h: number }>>({});
   const clipboard = useRef<{ layers: Layer[]; groups: CanvasDoc['groups'] } | null>(null);
+  /** Bubble menu at the mouse: screen position (in the stage) and the post point it was opened at. */
+  const [bubble, setBubble] = useState<{ x: number; y: number; at: { x: number; y: number } } | null>(null);
+  const [plainBg, setPlainBg] = useState<boolean | null>(null);
+  const [leftTab, setLeftTab] = useState<'add' | 'layers'>('add');
+  const [showLeft, setShowLeft] = useState(true);
+  const [showRight, setShowRight] = useState(true);
+  const panelsRef = useRef({ left: true, right: true });
+  useLayoutEffect(() => { panelsRef.current = { left: showLeft, right: showRight }; });
+  const [hasClip, setHasClip] = useState(false);
+  const [startOpen, setStartOpen] = useState(() => !loadSavedDoc(storageKey)?.layers.length);
+  const previousKey = `${storageKey}.previous`;
+  const [previous, setPrevious] = useState<CanvasDoc | null>(() => loadSavedDoc(`${storageKey}.previous`));
+  const stageRef = useRef<HTMLDivElement>(null);
+  const replaceRef = useRef<string | null>(null);
+  const longPress = useRef<{ timer: number; x: number; y: number } | null>(null);
   const pasteCount = useRef(0);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -159,8 +181,15 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
     const { width, height } = el.getBoundingClientRect();
     if (!width || !height) return;
     const d = docRef.current;
-    const z = clampZoom(Math.min((width - 64) / d.width, (height - 64) / d.height));
-    const p = { x: (width - d.width * z) / 2, y: (height - d.height * z) / 2 };
+    // Leave room for the floating panels and the tool dock, so the post sits centred in the free space.
+    const roomy = width > 900;
+    const left = roomy && panelsRef.current.left ? 256 : 0;
+    const right = roomy && panelsRef.current.right ? 288 : 0;
+    const bottom = 64;
+    const freeW = width - left - right;
+    const freeH = height - bottom;
+    const z = clampZoom(Math.min((freeW - 64) / d.width, (freeH - 56) / d.height));
+    const p = { x: left + (freeW - d.width * z) / 2, y: (freeH - d.height * z) / 2 + 8 };
     view.current = { zoom: z, pan: p };
     setZoom(z);
     setPan(p);
@@ -276,6 +305,7 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
     const layers = docRef.current.layers.filter((l) => ids.has(l.id));
     if (!layers.length) return;
     clipboard.current = { layers, groups: docRef.current.groups };
+    setHasClip(true);
     pasteCount.current = 0;
     if (cut) deleteSelected();
   }, [deleteSelected]);
@@ -321,31 +351,150 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
     if (edit) setEditingId(layer.id);
   }, [commit]);
 
-  const addImage = useCallback((src: string, width: number, height: number, name = 'Image', at?: { x: number; y: number }) => {
+  /** Adds layers (several made together become one group) and selects them. */
+  const addLayers = useCallback((layers: Layer[], groupName?: string) => {
+    if (!layers.length) return [];
+    let next: CanvasDoc = { ...docRef.current, layers: [...docRef.current.layers, ...layers] };
+    let ids = layers.map((l) => l.id);
+    if (groupName && layers.length > 1) {
+      const grouped = groupLayers(next, ids);
+      next = grouped.groupId ? { ...grouped.doc, groups: { ...grouped.doc.groups, [grouped.groupId]: { name: groupName } } } : next;
+      ids = layers.map((l) => l.id);
+    }
+    commit(next);
+    setSelected(ids);
+    setEnteredGroup(null);
+    setTool('select');
+    return ids;
+  }, [commit]);
+
+  /** Several pictures land side by side (all selected, ready to group); one lands in the middle. */
+  const addImagesRow = useCallback((items: { src: string; width: number; height: number; name: string }[], at?: { x: number; y: number }, groupName?: string) => {
+    if (!items.length) return;
     const d = docRef.current;
-    const scale = Math.min(1, (d.width * 0.6) / width, (d.height * 0.6) / height);
-    const w = width * scale;
-    const h = height * scale;
+    const gap = Math.min(d.width, d.height) * 0.03;
+    const targetH = items.length === 1 ? Math.min(d.height * 0.6, (d.width * 0.6 * items[0].height) / items[0].width) : d.height * 0.35;
+    let sizes = items.map((it) => ({ w: (it.width / it.height) * targetH, h: targetH }));
+    const total = sizes.reduce((sum, sz) => sum + sz.w, 0) + gap * (items.length - 1);
+    const maxW = d.width * 0.9;
+    if (total > maxW) sizes = sizes.map((sz) => ({ w: (sz.w * (maxW - gap * (items.length - 1))) / (total - gap * (items.length - 1)), h: (sz.h * (maxW - gap * (items.length - 1))) / (total - gap * (items.length - 1)) }));
+    const rowW = sizes.reduce((sum, sz) => sum + sz.w, 0) + gap * (items.length - 1);
     const cx = at?.x ?? d.width / 2;
     const cy = at?.y ?? d.height / 2;
-    addLayer(makeImage(src, { x: cx - w / 2, y: cy - h / 2, w, h }, { name, fit: 'contain' }));
-  }, [addLayer]);
+    let x = cx - rowW / 2;
+    const layers = items.map((it, i) => {
+      const layer = makeImage(it.src, { x, y: cy - sizes[i].h / 2, w: sizes[i].w, h: sizes[i].h }, { name: it.name, fit: 'contain' });
+      x += sizes[i].w + gap;
+      return layer;
+    });
+    addLayers(layers, groupName);
+    if (items.length > 1 && !groupName) message.info(`${items.length} pictures added and selected. Press ⌘/Ctrl + G to group them.`);
+  }, [addLayers, message]);
 
   const addImageFiles = useCallback(async (files: FileList | File[], at?: { x: number; y: number }) => {
-    for (const file of [...files].filter((f) => f.type.startsWith('image/'))) {
+    const picked = [...files].filter((f) => f.type.startsWith('image/'));
+    const results = await Promise.all(picked.map(async (file) => {
       const result = await readImageFile(file);
-      if (result) addImage(result.src, result.width, result.height, file.name.replace(/\.[^.]+$/, '') || 'Image', at);
-      else message.error('Could not read that picture.');
+      return result ? { ...result, name: file.name.replace(/\.[^.]+$/, '') || 'Image' } : null;
+    }));
+    const ok = results.filter((r): r is NonNullable<typeof r> => !!r);
+    if (ok.length < picked.length) message.error('Some pictures could not be read.');
+    // Replacing one picture keeps its box; otherwise add them.
+    const replaceId = replaceRef.current;
+    replaceRef.current = null;
+    if (replaceId && ok[0]) {
+      commit(updateLayers(docRef.current, [replaceId], { src: ok[0].src, originalSrc: undefined } as Partial<Layer>));
+      return;
     }
-  }, [addImage, message]);
+    addImagesRow(ok, at);
+  }, [addImagesRow, commit, message]);
 
-  const addProductPhoto = useCallback((photo: { name: string; src: string }) => {
+  const loadPhoto = (photo: { name: string; src: string }) => new Promise<{ src: string; width: number; height: number; name: string } | null>((resolve) => {
     const image = new Image();
     image.crossOrigin = 'anonymous';
-    image.onload = () => addImage(photo.src, image.naturalWidth, image.naturalHeight, photo.name);
-    image.onerror = () => message.error('Could not load that photo.');
+    image.onload = () => resolve({ src: photo.src, width: image.naturalWidth, height: image.naturalHeight, name: photo.name });
+    image.onerror = () => resolve(null);
     image.src = photo.src;
-  }, [addImage, message]);
+  });
+
+  const addProductPhoto = useCallback(async (photo: { name: string; src: string }) => {
+    const item = await loadPhoto(photo);
+    if (item) addImagesRow([item]); else message.error('Could not load that photo.');
+  }, [addImagesRow, message]);
+
+  const addAllProducts = useCallback(async () => {
+    const items = (await Promise.all(productPhotos.map(loadPhoto))).filter((it): it is NonNullable<typeof it> => !!it);
+    addImagesRow(items, undefined, 'Products');
+  }, [addImagesRow, productPhotos]);
+
+  const addWidget = useCallback((widget: Widget, at?: { x: number; y: number }) => {
+    const d = docRef.current;
+    if (widget.id === 'shade') {
+      // Above a full-frame background, below everything else.
+      const layer = overlayLayer(d.width, d.height);
+      const first = d.layers[0];
+      const index = first && first.w >= d.width - 1 && first.h >= d.height - 1 ? 1 : 0;
+      const layers = [...d.layers];
+      layers.splice(index, 0, layer);
+      commit({ ...d, layers });
+      setSelected([layer.id]);
+      return;
+    }
+    const made = widget.make(at?.x ?? d.width / 2, at?.y ?? d.height / 2, Math.min(d.width, d.height));
+    addLayers(made.layers, made.groupName);
+  }, [addLayers, commit]);
+
+  const removeBg = useCallback(async (id: string) => {
+    const layer = docRef.current.layers.find((l) => l.id === id) as WithOriginal | undefined;
+    if (!layer || layer.type !== 'image') return;
+    const hide = message.loading('Removing the background…', 0);
+    const result = await cutBackground(layer);
+    hide();
+    if (!result) {
+      message.error('Could not remove the background from this picture.');
+      return;
+    }
+    commit(updateLayers(docRef.current, [id], result as Partial<Layer>));
+    message.success('Background removed. Use “Restore original background” to undo it.');
+  }, [commit, message]);
+
+  const restoreBg = useCallback((id: string) => {
+    const layer = docRef.current.layers.find((l) => l.id === id) as WithOriginal | undefined;
+    if (!layer?.originalSrc) return;
+    commit(updateLayers(docRef.current, [id], { src: layer.originalSrc, originalSrc: undefined } as Partial<Layer>));
+  }, [commit]);
+
+  /** Starts a new design; the one on screen is kept as "previous" to go back to. */
+  const keepAsPrevious = useCallback(() => {
+    const current = docRef.current;
+    if (!current.layers.length) return;
+    setPrevious(current);
+    try { window.localStorage.setItem(previousKey, JSON.stringify(current)); } catch { /* too big: kept for this visit only */ }
+  }, [previousKey]);
+
+  const newBlank = useCallback((width: number, height: number) => {
+    keepAsPrevious();
+    commit({ ...blankDoc(width, height), background: '#ffffff', textStyles: docRef.current.textStyles });
+    setSelected([]);
+    setStartOpen(false);
+    setTimeout(() => fit(), 30);
+  }, [commit, fit, keepAsPrevious]);
+
+  const backToPrevious = useCallback(() => {
+    if (!previous) return;
+    const current = docRef.current;
+    commit(previous);
+    if (current.layers.length) {
+      setPrevious(current);
+      try { window.localStorage.setItem(previousKey, JSON.stringify(current)); } catch { /* ignore */ }
+    } else {
+      setPrevious(null);
+      try { window.localStorage.removeItem(previousKey); } catch { /* ignore */ }
+    }
+    setSelected([]);
+    setStartOpen(false);
+    setTimeout(() => fit(), 30);
+  }, [commit, fit, previous, previousKey]);
 
   const exportPng = useCallback(async () => {
     setEditingId(null);
@@ -369,38 +518,22 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
 
   const importPost = useCallback(async () => {
     if (!onImportPost) return;
-    const run = async () => {
-      const hide = message.loading('Turning the post into layers…', 0);
-      try {
-        const next = await onImportPost();
-        if (next) {
-          commit(next);
-          setSelected([]);
-          setEnteredGroup(null);
-          message.success('Done: click any text to select it, double-click to type.');
-        }
-      } finally {
-        hide();
-      }
-    };
-    if (docRef.current.layers.length) {
-      modal.confirm({ title: 'Replace this canvas with the current post?', content: 'You can undo this with ⌘/Ctrl + Z.', okText: 'Replace', onOk: run });
-    } else {
-      void run();
-    }
-  }, [commit, message, modal, onImportPost]);
-
-  const clearCanvas = useCallback(() => {
-    modal.confirm({
-      title: 'Start a blank canvas?',
-      content: 'You can undo this with ⌘/Ctrl + Z.',
-      okText: 'Clear',
-      onOk: () => {
-        commit({ ...blankDoc(docRef.current.width, docRef.current.height), textStyles: docRef.current.textStyles });
+    const hide = message.loading('Turning the post into layers…', 0);
+    try {
+      const next = await onImportPost();
+      if (next) {
+        keepAsPrevious();
+        commit(next);
         setSelected([]);
-      },
-    });
-  }, [commit, modal]);
+        setEnteredGroup(null);
+        setStartOpen(false);
+        setTimeout(() => fit(), 30);
+        message.success('Done: click any text to select it, double-click to type.');
+      }
+    } finally {
+      hide();
+    }
+  }, [commit, fit, keepAsPrevious, message, onImportPost]);
 
   const toggleFullscreen = useCallback(() => {
     const el = rootRef.current;
@@ -526,6 +659,13 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
 
   const panning = tool === 'hand' || spaceDown;
 
+  /** Opens the bubble menu at a screen point (inside the stage). */
+  const openBubble = useCallback((clientX: number, clientY: number) => {
+    const stage = stageRef.current?.getBoundingClientRect();
+    if (!stage) return;
+    setBubble({ x: clientX - stage.left + 6, y: clientY - stage.top + 6, at: toDoc(clientX, clientY) });
+  }, [toDoc]);
+
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
     if (!el) return;
@@ -616,8 +756,10 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
       return;
     }
 
-    // Empty canvas: touch pans, mouse draws a selection box.
+    // Empty canvas: touch pans (hold still for the add bubble), mouse draws a selection box.
     if (event.pointerType === 'touch') {
+      const { clientX, clientY } = event;
+      longPress.current = { x: clientX, y: clientY, timer: window.setTimeout(() => { drag.current = null; setSelected([]); openBubble(clientX, clientY); }, 550) };
       drag.current = { kind: 'pan', startClient: { x: event.clientX, y: event.clientY }, startPan: view.current.pan };
     } else {
       if (!event.shiftKey) setSelected([]);
@@ -649,6 +791,10 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
         if (id !== hoverId) setHoverId(id);
       }
       return;
+    }
+    if (longPress.current && Math.hypot(event.clientX - longPress.current.x, event.clientY - longPress.current.y) > 8) {
+      window.clearTimeout(longPress.current.timer);
+      longPress.current = null;
     }
     if (d.kind === 'pan') {
       setPan({ x: d.startPan.x + event.clientX - d.startClient.x, y: d.startPan.y + event.clientY - d.startClient.y });
@@ -770,6 +916,10 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     pointers.current.delete(event.pointerId);
+    if (longPress.current) {
+      window.clearTimeout(longPress.current.timer);
+      longPress.current = null;
+    }
     if (pinch.current) {
       if (pointers.current.size < 2) pinch.current = null;
       return;
@@ -810,7 +960,14 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
   const onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const id = (event.target as HTMLElement).closest<HTMLElement>('[data-layer-id]')?.dataset.layerId;
     const layer = id ? layerById.get(id) : undefined;
-    if (!layer || layer.locked) return;
+    if (!layer || layer.locked) {
+      // Double-click on empty canvas: the "add" bubble.
+      if (!(event.target as HTMLElement).closest('[data-handle]')) {
+        setSelected([]);
+        openBubble(event.clientX, event.clientY);
+      }
+      return;
+    }
     if (layer.groupId && layer.groupId !== enteredGroup) {
       // First double-click on a group goes inside it.
       setEnteredGroup(layer.groupId);
@@ -818,15 +975,73 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
       if (layer.type !== 'text') return;
     }
     setSelected([layer.id]);
-    if (layer.type === 'text') setEditingId(layer.id);
+    if (layer.type === 'text') {
+      setEditingId(layer.id);
+      // Formatting bubble next to the text being edited.
+      const el = textRefs.current.get(layer.id)?.getBoundingClientRect();
+      if (el) openBubble(Math.min(el.right + 8, window.innerWidth - 300), el.top);
+    }
     if (layer.type === 'image') setCroppingId(layer.id);
   };
 
+  const onContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const id = (event.target as HTMLElement).closest<HTMLElement>('[data-layer-id]')?.dataset.layerId;
+    const layer = id ? layerById.get(id) : undefined;
+    if (layer && !layer.locked) {
+      if (!selectedRef.current.includes(layer.id)) setSelected(clickTarget(layer));
+    } else {
+      setSelected([]);
+    }
+    setEditingId(null);
+    openBubble(event.clientX, event.clientY);
+  };
+
   const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    const widgetId = event.dataTransfer.getData('application/x-tessa-widget');
+    if (widgetId) {
+      event.preventDefault();
+      const widget = widgets().find((w) => w.id === widgetId);
+      if (widget) addWidget(widget, toDoc(event.clientX, event.clientY));
+      return;
+    }
     if (!event.dataTransfer.files.length) return;
     event.preventDefault();
     event.stopPropagation();
     void addImageFiles(event.dataTransfer.files, toDoc(event.clientX, event.clientY));
+  };
+
+  // A picture under the bubble: check for a plain background to offer removing it.
+  const bubbleImage = bubble && selectedLayers.length === 1 && selectedLayers[0].type === 'image' ? selectedLayers[0] : null;
+  useEffect(() => {
+    if (!bubbleImage) return;
+    let live = true;
+    void hasPlainBackground(bubbleImage.src).then((plain) => { if (live) setPlainBg(plain); });
+    return () => { live = false; setPlainBg(null); };
+  }, [bubbleImage?.src]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const bubbleActions: BubbleActions = {
+    addText: () => addLayers([makeText({ x: (bubble?.at.x ?? doc.width / 2) - 300, y: bubble?.at.y ?? doc.height / 2 }, { align: 'center' })]).forEach((lid) => setEditingId(lid)),
+    addImages: () => fileRef.current?.click(),
+    addShape: (type) => {
+      const at = bubble?.at ?? { x: doc.width / 2, y: doc.height / 2 };
+      addLayers([makeShape(type, { x: at.x - 100, y: at.y - 100, w: 200, h: 200 })]);
+    },
+    openWidgets: () => { setShowLeft(true); setLeftTab('add'); },
+    paste: () => { paste(); },
+    canPaste: hasClip,
+    selectAll,
+    duplicate: duplicateSelected,
+    copy: () => copySelected(),
+    remove: deleteSelected,
+    arrange,
+    group,
+    ungroup,
+    editText: (lid) => { setSelected([lid]); setEditingId(lid); },
+    crop: (lid) => setCroppingId(lid),
+    removeBackground: (lid) => void removeBg(lid),
+    restoreBackground: restoreBg,
+    replaceImage: (lid) => { replaceRef.current = lid; fileRef.current?.click(); },
   };
 
   /* ------------------------------------------------------------- render */
@@ -948,22 +1163,13 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
   return (
     <div className="ce" ref={rootRef}>
       <div className="ce-toolbar">
-        {toolButton('select', <MousePointer2 size={14} />, 'Move (V)')}
-        {toolButton('text', <FontSizeOutlined />, 'Text (T)')}
-        {toolButton('rect', <BorderOutlined />, 'Rectangle (R)')}
-        {toolButton('ellipse', <Circle size={14} />, 'Ellipse (O)')}
-        {toolButton('hand', <DragOutlined />, 'Hand (H, or hold Space)')}
-        <Tooltip title="Add a picture (or drop / paste one on the canvas)"><Button size="small" type="text" icon={<PictureOutlined />} onClick={() => fileRef.current?.click()} aria-label="Add picture" /></Tooltip>
-        {productPhotos.length > 0 && (
-          <Dropdown menu={{ items: productPhotos.map((photo, i) => ({ key: String(i), label: photo.name, onClick: () => addProductPhoto(photo) })) }}>
-            <Button size="small" type="text">Product photo ▾</Button>
-          </Dropdown>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) void addImageFiles(e.target.files); e.target.value = ''; }} />
+        <Tooltip title="New design: blank frame, the post from Create, or back to the previous design"><Button size="small" icon={<FilePlus2 size={14} />} onClick={() => setStartOpen(true)}>New</Button></Tooltip>
+        {previous && <Tooltip title="Switch back to the design you had before"><Button size="small" type="text" icon={<History size={14} />} onClick={backToPrevious}>Previous design</Button></Tooltip>}
+        {onImportPost && <Tooltip title="Bring in the post from the Create tab, with its text as editable layers"><Button size="small" type="text" icon={<ImportOutlined />} onClick={() => void importPost()}>From Create</Button></Tooltip>}
         <span className="ce-sep" />
         <Tooltip title="Undo (⌘/Ctrl+Z)"><Button size="small" type="text" icon={<UndoOutlined />} disabled={!history.past.length} onClick={() => dispatch({ type: 'undo' })} aria-label="Undo" /></Tooltip>
         <Tooltip title="Redo (⇧⌘/Ctrl+Z)"><Button size="small" type="text" icon={<RedoOutlined />} disabled={!history.future.length} onClick={() => dispatch({ type: 'redo' })} aria-label="Redo" /></Tooltip>
-        <span className="ce-sep" />
+        <span className="ce-grow" />
         <Tooltip title="Zoom out (⌘/Ctrl −)"><Button size="small" type="text" icon={<ZoomOutOutlined />} onClick={() => zoomAt(zoom / 1.25)} aria-label="Zoom out" /></Tooltip>
         <Dropdown menu={{ items: [
           { key: 'fit', label: 'Fit to screen (⇧1)', onClick: fit },
@@ -983,28 +1189,16 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
         </Dropdown>
         <Tooltip title="Zoom in (⌘/Ctrl +)"><Button size="small" type="text" icon={<ZoomInOutlined />} onClick={() => zoomAt(zoom * 1.25)} aria-label="Zoom in" /></Tooltip>
         <Tooltip title="Fit to screen (⇧1)"><Button size="small" type="text" icon={<AimOutlined />} onClick={fit} aria-label="Fit to screen" /></Tooltip>
-        <span className="ce-grow" />
-        {onImportPost && <Tooltip title="Bring in the post from the Create tab, with its text as editable layers"><Button size="small" icon={<ImportOutlined />} onClick={() => void importPost()}>Start from current post</Button></Tooltip>}
-        <Button size="small" onClick={clearCanvas}>Blank</Button>
+        <span className="ce-sep" />
+        <Tooltip title={showLeft ? 'Hide the left panel' : 'Show widgets and layers'}><Button size="small" type={showLeft ? 'default' : 'text'} icon={<PanelLeft size={14} />} onClick={() => setShowLeft((v) => !v)} aria-label="Toggle left panel" /></Tooltip>
+        <Tooltip title={showRight ? 'Hide the right panel' : 'Show properties'}><Button size="small" type={showRight ? 'default' : 'text'} icon={<PanelRight size={14} />} onClick={() => setShowRight((v) => !v)} aria-label="Toggle right panel" /></Tooltip>
         <Tooltip title="Full screen"><Button size="small" type="text" icon={document.fullscreenElement ? <CompressOutlined /> : <ExpandOutlined />} onClick={toggleFullscreen} aria-label="Full screen" /></Tooltip>
         <Tooltip title="Keyboard shortcuts (?)"><Button size="small" type="text" icon={<QuestionOutlined />} onClick={() => setHelpOpen(true)} aria-label="Keyboard shortcuts" /></Tooltip>
         <Button size="small" type="primary" icon={<DownloadOutlined />} onClick={() => void exportPng()}>Export PNG</Button>
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) void addImageFiles(e.target.files, bubble?.at); e.target.value = ''; }} />
       </div>
 
-      <div className="ce-body">
-        <div className="ce-panel ce-panel--left">
-          <LayersPanel
-            doc={doc}
-            selected={selected}
-            onSelect={(ids, additive) => {
-              setEnteredGroup(null);
-              setSelected(additive ? [...new Set([...selected.filter((id) => !ids.includes(id) || !ids.every((x) => selected.includes(x))), ...(ids.every((x) => selected.includes(x)) ? [] : ids)])] : ids);
-            }}
-            onChange={commit}
-            onEditText={(id) => { setSelected([id]); setEditingId(id); }}
-          />
-        </div>
-
+      <div className="ce-stage" ref={stageRef}>
         <div
           className="ce-viewport"
           ref={viewportRef}
@@ -1017,7 +1211,8 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
           onPointerCancel={onPointerUp}
           onPointerLeave={() => setHoverId(null)}
           onDoubleClick={onDoubleClick}
-          onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); }}
+          onContextMenu={onContextMenu}
+          onDragOver={(e) => { if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('application/x-tessa-widget')) e.preventDefault(); }}
           onDrop={onDrop}
           aria-label="Design canvas"
           role="application"
@@ -1052,7 +1247,9 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
                 <div
                   key={i}
                   className="ce-guide"
-                  style={g.axis === 'x' ? { left: g.pos - 0.5 / z, top: g.from, width: 1 / z, height: g.to - g.from } : { top: g.pos - 0.5 / z, left: g.from, height: 1 / z, width: g.to - g.from }}
+                  style={g.axis === 'x'
+                    ? { left: g.pos - 0.75 / z, top: g.from, height: g.to - g.from, borderLeft: `${1.5 / z}px dashed #ff4d1f` }
+                    : { top: g.pos - 0.75 / z, left: g.from, width: g.to - g.from, borderTop: `${1.5 / z}px dashed #ff4d1f` }}
                 />
               ))}
               {marquee && <div className="ce-marquee" style={{ left: marquee.x, top: marquee.y, width: marquee.w, height: marquee.h, borderWidth: 1 / z }} />}
@@ -1061,14 +1258,48 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
           </div>
           {doc.layers.length === 0 && (
             <div className="ce-empty-hint">
-              {onImportPost ? 'Click “Start from current post”, or ' : ''}press T for text, R for a box, or drop a photo here
+              Double-click or right-click the canvas to add things · pick widgets on the left · drop photos here
             </div>
           )}
           {croppingId && <div className="ce-empty-hint">Crop: drag the photo to move it, scroll to zoom · Enter or Esc when done</div>}
           {editingId && <div className="ce-empty-hint">Typing · Esc or click outside when done</div>}
         </div>
 
-        <div className="ce-panel ce-panel--right">
+
+        {showLeft && (
+          <div className="ce-float ce-float--left">
+            <div className="ce-float-tabs" role="tablist">
+              <button type="button" role="tab" aria-selected={leftTab === 'add'} className={leftTab === 'add' ? 'is-on' : ''} onClick={() => setLeftTab('add')}>Add</button>
+              <button type="button" role="tab" aria-selected={leftTab === 'layers'} className={leftTab === 'layers' ? 'is-on' : ''} onClick={() => setLeftTab('layers')}>Layers · {doc.layers.length}</button>
+            </div>
+            <div className="ce-float-body">
+              {leftTab === 'add' ? (
+                <AddPanel
+                  productPhotos={productPhotos}
+                  onWidget={(w) => addWidget(w)}
+                  onUpload={() => fileRef.current?.click()}
+                  onProduct={(photo) => void addProductPhoto(photo)}
+                  onAllProducts={() => void addAllProducts()}
+                />
+              ) : (
+                <LayersPanel
+                  doc={doc}
+                  selected={selected}
+                  onSelect={(ids, additive) => {
+                    setEnteredGroup(null);
+                    setSelected(additive ? [...new Set([...selected.filter((id) => !ids.includes(id) || !ids.every((x) => selected.includes(x))), ...(ids.every((x) => selected.includes(x)) ? [] : ids)])] : ids);
+                  }}
+                  onChange={commit}
+                  onEditText={(id) => { setSelected([id]); setEditingId(id); }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {showRight && (
+          <div className="ce-float ce-float--right">
+            <div className="ce-float-body">
           <PropertiesPanel
             doc={doc}
             layers={selectedLayers}
@@ -1088,7 +1319,44 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
             snapping={snapping}
             onSnapping={setSnapping}
           />
+            </div>
+          </div>
+        )}
+
+        <div className="ce-dock" role="toolbar" aria-label="Tools">
+          {toolButton('select', <MousePointer2 size={15} />, 'Move (V)')}
+          {toolButton('text', <FontSizeOutlined />, 'Text (T)')}
+          {toolButton('rect', <BorderOutlined />, 'Rectangle (R)')}
+          {toolButton('ellipse', <Circle size={15} />, 'Ellipse (O)')}
+          {toolButton('hand', <DragOutlined />, 'Hand (H, or hold Space)')}
+          <Tooltip title="Add photos (pick several)"><Button size="small" type="text" icon={<PictureOutlined />} onClick={() => fileRef.current?.click()} aria-label="Add photos" /></Tooltip>
         </div>
+
+        {bubble && (
+          <ContextBubble
+            x={bubble.x}
+            y={bubble.y}
+            doc={doc}
+            layers={selectedLayers}
+            onChange={commit}
+            onClose={() => setBubble(null)}
+            actions={bubbleActions}
+            plainBackground={plainBg}
+          />
+        )}
+
+        {startOpen && (
+          <StartScreen
+            frames={frames}
+            hasCurrent={doc.layers.length > 0}
+            previousLabel={previous ? `${previous.width} × ${previous.height} · ${previous.layers.length} layers` : null}
+            onBlank={newBlank}
+            onImportPost={onImportPost ? () => void importPost() : undefined}
+            onOpenIdeas={onOpenIdeas}
+            onContinue={() => setStartOpen(false)}
+            onPrevious={backToPrevious}
+          />
+        )}
       </div>
 
       <Modal open={helpOpen} onCancel={() => setHelpOpen(false)} footer={null} title="Keyboard shortcuts" width={620}>
