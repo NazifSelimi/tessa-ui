@@ -9,7 +9,8 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import PageOutlet from './PageOutlet';
 import { Layout, Menu, Typography, Button, Space, Avatar, Dropdown, Badge, Drawer } from 'antd';
 import {
   DashboardOutlined,
@@ -334,7 +335,7 @@ export default function AdminLayout() {
 
         {/* Content */}
         <Content className="admin-content">
-          <Outlet />
+          <PageOutlet />
         </Content>
       </Layout>
     </Layout>

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import { Typography, Table, Button, Tag, Input, Space, Card, InputNumber, Select, Row, Col, App, Checkbox, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetCategoriesQuery, useGetBrandsQuery, type VisibilityFilter } from '@/features/products/api';
@@ -27,8 +28,7 @@ const WORK_QUEUE_OPTIONS: { value: WorkQueue; label: string }[] = [
   { value: 'low_stock', label: 'Low stock (1–3)' },
   { value: 'out_of_stock', label: 'Out of stock' },
 ];
-const isWorkQueue = (value: string | null): value is WorkQueue =>
-  WORK_QUEUE_OPTIONS.some((option) => option.value === value);
+const WORK_QUEUES = WORK_QUEUE_OPTIONS.map((option) => option.value);
 const REVIEW_REASON_LABELS: Record<ProductReviewReason, string> = {
   no_photo: 'a real photo',
   no_brand: 'a real brand',
@@ -44,24 +44,20 @@ const VISIBILITY_FILTER_OPTIONS: { value: '' | VisibilityFilter; label: string }
   { value: 'customers', label: 'Shown to customers' },
   { value: 'stylists', label: 'Shown to stylists' },
 ];
+const VISIBILITY_FILTERS = VISIBILITY_FILTER_OPTIONS.map((option) => option.value);
 
 export default function AdminProductsPage() {
   const { modal, message } = App.useApp();
-  const [searchParams] = useSearchParams();
-  const initialReview = searchParams.get('review');
-  const initialQueue = searchParams.get('queue');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [category, setCategory] = useState('');
-  const [brand, setBrand] = useState('');
+  const [search, setSearch] = useUrlState('search', '');
+  const [page, setPage] = useUrlState('page', 1);
+  const [category, setCategory] = useUrlState('category', '');
+  const [brand, setBrand] = useUrlState('brand', '');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, DEFAULT_MAX_PRICE]);
-  const [inStockOnly, setInStockOnly] = useState(false);
-  const [reviewFilter, setReviewFilter] = useState<'' | 'in_review' | 'ready'>(
-    initialReview === 'in_review' || initialReview === 'ready' ? initialReview : '',
-  );
-  const [workQueue, setWorkQueue] = useState<WorkQueue>(isWorkQueue(initialQueue) ? initialQueue : '');
-  const [visibilityFilter, setVisibilityFilter] = useState<'' | VisibilityFilter>('');
-  const [sortBy, setSortBy] = useState('name_asc');
+  const [inStockOnly, setInStockOnly] = useUrlState('in_stock', false);
+  const [reviewFilter, setReviewFilter] = useUrlState<'' | 'in_review' | 'ready'>('review', '', ['', 'in_review', 'ready']);
+  const [workQueue, setWorkQueue] = useUrlState<WorkQueue>('queue', '', WORK_QUEUES);
+  const [visibilityFilter, setVisibilityFilter] = useUrlState<'' | VisibilityFilter>('visibility', '', VISIBILITY_FILTERS);
+  const [sortBy, setSortBy] = useUrlState('sort', 'name_asc');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -129,12 +125,15 @@ export default function AdminProductsPage() {
   const [deleteProduct] = useDeleteProductMutation();
 
   useEffect(() => {
-    const lastPage = data?.meta?.last_page ?? 1;
+    // Wait for the list: before it loads, a page restored from the address
+    // (e.g. ?page=4 after a refresh) must not be reset to 1.
+    const lastPage = data?.meta?.last_page;
+    if (!lastPage) return;
 
     if (page > lastPage) {
       setPage(lastPage);
     }
-  }, [data?.meta?.last_page, page]);
+  }, [data?.meta?.last_page, page, setPage]);
 
 
   /* ============================== handlers ============================== */

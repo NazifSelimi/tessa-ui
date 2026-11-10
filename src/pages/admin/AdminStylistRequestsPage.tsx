@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import {
   Typography, Table, Tag, Select, Input, Space, Card, Button, Modal,
   Descriptions, App,
@@ -30,10 +31,10 @@ const statusOptions = [
 
 export default function AdminStylistRequestsPage() {
   const { message, modal } = App.useApp();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useUrlState('search', '');
+  const [statusFilter, setStatusFilter] = useUrlState('status', 'all');
   const [selectedRequest, setSelectedRequest] = useState<StylistRequest | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useUrlState('page', 1);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);

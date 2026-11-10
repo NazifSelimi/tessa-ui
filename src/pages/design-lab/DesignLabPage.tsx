@@ -10,16 +10,17 @@
  * This route is additive and isolated — it does not touch existing pages.
  */
 
-import { lazy, Suspense, useState } from 'react';
+import { Suspense, useState } from 'react';
+import { lazyWithReload } from '@/shared/utils/chunkReload';
 import type { LabProduct, LabRole } from './mockData';
 import { useLabProducts } from './useLabProducts';
 import './design-lab.css';
 
-const VersionOne = lazy(() => import('./VersionOne'));
-const VersionTwo = lazy(() => import('./VersionTwo'));
-const VersionThree = lazy(() => import('./VersionThree'));
-const VersionFour = lazy(() => import('./VersionFour'));
-const VersionFive = lazy(() => import('./VersionFive'));
+const VersionOne = lazyWithReload(() => import('./VersionOne'));
+const VersionTwo = lazyWithReload(() => import('./VersionTwo'));
+const VersionThree = lazyWithReload(() => import('./VersionThree'));
+const VersionFour = lazyWithReload(() => import('./VersionFour'));
+const VersionFive = lazyWithReload(() => import('./VersionFive'));
 
 export interface VersionProps {
   role: LabRole;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import { 
   Typography, Table, Tag, Input, Space, Card, Button, Modal, Form, 
   InputNumber, Select, DatePicker, Popconfirm, App
@@ -39,9 +40,9 @@ const statusColors: Record<string, string> = {
 
 export default function AdminCouponsPage() {
   const { message } = App.useApp();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired'>('all');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useUrlState('search', '');
+  const [statusFilter, setStatusFilter] = useUrlState<'all' | 'active' | 'expired'>('status', 'all', ['all', 'active', 'expired']);
+  const [page, setPage] = useUrlState('page', 1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [form] = Form.useForm();

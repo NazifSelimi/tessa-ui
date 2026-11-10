@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import {
   App, Button, Card, Col, Empty, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
@@ -204,6 +205,9 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   qr: false,
   qrUrl: '',
 });
+
+type StudioTab = 'create' | 'templates' | 'drafts' | 'help';
+const STUDIO_TABS: StudioTab[] = ['create', 'templates', 'drafts', 'help'];
 
 export default function AdminPostStudioPage() {
   const { message } = App.useApp();
@@ -833,8 +837,7 @@ export default function AdminPostStudioPage() {
 
   /* ------------------------------------------------------------ template gallery */
 
-  type StudioTab = 'create' | 'templates' | 'drafts' | 'help';
-  const [activeTab, setActiveTab] = useState<StudioTab>('create');
+  const [activeTab, setActiveTab] = useUrlState<StudioTab>('tab', 'create', STUDIO_TABS);
   const galleryOpen = activeTab === 'templates';
   const [galleryThumbs, setGalleryThumbs] = useState<Record<string, string>>({});
 

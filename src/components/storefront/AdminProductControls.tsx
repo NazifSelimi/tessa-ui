@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from 'react';
+import { Suspense, useState } from 'react';
+import { lazyWithReload } from '@/shared/utils/chunkReload';
 import { Link, useNavigate } from 'react-router-dom';
 import { App, InputNumber } from 'antd';
 import { Check, Images, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -7,7 +8,7 @@ import { useGetProductByIdQuery } from '@/features/products/api';
 import type { Product } from '@/types';
 
 // Customers never load the editor; it is fetched the first time an admin opens it.
-const ProductEditorModal = lazy(() => import('@/features/admin/ProductEditorModal'));
+const ProductEditorModal = lazyWithReload(() => import('@/features/admin/ProductEditorModal'));
 
 interface AdminProductControlsProps {
   /** Lists may hold a slim copy; the editor always loads the full product. */

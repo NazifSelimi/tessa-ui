@@ -1,5 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Suspense, useEffect, useState } from 'react';
+import { lazyWithReload } from '@/shared/utils/chunkReload';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import PageOutlet from './PageOutlet';
 import { ConfigProvider, Drawer, Dropdown } from 'antd';
 import { ArrowUpRight, ChevronRight, ClipboardList, Gift, Headphones, Home, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
 import { FacebookIcon, InstagramIcon } from './SocialIcons';
@@ -15,8 +17,8 @@ import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
 import { useFeature } from '@/shared/hooks/useFeature';
 import { captureReferralCode } from '@/shared/utils/referral';
 
-const CartDrawer = lazy(() => import('./CartDrawer'));
-const AdminDock = lazy(() => import('./storefront/AdminDock'));
+const CartDrawer = lazyWithReload(() => import('./CartDrawer'));
+const AdminDock = lazyWithReload(() => import('./storefront/AdminDock'));
 
 export default function MainLayout() {
   const { t } = useTranslation();
@@ -102,7 +104,7 @@ export default function MainLayout() {
             {!professionalShell && <Dropdown menu={{ items: accountItems }} trigger={['click']}><button className="nl-icon-button nl-account-button" aria-label={t('auth.account')}><UserRound size={20} /></button></Dropdown>}
           </div>
         </header>
-        <main id="page-content" className="nl-content" tabIndex={-1}><Outlet /></main>
+        <main id="page-content" className="nl-content" tabIndex={-1}><PageOutlet /></main>
         <footer className="nl-footer">
           <div><Logo height={28} /><p>{t('footer.tagline')}</p></div>
           <div className="nl-footer-contact"><Link to="/contact">{t('footer.contactUs')}</Link>{site.contactPhones.map(phone => <a key={phone.href} href={phone.href}>{phone.label}</a>)}<a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a><span className="nl-footer-chat"><a href={viberUrl(site.chatPhone)} aria-label={t('footer.chatViber')}>Viber</a><a href={whatsappUrl(site.chatPhone)} target="_blank" rel="noopener noreferrer" aria-label={t('footer.chatWhatsapp')}>WhatsApp</a></span></div>

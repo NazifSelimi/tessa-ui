@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import { Typography, Table, Tag, Select, Input, Space, Card, Button, Popconfirm, Modal, Form, Descriptions, App, Alert } from 'antd';
 import { SearchOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { 
@@ -30,15 +31,15 @@ const roleOptions = [
 
 export default function AdminUsersPage() {
   const { message } = App.useApp();
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useUrlState('search', '');
+  const [roleFilter, setRoleFilter] = useUrlState<UserRole | 'all'>('role', 'all');
+  const [page, setPage] = useUrlState('page', 1);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [form] = Form.useForm();
-  const [perPage, setPerPage] = useState(20);
-  const [sort, setSort] = useState('newest');
+  const [perPage, setPerPage] = useUrlState('per_page', 20);
+  const [sort, setSort] = useUrlState('sort', 'newest');
 
   const debouncedSearch = useDebounce(search, 300);
 

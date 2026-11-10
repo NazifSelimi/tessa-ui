@@ -10,11 +10,14 @@
  * </ErrorBoundary>
  */
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { isChunkLoadError } from '@/shared/utils/chunkReload';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  /** When this changes (e.g. the page address), a shown error is cleared. */
+  resetKey?: string;
 }
 
 interface State {
@@ -44,6 +47,12 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ error, errorInfo });
   }
 
+  componentDidUpdate(prevProps: Props): void {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.handleReset();
+    }
+  }
+
   handleReset = (): void => {
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
@@ -54,12 +63,21 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      // A page file from an older version of the site: only a reload helps.
+      const newVersion = isChunkLoadError(this.state.error);
+
       // Plain-HTML fallback — no antd dependency to keep initial bundle small
       return (
         <div style={{ padding: '50px 20px', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <h1 style={{ fontSize: 22, margin: '0 0 8px', color: '#1a1a2e' }}>Something went wrong</h1>
-          <p style={{ color: '#666', marginBottom: 24 }}>An unexpected error occurred. Please try refreshing the page.</p>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>{newVersion ? '🔄' : '⚠️'}</div>
+          <h1 style={{ fontSize: 22, margin: '0 0 8px', color: '#1a1a2e' }}>
+            {newVersion ? 'A new version is available' : 'Something went wrong'}
+          </h1>
+          <p style={{ color: '#666', marginBottom: 24 }}>
+            {newVersion
+              ? 'The site was updated while this page was open. Reload to continue.'
+              : 'An unexpected error occurred. Please try refreshing the page.'}
+          </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button
               onClick={() => window.location.reload()}
@@ -67,12 +85,12 @@ export class ErrorBoundary extends Component<Props, State> {
             >
               Reload Page
             </button>
-            <button
+            {!newVersion && <button
               onClick={this.handleReset}
               style={{ padding: '8px 24px', background: '#fff', color: '#1a1a2e', border: '1px solid #d9d9d9', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}
             >
               Try Again
-            </button>
+            </button>}
           </div>
           {import.meta.env.DEV && this.state.error && (
             <details style={{ marginTop: 20, textAlign: 'left' }}>

@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Typography, Card, Form, Input, Button, Result, Steps, Alert, App, Spin, Select } from 'antd';
 import { ScissorOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -126,9 +127,9 @@ export default function StylistRequestPage() {
             title="You're a Verified Stylist!"
             subTitle="Enjoy exclusive stylist pricing on all products."
             extra={
-              <Button type="primary" href="/">
-                Shop with Stylist Pricing
-              </Button>
+              <Link to="/shop">
+                <Button type="primary">Shop with Stylist Pricing</Button>
+              </Link>
             }
           />
         </Card>

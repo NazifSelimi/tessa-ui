@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useUrlState } from '@/shared/hooks/useUrlState';
+import { useNavigate } from 'react-router-dom';
 import { useFeature, useForceDeleteOrderMutation, useRestoreOrderMutation, useTrashOrderMutation } from '@/features/admin/platformApi';
 import { Typography, Table, Tag, Select, Input, Space, Card, Modal, App, Button, Segmented, Tooltip } from 'antd';
 import { SearchOutlined, DeleteOutlined, UndoOutlined, MailOutlined } from '@ant-design/icons';
@@ -42,15 +43,14 @@ export default function AdminOrdersPage() {
   const navigate = useNavigate();
   const canDelete = useFeature('order_delete');
   const emailsOn = useFeature('admin_emails');
-  const [view, setView] = useState<'orders' | 'trash'>('orders');
+  const [view, setView] = useUrlState<'orders' | 'trash'>('view', 'orders', ['orders', 'trash']);
   const [trashOrder] = useTrashOrderMutation();
   const [restoreOrder] = useRestoreOrderMutation();
   const [forceDeleteOrder] = useForceDeleteOrderMutation();
-  const [search, setSearch] = useState('');
-  const [searchParams] = useSearchParams();
-  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? 'all');
+  const [search, setSearch] = useUrlState('search', '');
+  const [statusFilter, setStatusFilter] = useUrlState('status', 'all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useUrlState('page', 1);
 
   const debouncedSearch = useDebounce(search, 300);
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
