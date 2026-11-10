@@ -3,6 +3,7 @@
  * later the storefront) read them from here, so the platform can run any
  * business without code changes.
  */
+import { fillUntouched } from '@/shared/utils/fillUntouched';
 import { useEffect } from 'react';
 import { Alert, App, Button, Card, Col, ColorPicker, Form, Input, Row, Select, Space, Typography, Upload } from 'antd';
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
@@ -21,7 +22,7 @@ export default function AdminBusinessPage() {
   const values = Form.useWatch([], form);
 
   useEffect(() => {
-    if (data) form.setFieldsValue(data);
+    if (data) fillUntouched(form, data);
   }, [data, form]);
 
   const save = async (profile: BusinessProfile) => {

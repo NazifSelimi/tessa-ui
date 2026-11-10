@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { clearCheckoutDraft, loadCheckoutDraft, saveCheckoutDraft } from '@/features/checkout/checkoutDraft';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import {
@@ -61,8 +62,12 @@ export default function CheckoutPage() {
   const { data: activeBundles = [] } = useGetBundlesQuery();
   const { t } = useTranslation();
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
+  // A refresh mid-checkout keeps what was typed and the step (this tab only).
+  const [draft] = useState(() => loadCheckoutDraft<ShippingFormData>());
+  const [shippingData, setShippingData] = useState<ShippingFormData | null>(
+    () => (draft?.step === 1 ? draft.values as ShippingFormData : null),
+  );
+  const [currentStep, setCurrentStep] = useState(() => (draft?.step === 1 ? 1 : 0));
   const [discountInput, setDiscountInput] = useState('');
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
@@ -73,7 +78,7 @@ export default function CheckoutPage() {
 
   // Auto-fill shipping form for authenticated users
   useEffect(() => {
-    if (user && !shippingData) {
+    if (user && !shippingData && !draft) {
       shippingForm.setFieldsValue({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -85,7 +90,7 @@ export default function CheckoutPage() {
         state: 'North Macedonia',
       });
     }
-  }, [user, shippingForm, shippingData]);
+  }, [user, shippingForm, shippingData, draft]);
 
   useEffect(() => {
     if (token && user && !isProfileComplete(user)) {
@@ -206,6 +211,7 @@ export default function CheckoutPage() {
   const handleShippingSubmit = (values: ShippingFormData) => {
     setShippingData(values);
     setCurrentStep(1);
+    saveCheckoutDraft({ values, step: 1 });
   };
 
   // Handle discount code application
@@ -255,6 +261,7 @@ export default function CheckoutPage() {
 
       await createOrder(payload).unwrap();
       if (appliedCode && appliedCode === storedReferralCode()) forgetReferralCode();
+      clearCheckoutDraft();
       clearCart();
       setOrderComplete(true);
     } catch (error: unknown) {
@@ -299,7 +306,8 @@ export default function CheckoutPage() {
                 form={shippingForm}
                 layout="vertical"
                 onFinish={handleShippingSubmit}
-                initialValues={shippingData || undefined}
+                onValuesChange={(_, all: ShippingFormData) => saveCheckoutDraft({ values: all, step: 0 })}
+                initialValues={shippingData || draft?.values || undefined}
               >
                 <Row gutter={16}>
                   <Col xs={24} sm={12}>
@@ -486,7 +494,7 @@ export default function CheckoutPage() {
               <Divider />
 
               <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
-                <Button onClick={() => setCurrentStep(0)} size="large">
+                <Button onClick={() => { setCurrentStep(0); if (shippingData) saveCheckoutDraft({ values: shippingData, step: 0 }); }} size="large">
                   {t('common.back')}
                 </Button>
                 <Button 

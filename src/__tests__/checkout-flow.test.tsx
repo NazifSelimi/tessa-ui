@@ -183,4 +183,34 @@ describe('Checkout flow', () => {
     renderCheckout();
     await waitFor(() => expect(applyCodeMock).toHaveBeenCalledWith('ANA10', expect.any(Number)));
   });
+
+  it('keeps typed details and the review step after a refresh, and forgets them once ordered', async () => {
+    cartItems = [{
+      productId: '1', quantity: 2,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
+    const user = userEvent.setup();
+    const first = renderCheckout();
+
+    await waitFor(() => expect(screen.getByLabelText('First name')).toHaveValue('Jane'));
+    await user.clear(screen.getByLabelText('First name'));
+    await user.type(screen.getByLabelText('First name'), 'Ana');
+
+    // Refresh on the shipping step: the edited name is kept, not the profile name.
+    first.unmount();
+    const second = renderCheckout();
+    await waitFor(() => expect(screen.getByLabelText('First name')).toHaveValue('Ana'));
+
+    await user.click(screen.getByRole('button', { name: 'Continue to review' }));
+    await screen.findByRole('button', { name: /Place Order/ });
+
+    // Refresh on the review step: still on review, with the same details.
+    second.unmount();
+    renderCheckout();
+    await user.click(await screen.findByRole('button', { name: /Place Order/ }));
+    await waitFor(() => expect(createOrderMock).toHaveBeenCalledWith(expect.objectContaining({
+      shipping_address: expect.objectContaining({ firstName: 'Ana', lastName: 'Stylist' }),
+    })));
+    expect(window.sessionStorage.getItem('tessa:checkout-draft')).toBeNull();
+  });
 });

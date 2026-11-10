@@ -1,3 +1,4 @@
+import { fillUntouched } from '@/shared/utils/fillUntouched';
 import { useEffect } from 'react';
 import { Button, Card, Form, InputNumber, Space, Typography, message } from 'antd';
 import { useGetPricingSettingsQuery, useUpdatePricingSettingsMutation, type PricingSettings } from '@/features/admin/api';
@@ -12,7 +13,7 @@ export default function PricingSettingsCard() {
   const [form] = Form.useForm<PricingSettings>();
 
   useEffect(() => {
-    if (data) form.setFieldsValue(data);
+    if (data) fillUntouched(form, data);
   }, [data, form]);
 
   const submit = async (values: PricingSettings) => {

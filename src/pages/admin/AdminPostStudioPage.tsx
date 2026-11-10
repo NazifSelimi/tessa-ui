@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useUrlState } from '@/shared/hooks/useUrlState';
+import { useUrlState, writeUrlParam } from '@/shared/hooks/useUrlState';
 import {
   App, Button, Card, Col, Empty, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
@@ -314,6 +314,9 @@ export default function AdminPostStudioPage() {
     const id = searchParams.get('product');
     if (!id || preselected.current || !catalogue) return;
     preselected.current = true;
+    // Take ?product off the address: after a refresh the work in progress is
+    // restored from the autosave instead of being replaced by this product.
+    writeUrlParam('product', null);
     selectProducts([id]).then((chosen) => {
       if (chosen[0]) setDesign((current) => ({ ...current, headline: chosen[0].name, subline: chosen[0].brand }));
     });
@@ -1064,6 +1067,9 @@ export default function AdminPostStudioPage() {
   // reload (own uploaded photos cannot be kept; products and texts are).
   const AUTOSAVE_KEY = 'postStudio.autosave.v1';
   const restoredRef = useRef(false);
+  // While the autosave is being loaded back, don't overwrite it with the
+  // half-restored post (its products are still being fetched).
+  const restoringRef = useRef(false);
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
@@ -1071,7 +1077,8 @@ export default function AdminPostStudioPage() {
     try {
       const saved = JSON.parse(window.localStorage.getItem(AUTOSAVE_KEY) ?? 'null') as Draft | null;
       if (saved?.design) {
-        openDraft(saved);
+        restoringRef.current = true;
+        void Promise.resolve(openDraft(saved)).finally(() => { restoringRef.current = false; });
         message.info('Your last post was restored.');
       }
     } catch {
@@ -1081,6 +1088,7 @@ export default function AdminPostStudioPage() {
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      if (restoringRef.current) return;
       try {
         const draft: Draft = {
           id: 'autosave', savedAt: new Date().toISOString(), design, social, thumbnail: '',
