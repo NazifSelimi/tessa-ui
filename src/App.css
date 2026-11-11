@@ -3902,17 +3902,37 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
 }
 
-.shade-dot--out .shade-dot__swatch img {
-  opacity: 0.4;
+/* Sold out: keep the real colour visible; a dashed ring and a small label say it's unavailable. */
+.shade-dot--out .shade-dot__swatch {
+  box-shadow: 0 0 0 1px var(--color-surface), 0 0 0 2px var(--color-text-secondary);
+  outline: 1px dashed var(--color-text-secondary);
+  outline-offset: 3px;
 }
 
-.shade-dot--out .shade-dot__swatch::after {
-  content: '';
-  position: absolute;
-  inset: 50% -10%;
-  height: 1px;
-  background: var(--color-text-secondary);
-  transform: rotate(-45deg);
+.shade-dot__out {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  text-align: center;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shade-picker__find {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-bottom: var(--spacing-md);
+}
+
+.shade-picker__none {
+  margin: 0;
+  color: var(--color-text-secondary);
 }
 
 .shade-dot__code {

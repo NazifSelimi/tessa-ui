@@ -3,7 +3,7 @@ import { lazyWithReload } from '@/shared/utils/chunkReload';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import PageOutlet from './PageOutlet';
 import { ConfigProvider, Drawer, Dropdown } from 'antd';
-import { ArrowUpRight, ChevronRight, ClipboardList, Gift, Headphones, Home, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
+import { ChevronRight, ClipboardList, Gift, Headphones, Home, LogOut, Menu, Package, Search, ShoppingBag, Sparkles, UserRound, UserRoundCheck, Zap } from 'lucide-react';
 import { FacebookIcon, InstagramIcon } from './SocialIcons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,7 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 import { site } from '@/shared/config/site';
 import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
+import SearchSuggest from './storefront/SearchSuggest';
 import './storefront/new-look.css';
 import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
 import { useFeature } from '@/shared/hooks/useFeature';
@@ -27,12 +28,10 @@ export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [search, setSearch] = useState('');
   const consumerStorePreview = isStylist && location.pathname === '/shop' && new URLSearchParams(location.search).get('view') === 'consumer';
   const professionalShell = isStylist && !consumerStorePreview;
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
-  useEffect(() => { setSearch(new URLSearchParams(location.search).get('search') || ''); }, [location.search]);
   useEffect(() => { captureReferralCode(location.search); }, [location.search]);
 
   const quizOn = useFeature('hair_quiz');
@@ -90,10 +89,7 @@ export default function MainLayout() {
           {professionalShell ? <>
             <button className="nl-menu-toggle nl-icon-button" onClick={() => setMenuOpen(true)} aria-label={t('nav.openMenu')} aria-expanded={menuOpen}><Menu size={22} /></button>
             <Link className="nl-mobile-logo" to={home} aria-label="Tessa"><Logo height={26} /></Link>
-            <form className="nl-top-search nl-search" role="search" onSubmit={e => { e.preventDefault(); navigate(`/shop${search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ''}`); }}>
-              <Search size={19} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('newLook.searchPlaceholder')} aria-label={t('home.searchProducts')} />
-              <button aria-label={t('newLook.search')}><ArrowUpRight size={18} /></button>
-            </form>
+            <SearchSuggest className="nl-top-search" />
           </> : <>
             <Link className="nl-header-logo" to="/" aria-label="Tessa"><Logo height={32} /></Link>
             <nav className="nl-desktop-nav" aria-label={t('newLook.navigation')}>{navigation.slice(0, 3).map(({ to, label }) => <NavLink key={to} to={to} end={to === '/'}>{label}</NavLink>)}</nav>

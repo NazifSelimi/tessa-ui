@@ -57,6 +57,7 @@ function ShadeDot({ shade, active, onPick }: { shade: ProductShade; active: bool
         ) : null}
       </span>
       <span className="shade-dot__code">{shadeLabel(shade)}</span>
+      {!shade.inStock && <span className="shade-dot__out">{t('product.outOfStock')}</span>}
     </Link>
   );
 }
@@ -92,6 +93,7 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [find, setFind] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
   const current = shades.find((shade) => String(shade.id) === String(currentId));
 
@@ -109,11 +111,13 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
     }
   }, [currentId]);
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return shades;
-    return shades.filter((shade) => [shade.shadeCode, shade.shadeName, shade.name].some((value) => value?.toLowerCase().includes(query)));
-  }, [search, shades]);
+  const matchShades = (query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return shades;
+    return shades.filter((shade) => [shade.shadeCode, shade.shadeName, shade.name].some((value) => value?.toLowerCase().includes(q)));
+  };
+  const filtered = useMemo(() => matchShades(search), [search, shades]); // eslint-disable-line react-hooks/exhaustive-deps
+  const found = useMemo(() => matchShades(find), [find, shades]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (shades.length < 2) return null;
 
@@ -139,7 +143,23 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
           </figure>
         )}
         <div className="shade-picker__groups" ref={panelRef}>
-          <ShadeGroups shades={shades} currentId={currentId} />
+          {shades.length > 12 && (
+            <Input
+              allowClear
+              size="large"
+              className="shade-picker__find"
+              prefix={<SearchOutlined />}
+              placeholder={t('product.searchShades')}
+              value={find}
+              onChange={(event) => setFind(event.target.value)}
+              inputMode="search"
+            />
+          )}
+          {find.trim() && found.length === 0 ? (
+            <p className="shade-picker__none">{t('common.noResults', 'No results')}</p>
+          ) : (
+            <ShadeGroups shades={found} currentId={currentId} />
+          )}
         </div>
       </div>
 

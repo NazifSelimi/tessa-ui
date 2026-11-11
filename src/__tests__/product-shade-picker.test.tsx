@@ -35,10 +35,26 @@ describe('shade picker', () => {
     render(<MemoryRouter><ShadePicker currentId="1" shades={shades} /></MemoryRouter>);
 
     fireEvent.click(screen.getByRole('button', { name: 'product.allShades 14' }));
-    fireEvent.change(screen.getByPlaceholderText('product.searchShades'), { target: { value: 'shade 12' } });
+    // The modal's search box is the second one (the first sits above the swatches on the page).
+    fireEvent.change(screen.getAllByPlaceholderText('product.searchShades').at(-1)!, { target: { value: 'shade 12' } });
 
     expect(document.querySelectorAll('.shade-picker__modal-groups .shade-dot')).toHaveLength(1);
     expect(document.querySelector('.shade-picker__modal-groups .shade-dot')!.getAttribute('href')).toBe('/product/12');
+  });
+
+  it('filters the swatches on the page from the search box above them', () => {
+    render(<MemoryRouter><ShadePicker currentId="1" shades={shades} /></MemoryRouter>);
+
+    fireEvent.change(screen.getByPlaceholderText('product.searchShades'), { target: { value: 'shade 12' } });
+
+    expect(document.querySelectorAll('.shade-picker__groups .shade-dot')).toHaveLength(1);
+  });
+
+  it('labels sold-out shades instead of hiding their colour', () => {
+    render(<MemoryRouter><ShadePicker currentId="1" shades={shades} /></MemoryRouter>);
+
+    const soldOut = document.querySelector('.shade-picker__groups [data-shade-id="3"]')!;
+    expect(soldOut.querySelector('.shade-dot__out')?.textContent).toBe('product.outOfStock');
   });
 
   it('shows nothing for a product without other shades', () => {
