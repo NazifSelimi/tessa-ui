@@ -138,15 +138,21 @@ export default function CollectionPage() {
     () => products.filter((product) => product.catalogGuidance?.professionalOnly),
     [products],
   );
+  // Salon accounts and admins also see professional-only products in the list.
+  const isProfessional = isStylist || isAdmin;
+  const visibleProducts = useMemo(
+    () => (isProfessional ? products : consumerProducts),
+    [isProfessional, products, consumerProducts],
+  );
   const groupedProducts = useMemo(
-    () => groupProductsByRole(consumerProducts, collection?.routineRoles ?? []),
-    [collection?.routineRoles, consumerProducts],
+    () => groupProductsByRole(visibleProducts, collection?.routineRoles ?? []),
+    [collection?.routineRoles, visibleProducts],
   );
   const heroProducts = consumerProducts.slice(0, 3);
   const pairingProducts = technicalProducts.filter((product) => {
     return productCompatibleSystems(product).length > 0 || productGuidanceNotes(product).length > 0;
   });
-  const showPairings = (isStylist || isAdmin) && pairingProducts.length > 0;
+  const showPairings = isProfessional && pairingProducts.length > 0;
 
   if (!collection) {
     return (
@@ -292,10 +298,20 @@ export default function CollectionPage() {
                 </div>
               );
             })
-          ) : products.length === 0 ? (
+          ) : visibleProducts.length === 0 ? (
             <div className="collection-empty-state">
-              <h3>New products for this collection are coming soon.</h3>
+              <h3>
+                {products.length > 0
+                  ? 'These are professional salon products.'
+                  : 'New products for this collection are coming soon.'}
+              </h3>
               <p>
+                {products.length > 0 && (
+                  <>
+                    <Link to="/for-professionals">Open a business account <ArrowRightOutlined /></Link>
+                    {' · '}
+                  </>
+                )}
                 <Link to="/shop">Browse the full shop <ArrowRightOutlined /></Link>
               </p>
             </div>
