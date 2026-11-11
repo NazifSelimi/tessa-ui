@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ADMIN_PATH_FEATURE, useFeatureStates } from '@/features/admin/platformApi';
-import { BarChart3, ClipboardList, FlaskConical, Gift, Images, Mail, Megaphone, SlidersHorizontal, Building2, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
+import { BarChart3, Contact, ClipboardList, FlaskConical, Gift, Images, Mail, Megaphone, SlidersHorizontal, Building2, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: BarChart3 },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/catalog-images', label: 'Photos', icon: Images },
+  { to: '/admin/customers', label: 'Customers', icon: Contact },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/stylist-requests', label: 'Business applications', icon: UserCheck },
   { to: '/admin/stylist-invitations', label: 'Business invitations', icon: QrCode },

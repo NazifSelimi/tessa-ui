@@ -8,7 +8,8 @@ export type MessageLanguage = 'mk' | 'sq';
 export type MessageTemplate =
   | { kind: 'stylistApproved'; name?: string }
   | { kind: 'stylistRejected'; name?: string; reason?: string | null }
-  | { kind: 'orderReceived' | 'orderConfirmed' | 'orderShipped' | 'orderCancelled'; name?: string; orderId: string };
+  | { kind: 'orderReceived' | 'orderConfirmed' | 'orderShipped' | 'orderCancelled'; name?: string; orderId: string }
+  | { kind: 'customerCheckIn'; name?: string };
 
 const firstName = (name?: string) => (name ?? '').trim().split(/\s+/)[0] || '';
 
@@ -30,6 +31,8 @@ export function messageText(template: MessageTemplate, language: MessageLanguage
         return `${hello}! Вашата нарачка #${template.orderId} е испратена и наскоро ќе пристигне. Плаќањето е при достава. Tessa`;
       case 'orderCancelled':
         return `${hello}, вашата нарачка #${template.orderId} е откажана. Ако ова е грешка или имате прашања, пишете ни тука. Tessa`;
+      case 'customerCheckIn':
+        return `${hello}! Ви пишуваме од Tessa. Имаме нови производи и понуди, а ако ви треба нешто или совет за коса, слободно пишете ни тука. Tessa`;
     }
   }
 
@@ -46,5 +49,7 @@ export function messageText(template: MessageTemplate, language: MessageLanguage
       return `${hello}! Porosia juaj #${template.orderId} u dërgua dhe do të arrijë së shpejti. Pagesa bëhet në dorëzim. Tessa`;
     case 'orderCancelled':
       return `${hello}, porosia juaj #${template.orderId} u anulua. Nëse është gabim ose keni pyetje, na shkruani këtu. Tessa`;
+    case 'customerCheckIn':
+      return `${hello}! Ju shkruajmë nga Tessa. Kemi produkte dhe oferta të reja, dhe nëse ju duhet diçka ose këshillë për flokët, na shkruani këtu. Tessa`;
   }
 }

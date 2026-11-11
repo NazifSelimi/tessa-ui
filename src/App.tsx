@@ -70,6 +70,7 @@ const RecommendationsPage = lazyWithReload(() => import('./pages/Recommendations
 const StylistQuickOrderPage = lazyWithReload(() => import('./pages/stylist/StylistQuickOrderPage'));
 const StylistReferralPage = lazyWithReload(() => import('./pages/stylist/StylistReferralPage'));
 const AdminReferralsPage = lazyWithReload(() => import('./pages/admin/AdminReferralsPage'));
+const AdminCustomersPage = lazyWithReload(() => import('./pages/admin/AdminCustomersPage'));
 // Design Lab — isolated /design-lab route for evaluating Shop/ordering concepts
 const DesignLabPage = lazyWithReload(() => import('./pages/design-lab/DesignLabPage'));
 const NotFoundPage = lazyWithReload(() => import('./pages/NotFoundPage'));
@@ -237,6 +238,7 @@ function App() {
                 <Route path="/admin/products" element={<AdminProductsPage />} />
                 <Route path="/admin/orders" element={<AdminOrdersPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/customers" element={<AdminCustomersPage />} />
                 <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                 <Route path="/admin/referrals" element={<FeatureGate feature="referrals" fallback="/admin/features"><AdminReferralsPage /></FeatureGate>} />
                 <Route path="/admin/distributors" element={<FeatureGate feature="distributors" fallback="/admin/features"><AdminDistributorsPage /></FeatureGate>} />
