@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Drawer, Empty, Image, Input, InputNumber, Modal, Pagination, Popconfirm, Select, Slider, Space, Spin, Switch, Table, Tabs, Tag, Typography, Upload, message } from 'antd';
+import { useEffect, useState } from 'react';
+import { Alert, Button, Card, Drawer, Empty, Image, Input, InputNumber, Modal, Pagination, Popconfirm, Select, Space, Spin, Table, Tabs, Tag, Typography, Upload, message } from 'antd';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
+import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
 const API = import.meta.env.VITE_API_URL as string;
 type Product = { id: string; name: string; brand?: string; status: string; imageUrl?: string; imageCount: number };
 type Asset = { id: number; url: string; alt: string; sort_order: number; variant: string; review_status: string; is_primary: boolean };
@@ -20,8 +21,6 @@ export default function ProductImagesWorkspace() {
   const [candidates, setCandidates] = useState<Candidate[]>([]); const [audit, setAudit] = useState(''); const [candidateSearch, setCandidateSearch] = useState('');
   const [decision, setDecision] = useState<{ candidate: Candidate; status: string }>(); const [note, setNote] = useState('');
   const [editAsset, setEditAsset] = useState<Asset>(); const [editSource, setEditSource] = useState<string>();
-  const [rotation, setRotation] = useState(0); const [zoom, setZoom] = useState(1); const [square, setSquare] = useState(false); const [editorError, setEditorError] = useState('');
-  const canvas = useRef<HTMLCanvasElement>(null);
   async function request(path: string, init: RequestInit = {}) {
     const response = await fetch(`${API}/v1/admin/${path}`, { ...init, headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, ...init.headers } });
     if (response.status === 413) throw new Error('The server rejected this file size. Please use a smaller image.');
@@ -52,19 +51,6 @@ export default function ProductImagesWorkspace() {
     const data = new FormData(); data.append('image', file); data.append('alt', gallery?.product.name || ''); return mutate(`products/${productId}/images`, data);
   }
   const updateAsset = (asset: Asset, body: object) => mutate(`products/${productId}/images/${asset.id}`, body, 'PATCH');
-  function openEditor(source: string) { setEditSource(source); setRotation(0); setZoom(1); setSquare(false); setEditorError('Loading image…'); }
-  useEffect(() => {
-    if (!editSource) return; let active = true; const img = new window.Image(); img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      if (!active || !canvas.current) return;
-      const turned = rotation % 180 !== 0; const width = turned ? img.naturalHeight : img.naturalWidth; const height = turned ? img.naturalWidth : img.naturalHeight;
-      const scale = Math.min(1, 2000 / Math.max(width, height)); const w = Math.round((square ? Math.min(width, height) : width) * scale); const h = Math.round((square ? Math.min(width, height) : height) * scale);
-      const target = canvas.current; target.width = w; target.height = h; const context = target.getContext('2d')!;
-      context.translate(w / 2, h / 2); context.rotate(rotation * Math.PI / 180); context.scale(scale * zoom, scale * zoom); context.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-      try { target.toDataURL(); setEditorError(''); } catch { setEditorError('This external image blocks editing. Download it and upload a local copy.'); }
-    };
-    img.onerror = () => active && setEditorError('Unable to edit this image. Download it and upload a local copy.'); img.src = editSource; return () => { active = false; };
-  }, [editSource, rotation, zoom, square]);
   const visibleCandidates = candidates.filter(c => `${c.current_name} ${c.brand} ${c.product_id}`.toLowerCase().includes(candidateSearch.toLowerCase()));
   return <Space direction="vertical" size="large" style={{ width: '100%' }}>
     <div><Typography.Title level={2}>Product images</Typography.Title><Typography.Paragraph type="secondary">Click images to zoom. Manage galleries, upload photos and save edited copies. Existing files are preserved.</Typography.Paragraph></div>
@@ -89,15 +75,21 @@ export default function ProductImagesWorkspace() {
     <Drawer title={gallery?.product.name || 'Product image manager'} open={!!productId} width={800} onClose={() => { setParams({}); setGallery(undefined); }}>
       {galleryLoading ? <Spin /> : gallery && <><Space wrap style={{ marginBottom: 20 }}><Upload accept="image/jpeg,image/png,image/webp" showUploadList={false} beforeUpload={file => { void upload(file); return false; }} disabled={busy}><Button type="primary" loading={busy}>Add another image</Button></Upload><Typography.Text type="secondary">Up to 10 MB · uploads are added, not replaced</Typography.Text></Space>{!gallery.images.length && <Empty description="No images yet. Add the first product photo." />}
       <Image.PreviewGroup>{gallery.images.map(asset => <Card key={asset.id} style={{ marginBottom: 16 }}><Space align="start" wrap><Image src={asset.url} alt={asset.alt || gallery.product.name} width={170} height={180} style={{ objectFit: 'contain' }} /><div style={{ maxWidth: 470 }}><Space wrap><Tag color={asset.is_primary ? 'blue' : undefined}>{asset.is_primary ? 'Primary image' : asset.variant}</Tag><Tag>{asset.review_status || 'legacy'}</Tag><Typography.Text type="secondary">#{asset.id} · position {asset.sort_order}</Typography.Text></Space><p>{asset.alt || 'No description yet'}</p><Space wrap>
-        <Button onClick={() => setEditAsset({ ...asset })}>Edit details / order</Button><Button onClick={() => openEditor(asset.url)}>Crop / rotate</Button><Button href={asset.url} target="_blank" rel="noreferrer">Open original</Button>
+        <Button onClick={() => setEditAsset({ ...asset })}>Edit details / order</Button><Button onClick={() => setEditSource(asset.url)}>Edit photo</Button><Button href={asset.url} target="_blank" rel="noreferrer">Open original</Button>
         {!asset.is_primary && <Popconfirm title="Use this as the primary product image?" description="The current image stays in the gallery." onConfirm={() => updateAsset(asset, { make_primary: true }).then(() => {})}><Button disabled={busy}>Make primary</Button></Popconfirm>}
         <Button disabled={busy || asset.review_status === 'approved'} onClick={() => void updateAsset(asset, { review_status: 'approved' })}>Mark reviewed</Button>
       </Space></div></Space></Card>)}</Image.PreviewGroup></>}
     </Drawer>
     <Modal title="Save candidate decision" open={!!decision} confirmLoading={busy} onCancel={() => setDecision(undefined)} onOk={async () => { if (decision && await mutate(`catalog-image-candidates/${decision.candidate.product_id}/approve`, { rank: decision.candidate.candidate_rank, status: decision.status, note, audit })) setDecision(undefined); }}><p>{decision?.candidate.current_name}: <strong>{decision?.status}</strong></p><Input.TextArea aria-label="Review note" placeholder="Check size, shade and packaging. Explain your decision." rows={4} value={note} maxLength={2000} onChange={e => setNote(e.target.value)} /></Modal>
     <Modal title="Image description and order" open={!!editAsset} confirmLoading={busy} onCancel={() => setEditAsset(undefined)} onOk={async () => { if (editAsset && await updateAsset(editAsset, { alt: editAsset.alt, sort_order: editAsset.sort_order, review_status: ['approved', 'needs_review', 'rejected'].includes(editAsset.review_status) ? editAsset.review_status : 'needs_review' })) setEditAsset(undefined); }}><p>Image description</p><Input maxLength={255} value={editAsset?.alt || ''} onChange={e => setEditAsset(a => a && ({ ...a, alt: e.target.value }))} /><p>Gallery position (lower numbers first)</p><InputNumber min={0} max={10000} value={editAsset?.sort_order} onChange={v => setEditAsset(a => a && ({ ...a, sort_order: v || 0 }))} /><p>Review status (does not hide the image)</p><Select style={{ width: '100%' }} value={editAsset?.review_status || 'needs_review'} options={['needs_review', 'approved', 'rejected'].map(value => ({ value, label: value.replace('_', ' ') }))} onChange={v => setEditAsset(a => a && ({ ...a, review_status: v }))} /></Modal>
-    <Modal title="Edit image — save a new copy" open={!!editSource} width={700} confirmLoading={busy} okText="Save edited copy" okButtonProps={{ disabled: !!editorError }} onCancel={() => setEditSource(undefined)} onOk={() => { canvas.current?.toBlob(async blob => { if (blob && await upload(new File([blob], 'edited-product.webp', { type: 'image/webp' }))) setEditSource(undefined); }, 'image/webp', 0.92); }}>
-      {editorError && <Alert type="info" message={editorError} />}<canvas ref={canvas} style={{ display: 'block', maxWidth: '100%', maxHeight: 400, margin: '16px auto', background: '#f5f5f5' }} /><Space wrap><Button onClick={() => setRotation(r => (r + 270) % 360)}>Rotate left</Button><Button onClick={() => setRotation(r => (r + 90) % 360)}>Rotate right</Button><Switch checked={square} onChange={setSquare} checkedChildren="Square crop" unCheckedChildren="Original shape" /></Space><p>Zoom / centered crop</p><Slider min={1} max={3} step={0.1} value={zoom} onChange={setZoom} /><Typography.Text type="secondary">Originals stay unchanged. Choose Make primary after saving to use the edited copy as the storefront photo.</Typography.Text>
-    </Modal>
+    <ProductPhotoEditor
+      open={!!editSource}
+      source={editSource}
+      busy={busy}
+      onCancel={() => setEditSource(undefined)}
+      onSave={async (blob, ext) => {
+        if (await upload(new File([blob], `edited-product.${ext}`, { type: `image/${ext}` }))) setEditSource(undefined);
+      }}
+    />
   </Space>;
 }

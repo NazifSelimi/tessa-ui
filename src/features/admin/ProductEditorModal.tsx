@@ -8,6 +8,7 @@ import { useCreateProductMutation, useUpdateProductMutation, useGetProductFamili
 import type { Product, ProductAudience } from '@/types';
 import { PRODUCT_AUDIENCES, productVisibleTo } from '@/shared/utils/productVisibility';
 import { convertToWebP } from '@/shared/utils/imageUtils';
+import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
 
 const { Text } = Typography;
 
@@ -79,6 +80,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [swatchList, setSwatchList] = useState<UploadFile[]>([]);
   const [removeSwatch, setRemoveSwatch] = useState(false);
+  const [editPhotoOpen, setEditPhotoOpen] = useState(false);
   const [form] = Form.useForm<ProductFormValues>();
   const visibleWatch = Form.useWatch('visible_to', form);
 
@@ -459,6 +461,22 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
               </div>
             )}
           </Upload>
+          {(fileList[0]?.originFileObj || (isEditing && editingProduct?.image)) && (
+            <Button size="small" style={{ marginTop: 4 }} onClick={() => setEditPhotoOpen(true)}>
+              Edit photo — remove background, zoom, move
+            </Button>
+          )}
+          <ProductPhotoEditor
+            open={editPhotoOpen}
+            file={(fileList[0]?.originFileObj as File) || null}
+            source={!fileList[0]?.originFileObj && isEditing ? (editingProduct?.image ?? undefined) : undefined}
+            onCancel={() => setEditPhotoOpen(false)}
+            onSave={(blob, ext) => {
+              const edited = new File([blob], `product.${ext}`, { type: `image/${ext}` });
+              setFileList([{ uid: `edited-${Date.now()}`, name: edited.name, status: 'done', originFileObj: edited as UploadFile['originFileObj'], url: URL.createObjectURL(edited) }]);
+              setEditPhotoOpen(false);
+            }}
+          />
           {isEditing && editingProduct.image && fileList.length === 0 && (
             <div style={{ marginTop: 8 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>Current image:</Text>

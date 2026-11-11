@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useUrlState } from '@/shared/hooks/useUrlState';
-import { Typography, Table, Button, Tag, Input, Space, Card, InputNumber, Select, Row, Col, App, Checkbox, Tooltip } from 'antd';
+import { Typography, Table, Button, Tag, Input, Space, Card, InputNumber, Select, Row, Col, App, Checkbox, Tooltip, Image } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetCategoriesQuery, useGetBrandsQuery, type VisibilityFilter } from '@/features/products/api';
 import { productVisibleTo, visibilitySummary } from '@/shared/utils/productVisibility';
@@ -180,10 +180,14 @@ export default function AdminProductsPage() {
       key: 'product',
       render: (_: unknown, record: Product) => (
         <Space>
-          <img
+          <Image
             src={record.image || '/placeholder.svg'}
             alt={record.name}
-            style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
+            width={48}
+            height={48}
+            style={{ objectFit: 'cover', borderRadius: 6 }}
+            preview={record.image ? { mask: 'View' } : false}
+            fallback="/placeholder.svg"
           />
           <div>
             <Text strong>{record.name}</Text>
