@@ -115,3 +115,9 @@
 .post-studio__guide { position: absolute; pointer-events: none; z-index: 2; }
 .post-studio__guide--v { left: 50%; top: 0; bottom: 0; border-left: 1.5px dashed #ff4d1f; }
 .post-studio__guide--h { top: 50%; left: 0; right: 0; border-top: 1.5px dashed #ff4d1f; }
+
+/* Story safe area: Instagram and Facebook cover the top and bottom of a story. */
+.post-studio__safe { position: absolute; left: 0; right: 0; pointer-events: none; z-index: 2; display: flex; justify-content: center; background: repeating-linear-gradient(45deg, rgba(255, 77, 31, .16) 0 8px, rgba(255, 77, 31, .06) 8px 16px); }
+.post-studio__safe i { font-style: normal; font-size: 10px; line-height: 1.2; color: #b93a17; background: rgba(255, 255, 255, .85); padding: 2px 6px; border-radius: 4px; align-self: center; text-align: center; }
+.post-studio__safe--top { top: 0; height: 13%; border-bottom: 1.5px dashed #ff4d1f; }
+.post-studio__safe--bottom { bottom: 0; height: 18%; border-top: 1.5px dashed #ff4d1f; }

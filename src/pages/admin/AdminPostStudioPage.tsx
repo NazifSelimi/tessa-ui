@@ -25,6 +25,7 @@ import { EMOJIS, SHAPES, elementLabel, makeElement, type ShapeKind, type StudioE
 import { INFO_OPTIONS, badgeChoices, benefitChoices, ctaChoices, productSize, suggestBenefits, type InfoMode } from '@/features/studio/info';
 import '@/features/studio/studio.css';
 import PostMockup from '@/features/studio/PostMockup';
+import VideoExport from '@/features/studio/VideoExport';
 import {
   INSTAGRAM_LIMITS, TONES, buildCaption, countHashtags, previewCut, siteHost, suggestHashtags, toHashtag,
   type Platform, type Tone,
@@ -247,6 +248,7 @@ export default function AdminPostStudioPage() {
   const [newTag, setNewTag] = useState('');
   const hitBoxesRef = useRef<PhotoHitBox[]>([]);
   const qrRef = useRef<HTMLDivElement>(null);
+  const [safeZone, setSafeZone] = useState(true);
 
   const { data: catalogue, isLoading: catalogueLoading } = useGetAllProductsQuery({ perPage: 1000, sort: 'name_asc' });
   const [fetchProduct] = useLazyGetProductByIdQuery();
@@ -971,6 +973,26 @@ export default function AdminPostStudioPage() {
     : products;
 
   /* ------------------------------------------------------------ output */
+
+  /** Every slide (or the single post) drawn at full size, for the video. */
+  const renderSlidesForVideo = async (): Promise<HTMLCanvasElement[]> => {
+    const list = currentSlides();
+    if (!list.length) {
+      const canvas = document.createElement('canvas');
+      const assets = await loadAssets(design, products);
+      renderDesign(canvas, design, { ...assets, qr: design.qr ? qrRef.current?.querySelector('canvas') ?? null : null });
+      return [canvas];
+    }
+    const canvases: HTMLCanvasElement[] = [];
+    for (const slide of list) {
+      const slideDesign = { ...slide.design, format: design.format };
+      const canvas = document.createElement('canvas');
+      const assets = await loadAssets(slideDesign, slide.products);
+      renderDesign(canvas, slideDesign, { ...assets, qr: slideDesign.qr ? qrRef.current?.querySelector('canvas') ?? null : null });
+      canvases.push(canvas);
+    }
+    return canvases;
+  };
 
   const fileName = () => {
     const slug = (design.headline || products[0]?.name || 'post').toLowerCase().replace(/[^a-z0-9а-ш]+/gi, '-').replace(/^-|-$/g, '').slice(0, 40);
@@ -1894,6 +1916,12 @@ export default function AdminPostStudioPage() {
                     ))}
                   </span>
                 )}
+                {design.format === 'story' && safeZone && (
+                  <>
+                    <span className="post-studio__safe post-studio__safe--top" aria-hidden><i>Profile name and close button cover this</i></span>
+                    <span className="post-studio__safe post-studio__safe--bottom" aria-hidden><i>Reply box and buttons cover this</i></span>
+                  </>
+                )}
                 {centreGuides.v && <span className="post-studio__guide post-studio__guide--v" aria-hidden />}
                 {centreGuides.h && <span className="post-studio__guide post-studio__guide--h" aria-hidden />}
                 </div>
@@ -1925,8 +1953,10 @@ export default function AdminPostStudioPage() {
               </div>
               <div className="post-studio__actions">
                 <Text type="secondary">{format.width} × {format.height} px · {format.hint}{slides.length ? ` · slide ${activeSlide + 1} of ${slides.length}` : ''}</Text>
+                {design.format === 'story' && <Space size={6}><Switch size="small" checked={safeZone} onChange={setSafeZone} /><Text type="secondary">Show safe area</Text></Space>}
                 <Space wrap>
                   {canShareFiles && <Button icon={<ShareAltOutlined />} onClick={share}>Share</Button>}
+                  <VideoExport renderSlides={renderSlidesForVideo} slideCount={slides.length} width={format.width} height={format.height} fileBase={fileName().replace(/\.png$/, '')} />
                   {slides.length > 0 && <Button icon={<DownloadOutlined />} onClick={exportSlides}>All {slides.length} slides</Button>}
                   <Button type="primary" icon={<DownloadOutlined />} onClick={download}>{slides.length ? 'This slide' : 'Download PNG'}</Button>
                 </Space>
