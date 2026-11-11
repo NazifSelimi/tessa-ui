@@ -211,7 +211,7 @@ export default function CollectionPage() {
             <Link to="/shop" className="collection-backlink">
               <ArrowLeftOutlined /> Back to shop
             </Link>
-            <span className={`collection-badge collection-badge--${collection.launchState}`}>
+            <span className="collection-badge collection-badge--live">
               {collection.heroEyebrow}
             </span>
             <Title level={1} className="collection-hero__title">
