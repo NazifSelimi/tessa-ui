@@ -262,7 +262,6 @@ export default function CollectionPage() {
           <div className="collection-section__head">
             <span className="collection-section__eyebrow">Shop the collection</span>
             <Title level={2}>{collection.title}</Title>
-            <Paragraph>{collection.description}</Paragraph>
           </div>
 
           {productsLoading ? (
@@ -282,7 +281,6 @@ export default function CollectionPage() {
                     <div>
                       <h3>{roleCopy.label}</h3>
                       <p>{roleCopy.intro}</p>
-                      <small>{roleCopy.microcopy}</small>
                     </div>
                   </div>
 

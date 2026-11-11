@@ -201,7 +201,7 @@ const DEFAULT_ROLE_COPY: Record<string, RoutineRoleCopy> = {
   },
   tone: {
     label: 'Tone',
-    intro: 'Use the role that shifts the visible result, not just the category name.',
+    intro: 'Neutralise unwanted tones and refresh colour.',
     microcopy: 'Helpful for brass control, brightness, and colour maintenance stories.',
   },
   nourish: {
@@ -216,17 +216,17 @@ const DEFAULT_ROLE_COPY: Record<string, RoutineRoleCopy> = {
   },
   repair: {
     label: 'Repair',
-    intro: 'Show the rebuilding step separately from the wash and finish.',
+    intro: 'Rebuild strength in weak, damaged hair.',
     microcopy: 'Reserve this role for reconstructing or bond-support moments.',
   },
   define: {
     label: 'Define',
-    intro: 'Put shape and hold in a dedicated styling step.',
+    intro: 'Shape and hold for defined styles.',
     microcopy: 'This keeps curl definition distinct from basic hydration.',
   },
   smooth: {
     label: 'Smooth',
-    intro: 'Surface finishing and anti-frizz support deserve their own role.',
+    intro: 'Tame frizz and add a smooth, glossy finish.',
     microcopy: 'This is the benefit-led home for smoothing fluids and glossing support.',
   },
 };
@@ -234,22 +234,22 @@ const DEFAULT_ROLE_COPY: Record<string, RoutineRoleCopy> = {
 const BLONDE_ROLE_COPY: Record<string, RoutineRoleCopy> = {
   cleanse: {
     label: 'Cleanse',
-    intro: 'Begin with the blonde-safe wash that keeps the routine approachable.',
+    intro: 'A gentle wash made for blonde and lightened hair.',
     microcopy: 'Purple-cleanse steps should feel home-safe and easy to repeat.',
   },
   tone: {
     label: 'Tone',
-    intro: 'Use the tone step to address brassiness without turning the page into a technical sheet.',
+    intro: 'Cool down brassy and yellow tones.',
     microcopy: 'For retail customers, this stays focused on maintenance rather than salon ratios.',
   },
   nourish: {
     label: 'Nourish',
-    intro: 'Blonde maintenance needs softness after toning, not just pigment correction.',
+    intro: 'Softness and shine after toning.',
     microcopy: 'Masks and post-tone care keep the story result-led instead of category-led.',
   },
   protect: {
     label: 'Protect',
-    intro: 'Finish with care that supports fragile blonde lengths and post-lightening feel.',
+    intro: 'Protect fragile lengths after lightening.',
     microcopy: 'Technical substitutions stay out of this block until they are verified for stylists.',
   },
 };
