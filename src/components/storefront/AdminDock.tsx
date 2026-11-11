@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ADMIN_PATH_FEATURE, useFeatureStates } from '@/features/admin/platformApi';
-import { BarChart3, TrendingUp, MessageCircle, Contact, ClipboardList, FlaskConical, Gift, Images, Mail, Megaphone, SlidersHorizontal, Building2, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
+import { BarChart3, FileText, TrendingUp, MessageCircle, Contact, ClipboardList, FlaskConical, Gift, Images, Mail, Megaphone, SlidersHorizontal, Building2, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: BarChart3 },
@@ -9,6 +9,7 @@ const links = [
   { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/catalog-images', label: 'Photos', icon: Images },
   { to: '/admin/customers', label: 'Customers', icon: Contact },
+  { to: '/admin/documents', label: 'PDF documents', icon: FileText },
   { to: '/admin/reports', label: 'Sales reports', icon: TrendingUp },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/stylist-requests', label: 'Business applications', icon: UserCheck },

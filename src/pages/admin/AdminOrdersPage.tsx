@@ -10,6 +10,7 @@ import type { Order, OrderStatus } from '@/types';
 import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import OrderDocumentButtons from '@/features/admin/OrderDocumentButtons';
 import MessageButtons from '@/features/messaging/MessageButtons';
 import { firstName, ORDER_STATUS_TEMPLATE } from '@/features/messaging/templates';
 
@@ -36,6 +37,7 @@ export default function AdminOrdersPage() {
   const navigate = useNavigate();
   const canDelete = useFeature('order_delete');
   const emailsOn = useFeature('admin_emails');
+  const documentsOn = useFeature('pdf_documents');
   const [view, setView] = useUrlState<'orders' | 'trash'>('view', 'orders', ['orders', 'trash']);
   const [trashOrder] = useTrashOrderMutation();
   const [restoreOrder] = useRestoreOrderMutation();
@@ -292,6 +294,7 @@ export default function AdminOrdersPage() {
                   Write an email
                 </Button>
               )}
+              {documentsOn && <OrderDocumentButtons orderId={selectedOrder.id} />}
               {canDelete && !selectedOrder.deletedAt && (
                 <Button danger icon={<DeleteOutlined />} onClick={() => askTrash(selectedOrder)}>Move to Trash</Button>
               )}

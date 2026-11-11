@@ -9,7 +9,7 @@ import { refreshFeatures as refreshFeaturesNow } from '@/shared/hooks/useFeature
 /* ------------------------------------------------------------------ features */
 
 export type FeatureKey =
-  | 'messaging' | 'sales_reports' | 'hair_quiz' | 'referrals' | 'bundles' | 'quick_order' | 'admin_emails' | 'mcp' | 'whatsapp_auto' | 'order_delete'
+  | 'messaging' | 'pdf_documents' | 'sales_reports' | 'hair_quiz' | 'referrals' | 'bundles' | 'quick_order' | 'admin_emails' | 'mcp' | 'whatsapp_auto' | 'order_delete'
   | 'post_studio' | 'content_blocks' | 'image_review' | 'stylist_invitations' | 'distributors' | 'supplier_list';
 
 export type PlanKey = 'basic' | 'pro' | 'premium';
@@ -322,6 +322,7 @@ export const ADMIN_PATH_FEATURE: Record<string, FeatureKey> = {
   '/admin/bundles': 'bundles',
   '/admin/studio': 'post_studio',
   '/admin/messages': 'messaging',
+  '/admin/documents': 'pdf_documents',
   '/admin/reports': 'sales_reports',
   '/admin/content-blocks': 'content_blocks',
   '/admin/catalog-images': 'image_review',
