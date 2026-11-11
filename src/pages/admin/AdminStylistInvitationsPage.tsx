@@ -3,6 +3,7 @@ import { Button, Card, Col, Form, Input, Popconfirm, Row, Space, Table, Tag, Typ
 import { CopyOutlined, QrcodeOutlined, ScissorOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/hooks/useAuth';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
 const { Title, Paragraph, Text } = Typography;
@@ -175,7 +176,7 @@ export default function AdminStylistInvitationsPage() {
             {created && (
               <Space direction="vertical" size="middle" style={{ width: '100%', alignItems: 'center' }}>
                 <QRCodeSVG value={created.activation_url} size={230} level="M" includeMargin />
-                <Text type="secondary" style={{ textAlign: 'center' }}>Expires {new Date(created.expires_at).toLocaleDateString('en-GB')} and can be used once.</Text>
+                <Text type="secondary" style={{ textAlign: 'center' }}>Expires {formatDate(created.expires_at)} and can be used once.</Text>
                 <Button icon={<CopyOutlined />} onClick={copyActivationUrl}>Copy activation link</Button>
               </Space>
             )}
@@ -201,7 +202,7 @@ export default function AdminStylistInvitationsPage() {
             { title: 'City', key: 'city', width: 150, render: (_: unknown, record: InvitationRow) => record.business_city || record.city || 'Not provided' },
             { title: 'Salon', dataIndex: 'business_name', key: 'business_name', width: 190, render: (value: string | null) => value || 'Not provided' },
             { title: 'Status', dataIndex: 'status', key: 'status', width: 110, render: (status: InvitationRow['status']) => <Tag color={status === 'activated' ? 'green' : status === 'pending' ? 'blue' : 'red'}>{status}</Tag> },
-            { title: 'Expires', dataIndex: 'expires_at', key: 'expires_at', width: 130, render: (value: string) => new Date(value).toLocaleDateString('en-GB') },
+            { title: 'Expires', dataIndex: 'expires_at', key: 'expires_at', width: 130, render: (value: string) => formatDate(value) },
             { title: 'Actions', key: 'actions', width: 180, render: (_: unknown, record: InvitationRow) => record.status === 'activated' ? 'Account active' : <Space size="small"><Button size="small" onClick={() => void reissueInvitation(record.id)}>New QR</Button><Popconfirm title="Revoke this activation link?" onConfirm={() => void revokeInvitation(record.id)} okText="Revoke" okButtonProps={{ danger: true }}><Button size="small" danger>Revoke</Button></Popconfirm></Space> },
           ]}
         />

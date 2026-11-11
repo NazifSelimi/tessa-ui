@@ -113,3 +113,23 @@ export function getPostcodeForCity(city: string | null | undefined): string {
 export function getCityForPostcode(postcode: string | null | undefined): string {
   return MACEDONIA_LOCATIONS.find((location) => location.postcode === postcode)?.city ?? '';
 }
+
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', ѓ: 'g', е: 'e', ж: 'z', з: 'z', ѕ: 'dz', и: 'i', ј: 'j',
+  к: 'k', л: 'l', љ: 'lj', м: 'm', н: 'n', њ: 'nj', о: 'o', п: 'p', р: 'r', с: 's', т: 't', ќ: 'k',
+  у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'c', џ: 'dz', ш: 's', й: 'j', ы: 'y', э: 'e', ю: 'ju', я: 'ja',
+};
+
+/** Lower-case, Cyrillic to Latin, no accents: "Скопје" and "Škopje" both become "skopje". */
+export function normalizeLocationText(text: string): string {
+  return Array.from(text.toLowerCase())
+    .map((char) => CYRILLIC_TO_LATIN[char] ?? char)
+    .join('')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+}
+
+/** Select search that matches Latin or Cyrillic typing against the location labels. */
+export function filterLocationOption(input: string, option?: { label?: unknown }): boolean {
+  return normalizeLocationText(String(option?.label ?? '')).includes(normalizeLocationText(input.trim()));
+}

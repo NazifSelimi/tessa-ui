@@ -17,7 +17,7 @@ describe('image review workflow', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Manage images' }));
     expect(await screen.findByText('Add another image')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Edit details / order' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Crop / rotate' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Edit photo' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Open original' })).toHaveAttribute('href', '/test.png');
   });
   it('supports a direct product link and persists a manual review action', async () => {

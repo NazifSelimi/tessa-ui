@@ -497,6 +497,9 @@
 .nl-admin-dock__menu a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; color: var(--nl-ink) !important; font-size: 13px; font-weight: 700; text-decoration: none; }
 .nl-admin-dock__menu a:hover { background: #f7f0f2; }
 @media (max-width: 760px) { .nl-admin-dock { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+/* Admin "Edit this page" button: keep it above the phone bottom menu. */
+.nl-page-edit-btn { position: fixed; right: 20px; bottom: 20px; z-index: 1000; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+@media (max-width: 760px) { .nl-page-edit-btn { right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
 
 /* Stylist referral page */
 .nl-referral-hero { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; }

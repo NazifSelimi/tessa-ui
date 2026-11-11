@@ -37,6 +37,7 @@ import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import type { Order } from '@/types';
 import { useGetDashboardStatsQuery } from '@/features/admin/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Text } = Typography;
 
@@ -101,7 +102,7 @@ const AdminDashboardPage: React.FC = () => {
       title: 'Date',
       key: 'date',
       render: (_: unknown, record: Order) => (
-        <Text type="secondary">{record.createdAt ? new Date(record.createdAt).toLocaleDateString() : '—'}</Text>
+        <Text type="secondary">{record.createdAt ? formatDate(record.createdAt) : '—'}</Text>
       ),
       responsive: ['lg', 'xl'] as Breakpoint[],
     },

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUrlState } from '@/shared/hooks/useUrlState';
-import { Typography, Table, Tag, Select, Input, Space, Card, Button, Popconfirm, Modal, Form, Descriptions, App, Alert } from 'antd';
+import { Typography, Table, Tag, Select, Input, Space, Card, Button, Popconfirm, Modal, Form, Descriptions, App, Alert, Divider } from 'antd';
 import { SearchOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { 
   useGetAllUsersQuery, 
@@ -11,6 +11,7 @@ import {
 } from '@/features/admin/api';
 import type { User, UserRole } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatDate, formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -24,7 +25,7 @@ const roleColors: Record<UserRole, string> = {
 
 const roleOptions = [
   { value: 'all', label: 'All Roles' },
-  { value: 'user', label: 'User' },
+  { value: 'user', label: 'Customer' },
   { value: 'stylist', label: 'Stylist' },
   { value: 'admin', label: 'Admin' },
 ];
@@ -121,20 +122,22 @@ export default function AdminUsersPage() {
       dataIndex: 'role',
       key: 'role',
       render: (role: UserRole) => (
-        <Tag color={roleColors[role]}>{role === 'user' ? 'Customer' : role}</Tag>
+        <Tag color={roleColors[role]}>{roleOptions.find((option) => option.value === role)?.label ?? role}</Tag>
       ),
     },
     {
       title: 'Joined',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => formatDate(date),
     },
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right' as const,
+      width: 260,
       render: (_: unknown, record: User) => (
-        <Space onClick={(e) => e.stopPropagation()}>
+        <Space size={4} onClick={(e) => e.stopPropagation()}>
           <Button 
             type="text" 
             icon={<EyeOutlined />}
@@ -149,6 +152,7 @@ export default function AdminUsersPage() {
           >
             Edit
           </Button>
+          <Divider orientation="vertical" style={{ margin: '0 8px' }} />
           <Popconfirm
             title="Delete user?"
             description="This action cannot be undone."
@@ -247,7 +251,7 @@ export default function AdminUsersPage() {
               <Tag color={roleColors[selectedUser.role]}>{selectedUser.role.toUpperCase()}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Registered">
-              {new Date(selectedUser.createdAt).toLocaleString()}
+              {formatDateTime(selectedUser.createdAt)}
             </Descriptions.Item>
           </Descriptions>
         )}
@@ -284,7 +288,7 @@ export default function AdminUsersPage() {
 
           <Form.Item name="role" label="Role" rules={[{ required: true }]}>
             <Select placeholder="Select role">
-              <Select.Option value="user">User</Select.Option>
+              <Select.Option value="user">Customer</Select.Option>
               <Select.Option value="stylist">Stylist</Select.Option>
               <Select.Option value="admin">Admin</Select.Option>
             </Select>

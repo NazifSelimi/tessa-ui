@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Empty, Skeleton, Tag, Typography } from 'antd';
-import { ArrowLeftOutlined, ArrowRightOutlined, LockOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import ProductCard from '@/components/ProductCard';
 import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import { useAuth } from '@/hooks/useAuth';
-import { useGetProductCollectionsQuery, useGetProductsQuery } from '@/features/products/api';
+import { useGetCategoriesQuery, useGetProductCollectionsQuery, useGetProductsQuery } from '@/features/products/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import {
   buildStorefrontCollectionDirectory,
@@ -64,13 +64,9 @@ function productGuidanceNotes(product: Product): string[] {
   return product.catalogGuidance?.professionalGuidance?.notes ?? [];
 }
 
-function HeroPackshot({ product, fallback }: { product?: Product; fallback: string }) {
+function HeroPackshot({ product }: { product?: Product }) {
   if (!product?.image) {
-    return (
-      <div className="collection-packshot collection-packshot--placeholder">
-        <span>{fallback}</span>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -93,8 +89,7 @@ function resolveCollection(
 
 export default function CollectionPage() {
   const { slug } = useParams();
-  const location = useLocation();
-  const { isAuthenticated, isAdmin, isStylist } = useAuth();
+  const { isAdmin, isStylist } = useAuth();
   const { data: collectionsData = [] } = useGetProductCollectionsQuery();
   const directory = useMemo(
     () => buildStorefrontCollectionDirectory(collectionsData),
@@ -114,7 +109,27 @@ export default function CollectionPage() {
     },
   );
 
-  const products = productsData?.data ?? [];
+  // Collections with no mapped products yet fall back to their supported categories,
+  // so shoppers never land on an empty page.
+  const { data: categories = [] } = useGetCategoriesQuery(undefined, { skip: !collection });
+  const fallbackCategoryIds = useMemo(() => {
+    const wanted = new Set((collection?.supportedCategoryNames ?? []).map((name) => name.toLowerCase()));
+    return categories
+      .filter((category) => wanted.has(String(category.name).toLowerCase()))
+      .map((category) => category.id)
+      .join(',');
+  }, [categories, collection?.supportedCategoryNames]);
+  const collectionIsEmpty = !isLoading && !error && (productsData?.data?.length ?? 0) === 0;
+  const { data: fallbackData, isLoading: fallbackLoading } = useGetProductsQuery(
+    { category_ids: fallbackCategoryIds, perPage: MAX_COLLECTION_PRODUCTS, sort: 'name_asc' },
+    { skip: !collection || !collectionIsEmpty || !fallbackCategoryIds },
+  );
+
+  const products = useMemo(
+    () => ((productsData?.data?.length ?? 0) > 0 ? productsData?.data ?? [] : fallbackData?.data ?? []),
+    [productsData, fallbackData],
+  );
+  const productsLoading = isLoading || (collectionIsEmpty && fallbackLoading);
   const consumerProducts = useMemo(
     () => products.filter((product) => !product.catalogGuidance?.professionalOnly),
     [products],
@@ -131,9 +146,7 @@ export default function CollectionPage() {
   const pairingProducts = technicalProducts.filter((product) => {
     return productCompatibleSystems(product).length > 0 || productGuidanceNotes(product).length > 0;
   });
-  const pairingCtaHref = isAuthenticated
-    ? '/stylist/request'
-    : `/login?continue=${encodeURIComponent(location.pathname)}`;
+  const showPairings = (isStylist || isAdmin) && pairingProducts.length > 0;
 
   if (!collection) {
     return (
@@ -199,7 +212,7 @@ export default function CollectionPage() {
               <ArrowLeftOutlined /> Back to shop
             </Link>
             <span className={`collection-badge collection-badge--${collection.launchState}`}>
-              {collection.launchState === 'live' ? collection.heroEyebrow : 'Verified inventory still being prepared'}
+              {collection.heroEyebrow}
             </span>
             <Title level={1} className="collection-hero__title">
               {collection.heroTitle}
@@ -208,20 +221,6 @@ export default function CollectionPage() {
               {collection.heroBody}
             </Paragraph>
 
-            <div className="collection-hero__stats">
-              <div className="collection-stat">
-                <span className="collection-stat__label">Collection</span>
-                <strong>{collection.title}</strong>
-              </div>
-              <div className="collection-stat">
-                <span className="collection-stat__label">Live products</span>
-                <strong>{typeof collection.productCount === 'number' ? collection.productCount : 'Pending'}</strong>
-              </div>
-              <div className="collection-stat">
-                <span className="collection-stat__label">Routine roles</span>
-                <strong>{collection.routineRoles.length}</strong>
-              </div>
-            </div>
 
             <div className="collection-hero__actions">
               <Link to="/hair-survey">
@@ -237,51 +236,36 @@ export default function CollectionPage() {
             </div>
           </div>
 
-          <div className="collection-hero__visual">
-            <div className="collection-placeholder">
-              <span className="collection-placeholder__eyebrow">Temporary slot</span>
-              <h2>{collection.placeholderTitle}</h2>
-              <p>{collection.placeholderBody}</p>
+          {heroProducts.some((product) => product.image) && (
+            <div className="collection-hero__visual">
+              <div className="collection-packshot-grid">
+                {heroProducts.map((product) => (
+                  <HeroPackshot key={product.id} product={product} />
+                ))}
+              </div>
             </div>
-
-            <div className="collection-packshot-grid">
-              <HeroPackshot product={heroProducts[0]} fallback="Existing product media appears here once the catalogue responds." />
-              <HeroPackshot product={heroProducts[1]} fallback="Approved campaign art stays out until it is cleared for use." />
-              <HeroPackshot product={heroProducts[2]} fallback="Technical visuals stay separated from the hero until verified." />
-            </div>
-          </div>
+          )}
         </section>
 
-        {collection.slug === 'blonde-and-tone' && (
-          <Alert
-            className="collection-callout"
-            type="info"
-            showIcon
-            message="Blonde and Tone is the first complete storefront collection."
-            description="Home-safe blonde maintenance stays visible for everyone. Technical ratios, substitutions, and verified salon pairings remain gated to stylist-safe guidance."
-          />
-        )}
 
         {error && (
           <Alert
             className="collection-callout"
             type="warning"
             showIcon
-            message="We couldn't refresh this collection from the catalogue right now."
-            description="The page structure is live and linked to the collection contract. Product cards will appear automatically when the API is reachable."
+            message="We couldn't load these products right now."
+            description="Please try again in a moment, or browse the full shop."
           />
         )}
 
         <section className="collection-section">
           <div className="collection-section__head">
-            <span className="collection-section__eyebrow">Routine roles</span>
-            <Title level={2}>Shop the collection by what each product does.</Title>
-            <Paragraph>
-              We keep the first decision result-led. Internal catalogue classes stay in the data, but the collection page starts with the role the product plays in the routine.
-            </Paragraph>
+            <span className="collection-section__eyebrow">Shop the collection</span>
+            <Title level={2}>{collection.title}</Title>
+            <Paragraph>{collection.description}</Paragraph>
           </div>
 
-          {isLoading ? (
+          {productsLoading ? (
             <div className="collection-loading-grid">
               {Array.from({ length: 3 }).map((_, index) => (
                 <Skeleton.Button key={index} active block style={{ height: 220 }} />
@@ -310,22 +294,21 @@ export default function CollectionPage() {
                 </div>
               );
             })
-          ) : (
+          ) : products.length === 0 ? (
             <div className="collection-empty-state">
-              <h3>This collection page is wired up and waiting for live products.</h3>
+              <h3>New products for this collection are coming soon.</h3>
               <p>
-                As soon as the collection API returns mapped products, they will be grouped into these routine roles automatically.
+                <Link to="/shop">Browse the full shop <ArrowRightOutlined /></Link>
               </p>
             </div>
-          )}
+          ) : null}
 
-          {groupedProducts.remaining.length > 0 && (
+          {!productsLoading && groupedProducts.remaining.length > 0 && (
             <div className="routine-group routine-group--remaining">
               <div className="routine-group__summary">
-                <span className="routine-group__count">+</span>
+                <span className="routine-group__count">{groupedProducts.grouped.length > 0 ? '+' : '01'}</span>
                 <div>
-                  <h3>More in this collection</h3>
-                  <p>Products that are live but not yet mapped to a customer-facing routine role still stay visible here.</p>
+                  <h3>{groupedProducts.grouped.length > 0 ? 'More in this collection' : 'Products'}</h3>
                 </div>
               </div>
               <div className="routine-group__products">
@@ -337,33 +320,16 @@ export default function CollectionPage() {
           )}
         </section>
 
+        {showPairings && (
         <section className="collection-section">
           <div className="collection-section__head">
             <span className="collection-section__eyebrow">Safe pairing</span>
-            <Title level={2}>Verified technical pairings stay explicit and limited.</Title>
+            <Title level={2}>Verified technical pairings</Title>
             <Paragraph>
-              We only show pairings that the catalogue already marks as compatible. Developer ratios, timing, and substitutions remain intentionally out of view until the current manufacturer sheet is verified.
+              Pairings the catalogue marks as compatible. Check the manufacturer sheet for ratios and timing.
             </Paragraph>
           </div>
 
-          {!isStylist && !isAdmin ? (
-            <div className="pairing-gate">
-              <div className="pairing-gate__icon">
-                <LockOutlined />
-              </div>
-              <div className="pairing-gate__copy">
-                <h3>Stylist-safe technical guidance unlocks after sign-in or approval.</h3>
-                <p>
-                  Customers can shop the maintenance routine here. Verified salon pairings stay behind a professional gate so we do not imply unsafe substitutions on the public storefront.
-                </p>
-              </div>
-              <Link to={pairingCtaHref}>
-                <Button type="primary">
-                  {isAuthenticated ? 'Apply for stylist access' : 'Sign in for stylist guidance'}
-                </Button>
-              </Link>
-            </div>
-          ) : pairingProducts.length > 0 ? (
             <div className="pairing-grid">
               {pairingProducts.map((product) => (
                 <article key={product.id} className="pairing-card">
@@ -412,29 +378,9 @@ export default function CollectionPage() {
                 </article>
               ))}
             </div>
-          ) : (
-            <div className="collection-empty-state">
-              <h3>No verified technical pairings are visible in this session yet.</h3>
-              <p>
-                As technical products are confirmed for this collection, they will appear here with the exact compatible systems already provided by the API.
-              </p>
-            </div>
-          )}
         </section>
+        )}
 
-        <section className="collection-section collection-section--footer">
-          <div className="collection-footer-card">
-            <div>
-              <span className="collection-section__eyebrow">Categories behind this collection</span>
-              <Title level={3}>Keep the result path visible. Keep the technical detail underneath it.</Title>
-            </div>
-            <div className="collection-footer-card__tags">
-              {collection.supportedCategoryNames.map((category) => (
-                <Tag key={category}>{category}</Tag>
-              ))}
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

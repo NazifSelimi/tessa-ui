@@ -33,6 +33,7 @@ import {
   MACEDONIA_POSTCODE_OPTIONS,
   getCityForPostcode,
   getPostcodeForCity,
+  filterLocationOption,
 } from '@/shared/data/macedoniaLocations';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
@@ -374,7 +375,7 @@ export default function CheckoutPage() {
                         showSearch
                         options={MACEDONIA_CITY_OPTIONS}
                         placeholder={t('account.selectMunicipality')}
-                        optionFilterProp="label"
+                        filterOption={filterLocationOption}
                         onChange={(city) => {
                           const postcode = getPostcodeForCity(city);
                           if (postcode) {
@@ -405,7 +406,7 @@ export default function CheckoutPage() {
                         showSearch
                         options={MACEDONIA_POSTCODE_OPTIONS}
                         placeholder={t('account.selectPostcode')}
-                        optionFilterProp="label"
+                        filterOption={filterLocationOption}
                         onChange={(postcode) => {
                           const city = getCityForPostcode(postcode);
                           if (city) {

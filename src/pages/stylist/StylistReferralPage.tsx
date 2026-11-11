@@ -137,7 +137,7 @@ export default function StylistReferralPage() {
       <div className="nl-card nl-referral-table">
         {data.orders.map((order) => (
           <div key={order.id}>
-            <span><strong>{order.client}</strong><small>{new Date(order.createdAt).toLocaleDateString(locale)}</small></span>
+            <span><strong>{order.client}</strong><small>{new Date(order.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
             <StatusBadge status={order.status as OrderStatus} />
             <span>{formatPrice(order.goodsTotal)}</span>
             <strong className={order.status === 'cancelled' ? 'is-muted' : ''}>+{formatPrice(order.commission)}</strong>
@@ -151,7 +151,7 @@ export default function StylistReferralPage() {
       <div className="nl-card nl-referral-table">
         {data.transactions.map((row) => (
           <div key={row.id}>
-            <span><strong>{t(`referral.type.${row.type}`)}{row.orderId ? ` · #${row.orderId}` : ''}</strong><small>{row.note || new Date(row.createdAt).toLocaleDateString(locale)}</small></span>
+            <span><strong>{t(`referral.type.${row.type}`)}{row.orderId ? ` · #${row.orderId}` : ''}</strong><small>{row.note || new Date(row.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
             <strong className={row.amount < 0 ? 'is-negative' : ''}>{row.amount > 0 ? '+' : ''}{formatPrice(row.amount)}</strong>
           </div>
         ))}

@@ -22,6 +22,7 @@ import {
   type ComposePayload, type EmailLogRow, type EmailSegment, type EmailSettingsUpdate,
 } from '@/features/admin/platformApi';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -44,7 +45,7 @@ const TYPE_LABEL: Record<string, string> = {
   test: 'Test',
 };
 
-const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—');
+const when = (iso: string | null) => (iso ? formatDateTime(iso) : '—');
 
 function EmailFrame({ html, height = 560 }: { html: string | null | undefined; height?: number }) {
   if (!html) return <Empty description="Nothing to show" />;

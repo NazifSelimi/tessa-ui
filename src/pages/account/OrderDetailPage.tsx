@@ -17,6 +17,7 @@ import { useGetOrderQuery } from '@/features/orders/api';
 import { useReorder } from '@/hooks/useReorder';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Order } from '@/types';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -104,7 +105,7 @@ export default function OrderDetailPage() {
         <div>
           <Title level={2} style={{ margin: 0 }}>{t('orders.order')} {order.id}</Title>
           <Text type="secondary">
-            {t('orders.placedOn')} {new Date(order.createdAt).toLocaleDateString()}
+            {t('orders.placedOn')} {formatDate(order.createdAt)}
           </Text>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>

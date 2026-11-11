@@ -10,6 +10,7 @@ const mockUseAuth = vi.fn();
 vi.mock('@/features/products/api', () => ({
   useGetProductCollectionsQuery: () => mockUseGetProductCollectionsQuery(),
   useGetProductsQuery: () => mockUseGetProductsQuery(),
+  useGetCategoriesQuery: () => ({ data: [] }),
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -98,7 +99,7 @@ describe('CollectionPage', () => {
     mockUseGetProductsQuery.mockReturnValue({ data: { data: products }, isLoading: false, error: undefined });
   });
 
-  it('shows the public pairing gate to non-stylists', () => {
+  it('shows products to shoppers without staff or placeholder text', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: false,
       isAdmin: false,
@@ -108,8 +109,9 @@ describe('CollectionPage', () => {
     renderCollection();
 
     expect(screen.getByText('Wonder No Yellow Shampoo')).toBeInTheDocument();
-    expect(screen.getByText('Stylist-safe technical guidance unlocks after sign-in or approval.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign in for stylist guidance' })).toBeInTheDocument();
+    expect(screen.queryByText(/Temporary slot/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/wired up/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Safe pairing')).not.toBeInTheDocument();
   });
 
   it('shows verified compatible systems to stylists', () => {

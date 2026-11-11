@@ -271,7 +271,7 @@ export default function AdminProductsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Products</Title>
           <Text type="secondary">

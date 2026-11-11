@@ -13,6 +13,7 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 import OrderDocumentButtons from '@/features/admin/OrderDocumentButtons';
 import MessageButtons from '@/features/messaging/MessageButtons';
 import { firstName, ORDER_STATUS_TEMPLATE } from '@/features/messaging/templates';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -164,7 +165,7 @@ export default function AdminOrdersPage() {
       title: 'Date',
       dataIndex: 'createdAt',
       key: 'date',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : '—',
+      render: (date: string) => date ? formatDate(date) : '—',
     },
     ...(canDelete ? [{
       title: '',
@@ -189,7 +190,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Orders</Title>
           <Text type="secondary">{pagination?.total ?? 0} {inTrash ? 'in the Trash' : 'total orders'}</Text>

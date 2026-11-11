@@ -10,6 +10,7 @@ import {
   useCreateAiTokenMutation, useGetAdminFeaturesQuery, useGetAiTokensQuery, useRevokeAiTokenMutation, useUpdateFeaturesMutation,
   type AdminFeature, type FeatureKey, type PlanKey,
 } from '@/features/admin/platformApi';
+import { formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -135,7 +136,7 @@ function AiAssistantCard({ enabled }: { enabled: boolean }) {
                     <div>
                       <Text>{item.name}</Text>
                       <div><Text type="secondary" style={{ fontSize: 12 }}>
-                        {item.lastUsedAt ? `Last used ${new Date(item.lastUsedAt).toLocaleString()}` : 'Never used'}
+                        {item.lastUsedAt ? `Last used ${formatDateTime(item.lastUsedAt)}` : 'Never used'}
                       </Text></div>
                     </div>
                     <Button

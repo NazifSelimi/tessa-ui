@@ -57,6 +57,7 @@ const AdminCatalogueReviewPage = lazyWithReload(() => import('./pages/admin/Admi
 const AdminHairQuizPage = lazyWithReload(() => import('./pages/admin/AdminHairQuizPage'));
 const AdminPostStudioPage = lazyWithReload(() => import('./pages/admin/AdminPostStudioPage'));
 import FeatureGate from '@/shared/components/FeatureGate';
+import RouteTitle from '@/shared/components/RouteTitle';
 const AdminEmailsPage = lazyWithReload(() => import('./pages/admin/AdminEmailsPage'));
 const AdminFeaturesPage = lazyWithReload(() => import('./pages/admin/AdminFeaturesPage'));
 const AdminBusinessPage = lazyWithReload(() => import('./pages/admin/AdminBusinessPage'));
@@ -136,6 +137,7 @@ function App() {
             >
               <AuthBootstrap />
               <ScrollToTop />
+              <RouteTitle />
               <Suspense fallback={<LoadingScreen />}>
               <AntdProvider>
                 <Routes>

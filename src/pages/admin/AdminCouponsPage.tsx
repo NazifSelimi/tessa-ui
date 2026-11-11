@@ -18,6 +18,7 @@ import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import dayjs from 'dayjs';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -142,7 +143,7 @@ export default function AdminCouponsPage() {
       title: 'Expires',
       dataIndex: 'expirationDate',
       key: 'expirationDate',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'No expiry',
+      render: (date: string) => date ? formatDate(date) : 'No expiry',
     },
     {
       title: 'Status',
@@ -178,12 +179,12 @@ export default function AdminCouponsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Coupons</Title>
           <Text type="secondary">{data?.meta?.total || 0} coupons</Text>
         </div>
-        <Space>
+        <Space wrap>
           <Input
             placeholder="Search codes..."
             prefix={<SearchOutlined />}

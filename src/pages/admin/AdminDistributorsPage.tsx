@@ -11,6 +11,7 @@ import {
   useGetDistributorCodeStatsQuery,
 } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatDate, formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -97,13 +98,13 @@ export default function AdminDistributorsPage() {
       title: 'Expires',
       dataIndex: 'expiresAt',
       key: 'expiresAt',
-      render: (date: string | null) => date ? new Date(date).toLocaleDateString() : 'Never',
+      render: (date: string | null) => date ? formatDate(date) : 'Never',
     },
     {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => formatDate(date),
     },
   ];
 
@@ -118,12 +119,12 @@ export default function AdminDistributorsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Distributor Codes</Title>
           <Text type="secondary">Manage stylist invitation codes and track usage</Text>
         </div>
-        <Space>
+        <Space wrap>
           <Input
             placeholder="Search codes or creators..."
             prefix={<SearchOutlined />}
@@ -220,10 +221,10 @@ export default function AdminDistributorsPage() {
               }
             </Descriptions.Item>
             <Descriptions.Item label="Expires">
-              {selectedCode.expiresAt ? new Date(selectedCode.expiresAt).toLocaleString() : 'Never'}
+              {selectedCode.expiresAt ? formatDateTime(selectedCode.expiresAt) : 'Never'}
             </Descriptions.Item>
             <Descriptions.Item label="Created">
-              {new Date(selectedCode.createdAt).toLocaleString()}
+              {formatDateTime(selectedCode.createdAt)}
             </Descriptions.Item>
           </Descriptions>
         )}

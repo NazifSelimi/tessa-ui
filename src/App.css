@@ -766,6 +766,21 @@ a {
   min-height: calc(100vh - var(--header-height));
 }
 
+/* Phones: wide admin content scrolls inside its own box, never the whole page. */
+.admin-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-content .ant-tabs,
+.admin-content .ant-table-wrapper {
+  max-width: 100%;
+}
+
+.admin-content .ant-table-wrapper .ant-table-container {
+  overflow-x: auto;
+}
+
 /* =============================================================================
    FORM STYLES
    ============================================================================= */

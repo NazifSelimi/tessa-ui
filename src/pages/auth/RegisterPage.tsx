@@ -39,6 +39,7 @@ import {
   MACEDONIA_POSTCODE_OPTIONS,
   getCityForPostcode,
   getPostcodeForCity,
+  filterLocationOption,
 } from '@/shared/data/macedoniaLocations';
 
 const { Text, Paragraph } = Typography;
@@ -233,7 +234,7 @@ const RegisterPage: React.FC = () => {
                 showSearch
                 options={MACEDONIA_CITY_OPTIONS}
                 placeholder={t('account.selectMunicipality')}
-                optionFilterProp="label"
+                filterOption={filterLocationOption}
                 suffixIcon={<PushpinOutlined />}
                 onChange={(city) => {
                   const postcode = getPostcodeForCity(city);
@@ -255,7 +256,7 @@ const RegisterPage: React.FC = () => {
                 showSearch
                 options={MACEDONIA_POSTCODE_OPTIONS}
                 placeholder={t('account.selectPostcode')}
-                optionFilterProp="label"
+                filterOption={filterLocationOption}
                 onChange={(postcode) => {
                   const city = getCityForPostcode(postcode);
                   if (city) {

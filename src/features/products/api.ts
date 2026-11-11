@@ -22,6 +22,8 @@ export interface ProductsQueryParams {
   category?: string;
   brand?: string;
   collection?: string;
+  /** Comma-separated category ids. */
+  category_ids?: string;
   search?: string;
   featured?: boolean;
   sort?: string;

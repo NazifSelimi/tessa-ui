@@ -19,6 +19,7 @@ import {
 } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import SendMessageButtons from '@/features/admin/SendMessageButtons';
+import { formatDate, formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -153,7 +154,7 @@ export default function AdminStylistRequestsPage() {
       title: 'Submitted',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : '-',
+      render: (date: string) => date ? formatDate(date) : '-',
     },
     {
       title: 'Actions',
@@ -203,7 +204,7 @@ export default function AdminStylistRequestsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Stylist Requests</Title>
           <Text type="secondary">
@@ -211,7 +212,7 @@ export default function AdminStylistRequestsPage() {
             {pendingCount > 0 && <Tag color="orange" style={{ marginLeft: 8 }}>{pendingCount} pending</Tag>}
           </Text>
         </div>
-        <Space>
+        <Space wrap>
           <Input
             placeholder="Search (min 2 chars)..."
             prefix={<SearchOutlined />}
@@ -331,7 +332,7 @@ export default function AdminStylistRequestsPage() {
               <Descriptions.Item label="Rejection Reason">{selectedRequest.rejectionReason}</Descriptions.Item>
             )}
             <Descriptions.Item label="Submitted">
-              {selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString() : '-'}
+              {selectedRequest.createdAt ? formatDateTime(selectedRequest.createdAt) : '-'}
             </Descriptions.Item>
           </Descriptions>
         )}

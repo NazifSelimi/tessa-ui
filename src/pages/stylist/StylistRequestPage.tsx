@@ -14,7 +14,7 @@ import { store } from '@/store/index';
 import type { StylistRequestStatus } from '@/types';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
-import { MACEDONIA_CITY_OPTIONS } from '@/shared/data/macedoniaLocations';
+import { MACEDONIA_CITY_OPTIONS, filterLocationOption } from '@/shared/data/macedoniaLocations';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -261,7 +261,7 @@ export default function StylistRequestPage() {
               showSearch
               options={MACEDONIA_CITY_OPTIONS}
               placeholder="Select municipality"
-              optionFilterProp="label"
+              filterOption={filterLocationOption}
             />
           </Form.Item>
 
