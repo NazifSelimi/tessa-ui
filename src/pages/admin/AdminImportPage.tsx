@@ -62,6 +62,7 @@ export default function AdminImportPage() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mapping, setMapping] = useState<Record<string, number | null>>({});
   const [createNew, setCreateNew] = useState(false);
+  const [details, setDetails] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [undone, setUndone] = useState(false);
@@ -73,15 +74,15 @@ export default function AdminImportPage() {
     setBusy(true);
     try {
       const data = await uploadImport(token, file);
-      setPreview(data); setMapping(data.mapping); setCreateNew(false); setResult(null); setUndone(false);
+      setPreview(data); setMapping(data.mapping); setCreateNew(false); setDetails(false); setResult(null); setUndone(false);
     } catch (error) { fail(error); } finally { setBusy(false); }
   };
 
-  const refresh = async (nextMapping: Record<string, number | null>, nextCreateNew: boolean) => {
+  const refresh = async (nextMapping: Record<string, number | null>, nextCreateNew: boolean, nextDetails: boolean) => {
     if (!preview) return;
-    setMapping(nextMapping); setCreateNew(nextCreateNew); setBusy(true);
+    setMapping(nextMapping); setCreateNew(nextCreateNew); setDetails(nextDetails); setBusy(true);
     try {
-      setPreview({ ...(await previewImport(token, preview.token, { mapping: nextMapping, create_new: nextCreateNew })), filename: preview.filename });
+      setPreview({ ...(await previewImport(token, preview.token, { mapping: nextMapping, create_new: nextCreateNew, update_details: nextDetails })), filename: preview.filename });
     } catch (error) { fail(error); } finally { setBusy(false); }
   };
 
@@ -94,7 +95,7 @@ export default function AdminImportPage() {
       okText: 'Save changes',
       onOk: async () => {
         try {
-          setResult(await applyImport(token, preview.token, { mapping, create_new: createNew }));
+          setResult(await applyImport(token, preview.token, { mapping, create_new: createNew, update_details: details }));
           refreshProducts();
         } catch (error) { fail(error); }
       },
@@ -151,14 +152,18 @@ export default function AdminImportPage() {
                   <Text style={{ fontSize: 12 }}>{label}</Text>
                   <Select
                     style={{ width: '100%' }} allowClear placeholder="not used" value={mapping[field] ?? undefined}
-                    onChange={(value) => refresh({ ...mapping, [field]: value ?? null }, createNew)}
+                    onChange={(value) => refresh({ ...mapping, [field]: value ?? null }, createNew, details)}
                     options={preview.headings.map((heading, index) => ({ value: index, label: heading || `Column ${index + 1}`, disabled: usedColumns.has(index) && mapping[field] !== index }))}
                   />
                 </Col>
               ))}
             </Row>
-            <Checkbox style={{ marginTop: 14 }} checked={createNew} onChange={(event) => refresh(mapping, event.target.checked)}>
+            <Checkbox style={{ marginTop: 14 }} checked={createNew} onChange={(event) => refresh(mapping, event.target.checked, details)}>
               Add products that are not in the catalogue ({preview.summary.new + preview.summary.create}). They stay hidden from customers until they have a photo.
+            </Checkbox>
+            <br />
+            <Checkbox style={{ marginTop: 8 }} checked={details} onChange={(event) => refresh(mapping, createNew, event.target.checked)}>
+              Also change names, article codes, brands and categories of products already in the catalogue. Leave off for a supplier list: only prices, stock and visibility change.
             </Checkbox>
           </Card>
 
@@ -177,6 +182,7 @@ export default function AdminImportPage() {
               Save {preview.summary.update + preview.summary.create} change{preview.summary.update + preview.summary.create === 1 ? '' : 's'}
             </Button>
             <Button onClick={reset}>Choose another file</Button>
+            {preview.summary.ignored > 0 && <Text type="secondary">{preview.summary.ignored} lines without a product (group headings, totals) were left out.</Text>}
           </Space>
 
           <Table

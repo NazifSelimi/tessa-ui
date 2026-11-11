@@ -24,7 +24,7 @@ export interface ImportPreview {
   mapping: Record<string, number>;
   fields: Record<string, string>;
   errors: string[];
-  summary: { rows: number; update: number; create: number; new: number; same: number; problems: number };
+  summary: { rows: number; update: number; create: number; new: number; same: number; problems: number; ignored: number };
   lines: ImportLine[];
   linesHidden: number;
 }
@@ -32,6 +32,7 @@ export interface ImportPreview {
 export interface ImportOptions {
   mapping?: Record<string, number | null>;
   create_new?: boolean;
+  update_details?: boolean;
 }
 
 export interface ImportResult { updated: number; created: number; skipped: number; notCreated: number }
