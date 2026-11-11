@@ -123,7 +123,7 @@ describe('CollectionPage', () => {
 
     renderCollection();
 
-    expect(screen.getByText('No Yellow 9 Tone Bleaching Powder')).toBeInTheDocument();
+    expect(screen.getAllByText('No Yellow 9 Tone Bleaching Powder').length).toBeGreaterThan(0);
     expect(screen.getByText('Pair only with')).toBeInTheDocument();
     expect(screen.getByText('Fanola Oxy')).toBeInTheDocument();
     expect(screen.getByText('Developer ratios, timing, and substitutions are intentionally omitted until manufacturer validation.')).toBeInTheDocument();
