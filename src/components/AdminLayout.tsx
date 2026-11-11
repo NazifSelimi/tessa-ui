@@ -38,6 +38,7 @@ import {
   AppstoreOutlined,
   IdcardOutlined,
   ContactsOutlined,
+  FileExcelOutlined,
   FilePdfOutlined,
   BarChartOutlined,
   WhatsAppOutlined,
@@ -54,6 +55,7 @@ const { Title, Text } = Typography;
 const pageTitles: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/products': 'Products',
+  '/admin/import': 'Excel import',
   '/admin/orders': 'Orders',
   '/admin/users': 'Users',
   '/admin/stylist-requests': 'Business applications',
@@ -92,6 +94,7 @@ export default function AdminLayout() {
   const menuItems = useMemo(() => [
     { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
     { key: '/admin/products', icon: <ShoppingOutlined />, label: <Link to="/admin/products">Products</Link> },
+    { key: '/admin/import', icon: <FileExcelOutlined />, label: <Link to="/admin/import">Excel import</Link> },
     {
       key: '/admin/orders',
       icon: <FileTextOutlined />,

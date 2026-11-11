@@ -71,6 +71,7 @@ const StylistQuickOrderPage = lazyWithReload(() => import('./pages/stylist/Styli
 const StylistReferralPage = lazyWithReload(() => import('./pages/stylist/StylistReferralPage'));
 const AdminReferralsPage = lazyWithReload(() => import('./pages/admin/AdminReferralsPage'));
 const AdminCustomersPage = lazyWithReload(() => import('./pages/admin/AdminCustomersPage'));
+const AdminImportPage = lazyWithReload(() => import('./pages/admin/AdminImportPage'));
 const AdminDocumentsPage = lazyWithReload(() => import('./pages/admin/AdminDocumentsPage'));
 const AdminReportsPage = lazyWithReload(() => import('./pages/admin/AdminReportsPage'));
 const AdminMessagesPage = lazyWithReload(() => import('./pages/admin/AdminMessagesPage'));
@@ -239,6 +240,7 @@ function App() {
               }>
                 <Route path="/admin" element={<AdminDashboardPage />} />
                 <Route path="/admin/products" element={<AdminProductsPage />} />
+                <Route path="/admin/import" element={<FeatureGate feature="excel_import" fallback="/admin/features"><AdminImportPage /></FeatureGate>} />
                 <Route path="/admin/orders" element={<AdminOrdersPage />} />
                 <Route path="/admin/documents" element={<FeatureGate feature="pdf_documents" fallback="/admin/features"><AdminDocumentsPage /></FeatureGate>} />
                 <Route path="/admin/reports" element={<FeatureGate feature="sales_reports" fallback="/admin/features"><AdminReportsPage /></FeatureGate>} />
