@@ -150,6 +150,27 @@ export default function AdminLayout() {
     { key: '/admin/features', icon: <AppstoreOutlined />, label: <Link to="/admin/features">Features</Link> },
   ].filter((item) => !ADMIN_PATH_FEATURE[item.key] || features?.[ADMIN_PATH_FEATURE[item.key]]?.enabled !== false && features?.[ADMIN_PATH_FEATURE[item.key]]?.included !== false),
   [pendingCount, pendingOrders, failedEmails, features]);
+
+  // The same links under short headings, so a long list is easy to scan.
+  const groupedMenuItems = useMemo(() => {
+    const sections: { label: string; keys: string[] }[] = [
+      { label: 'Daily work', keys: ['/admin', '/admin/orders', '/admin/products', '/admin/customers'] },
+      { label: 'Sales & documents', keys: ['/admin/reports', '/admin/documents', '/admin/import'] },
+      { label: 'Offers & codes', keys: ['/admin/bundles', '/admin/coupons', '/admin/referrals'] },
+      { label: 'Marketing', keys: ['/admin/studio', '/admin/emails', '/admin/messages'] },
+      { label: 'Accounts', keys: ['/admin/users', '/admin/stylist-requests', '/admin/stylist-invitations', '/admin/distributors'] },
+      { label: 'Shop content', keys: ['/admin/content-blocks', '/admin/catalog-images', '/admin/hair-quiz', '/admin/catalogue-review'] },
+      { label: 'Settings', keys: ['/admin/business', '/admin/features'] },
+    ];
+    const byKey = new Map(menuItems.map((item) => [item.key, item]));
+    const placed = new Set(sections.flatMap((section) => section.keys));
+    const groups = sections
+      .map((section) => ({ type: 'group' as const, key: `group-${section.label}`, label: section.label, children: section.keys.flatMap((key) => byKey.get(key) ?? []) }))
+      .filter((group) => group.children.length > 0);
+    // Anything new that has no section yet still shows up.
+    const rest = menuItems.filter((item) => !placed.has(item.key));
+    return rest.length ? [...groups, { type: 'group' as const, key: 'group-more', label: 'More', children: rest }] : groups;
+  }, [menuItems]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -218,12 +239,16 @@ export default function AdminLayout() {
       <Menu
         mode="inline"
         selectedKeys={[location.pathname]}
-        items={menuItems}
+        items={groupedMenuItems}
         onClick={() => isMobile && setMobileMenuOpen(false)}
+        className="admin-sidebar__menu"
         style={{ 
           borderRight: 'none', 
-          padding: '12px 8px',
-          flex: 1,
+          padding: '4px 8px 12px',
+          flex: '1 1 0',
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       />
 

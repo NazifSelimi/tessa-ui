@@ -4526,3 +4526,11 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   .email-segments { grid-template-columns: 1fr; }
 }
 .admin-feature-row.is-locked { opacity: .72; }
+
+/* Admin sidebar: the logo and "Back to Shop" stay put, the links scroll between them. */
+.admin-sidebar .ant-layout-sider-children { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.admin-sidebar__logo { flex: none; }
+.admin-sidebar__menu { scrollbar-width: thin; }
+.admin-sidebar__menu .ant-menu-item { height: 34px; line-height: 34px; margin-block: 1px; }
+.admin-sidebar__menu .ant-menu-item-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 10px 16px 2px; }
+.admin-sidebar--collapsed .admin-sidebar__menu .ant-menu-item-group-title { height: 1px; padding: 0; margin: 6px 12px; overflow: hidden; background: var(--color-border-light, #eee); }
