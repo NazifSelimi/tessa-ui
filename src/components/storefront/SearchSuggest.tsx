@@ -93,7 +93,10 @@ export default function SearchSuggest({ className = '' }: { className?: string }
             return (
               <div key={product.id} className="nl-suggest__item" role="option" aria-selected={false}>
                 <Link to={`/product/${product.id}`} className="nl-suggest__link" onClick={() => setOpen(false)}>
-                  <span className="nl-suggest__thumb">{product.image ? <img src={product.image} alt="" loading="lazy" /> : null}</span>
+                  {/* Hair colours show their colour swatch; other products their photo. */}
+                  <span className={`nl-suggest__thumb${product.swatch ? ' nl-suggest__thumb--swatch' : ''}`}>
+                    {product.swatch || product.image ? <img src={product.swatch || product.image || ''} alt="" /> : null}
+                  </span>
                   <span className="nl-suggest__text">
                     <strong>{product.name}</strong>
                     <small>
