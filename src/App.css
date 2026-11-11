@@ -782,6 +782,7 @@ a {
 }
 
 /* Period pickers and other segmented controls scroll sideways instead of widening the page. */
+.admin-content .ant-space,
 .admin-content .ant-space-item {
   max-width: 100%;
   min-width: 0;
