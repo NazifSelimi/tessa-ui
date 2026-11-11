@@ -38,6 +38,7 @@ import {
   AppstoreOutlined,
   IdcardOutlined,
   ContactsOutlined,
+  WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetDashboardStatsQuery } from '@/features/admin/api';
@@ -68,6 +69,7 @@ const pageTitles: Record<string, string> = {
   '/admin/emails': 'Emails',
   '/admin/features': 'Features',
   '/admin/business': 'Business profile',
+  '/admin/messages': 'Viber & WhatsApp',
 };
 
 export default function AdminLayout() {
@@ -129,6 +131,7 @@ export default function AdminLayout() {
       ),
     },
     { key: '/admin/studio', icon: <InstagramOutlined />, label: <Link to="/admin/studio">Post Studio</Link> },
+    { key: '/admin/messages', icon: <WhatsAppOutlined />, label: <Link to="/admin/messages">Viber & WhatsApp</Link> },
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
     { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },
