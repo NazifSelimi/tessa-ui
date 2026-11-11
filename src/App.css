@@ -781,6 +781,36 @@ a {
   overflow-x: auto;
 }
 
+/* Phones: admin tables keep natural column widths and scroll sideways inside their box,
+   instead of squeezing text one letter per line. */
+@media (max-width: 640px) {
+  .admin-content .ant-table-wrapper .ant-table-container {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-content .ant-table-wrapper table {
+    width: max-content !important;
+    min-width: 100%;
+  }
+
+  .admin-content .ant-table-wrapper .ant-table-cell {
+    min-width: 72px;
+    max-width: 260px;
+    padding: 10px 12px !important;
+    font-size: 13px;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .admin-content .ant-table-wrapper .ant-table-thead .ant-table-cell {
+    white-space: nowrap;
+  }
+
+  .admin-content .ant-card .ant-card-body {
+    padding: 12px;
+  }
+}
+
 /* Period pickers and other segmented controls scroll sideways instead of widening the page. */
 .admin-content .ant-space,
 .admin-content .ant-space-item {
@@ -3927,6 +3957,142 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   }
 }
 
+/* Phones: big preview on top, each tone group a swipeable row of large swatches (no box scrolling inside the page). */
+.shade-group__count {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .shade-picker__body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .shade-picker__preview {
+    position: relative;
+    flex: none;
+    display: block;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 8px 22px rgb(36 33 36 / 14%);
+  }
+
+  .shade-picker__preview-swatch {
+    display: block;
+    width: 100%;
+    height: 132px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .shade-picker__preview-code,
+  .shade-picker__preview-name {
+    position: absolute;
+    left: 14px;
+    z-index: 1;
+    color: #fff;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 55%);
+    text-align: left;
+  }
+
+  .shade-picker__preview-code {
+    bottom: 30px;
+    font-size: 24px;
+  }
+
+  .shade-picker__preview-name {
+    bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .shade-picker__preview::after {
+    content: '';
+    position: absolute;
+    inset: 45% 0 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 45%), transparent);
+    pointer-events: none;
+  }
+
+  .shade-picker__groups {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .shade-group + .shade-group {
+    margin-top: var(--spacing-lg);
+  }
+
+  .shade-group__title {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .shade-picker__groups .shade-group__dots {
+    position: relative;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding: 4px 2px 6px;
+    margin: 0 -2px;
+    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+
+  .shade-picker__groups .shade-group__dots::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shade-picker__groups .shade-dot,
+  .shade-picker__modal-groups .shade-dot {
+    flex: none;
+    width: 68px;
+    scroll-snap-align: start;
+  }
+
+  .shade-picker__groups .shade-dot__swatch,
+  .shade-picker__modal-groups .shade-dot__swatch {
+    width: 60px;
+    height: 60px;
+  }
+
+  .shade-dot__code {
+    font-size: 12px;
+  }
+
+  /* "All shades" fills the phone screen as a tidy grid. */
+  .shade-picker__modal.ant-modal {
+    top: 0;
+    max-width: 100vw;
+    margin: 0;
+    padding-bottom: 0;
+  }
+
+  .shade-picker__modal .ant-modal-container,
+  .shade-picker__modal .ant-modal-content {
+    min-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .shade-picker__modal-groups {
+    max-height: calc(100dvh - 150px);
+  }
+
+  .shade-picker__modal-groups .shade-group__dots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 14px 8px;
+    justify-items: center;
+  }
+}
+
 /* Brand catalogue as a book (product page) */
 .catalogue-book {
   margin-top: var(--spacing-3xl);
@@ -3956,6 +4122,7 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 }
 
 .catalogue-book__stage {
+  position: relative;
   --catalogue-page-h: calc(min(78vh, 860px) - 2 * var(--spacing-md));
   display: flex;
   justify-content: center;
@@ -4123,6 +4290,28 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 
   .catalogue-book__zoom {
     width: 100%;
+  }
+
+  /* Zoomed on a phone: page ~2.5x the screen, drag to look around; arrows turn pages. */
+  .catalogue-book__stage--zoomed {
+    max-height: 68vh;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .catalogue-book__stage--zoomed .catalogue-book__page {
+    min-width: 250%;
+  }
+
+  .catalogue-spot--current {
+    border-width: 3px;
+    box-shadow: 0 0 0 4px rgb(155 83 100 / 30%);
+  }
+
+  .catalogue-book__controls .ant-btn-circle {
+    width: 44px;
+    height: 44px;
   }
 }
 

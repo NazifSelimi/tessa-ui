@@ -71,7 +71,12 @@ function ShadeGroups({ shades, currentId, onPick }: { shades: ProductShade[]; cu
     <>
       {groups.map((group) => (
         <section key={group.key} className="shade-group">
-          {showHeadings && <h4 className="shade-group__title">{t(`product.shadeGroups.${group.key}`)}</h4>}
+          {showHeadings && (
+            <h4 className="shade-group__title">
+              {t(`product.shadeGroups.${group.key}`)}
+              <span className="shade-group__count">{group.shades.length}</span>
+            </h4>
+          )}
           <div className="shade-group__dots">
             {group.shades.map((shade) => (
               <ShadeDot key={shade.id} shade={shade} active={String(shade.id) === String(currentId)} onPick={onPick} />
@@ -96,6 +101,11 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
     const dot = panel?.querySelector<HTMLElement>(`[data-shade-id="${currentId}"]`);
     if (panel && dot) {
       panel.scrollTop = dot.offsetTop - panel.clientHeight / 2 + dot.clientHeight / 2;
+      // Phones show each tone group as a swipeable row: bring the selected shade into the middle of its row.
+      const row = dot.closest<HTMLElement>('.shade-group__dots');
+      if (row && row.scrollWidth > row.clientWidth) {
+        row.scrollLeft = dot.offsetLeft - row.clientWidth / 2 + dot.clientWidth / 2;
+      }
     }
   }, [currentId]);
 
@@ -138,6 +148,7 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
         onCancel={() => setOpen(false)}
         footer={null}
         width={720}
+        className="shade-picker__modal"
         title={t('product.allShades', { count: shades.length })}
       >
         {shades.length > 12 && (

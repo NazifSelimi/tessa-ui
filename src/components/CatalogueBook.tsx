@@ -64,12 +64,30 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
   );
   const [index, setIndex] = useState(currentPage);
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  const [zoomed, setZoomed] = useState(false);
+  // Phones open zoomed in: a whole catalogue page is too small to judge a colour on a phone screen.
+  const [zoomed, setZoomed] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches === true);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [openSpot, setOpenSpot] = useState<string | null>(null);
   const touchStart = useRef<number | null>(null);
 
   // Arriving on another shade: open the book at that shade's page.
   useEffect(() => { setIndex(currentPage); setOpenSpot(null); }, [currentPage]);
+
+  // Zoomed in: centre the shade being viewed (or the page's top-left) in the visible area.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || !zoomed) return;
+    const pageEl = stage.querySelector<HTMLElement>('.catalogue-book__page');
+    const spot = stage.querySelector<HTMLElement>('.catalogue-spot--current');
+    if (!pageEl || !spot) {
+      stage.scrollTo({ left: 0, top: 0 });
+      return;
+    }
+    stage.scrollTo({
+      left: pageEl.offsetLeft + spot.offsetLeft + spot.offsetWidth / 2 - stage.clientWidth / 2,
+      top: pageEl.offsetTop + spot.offsetTop + spot.offsetHeight / 2 - stage.clientHeight / 2,
+    });
+  }, [index, zoomed]);
 
   const turn = (to: number) => {
     if (to < 0 || to >= pages.length || to === index) return;
@@ -86,11 +104,12 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
       <div className="catalogue-book__header">
         <h3 className="catalogue-book__title">{catalogue.title}</h3>
         {pages.some((p) => p.spots.some((spot) => spot.productId)) && (
-          <span className="catalogue-book__hint">{t('product.catalogue.hint')}</span>
+          <span className="catalogue-book__hint">{t(zoomed ? 'product.catalogue.dragHint' : 'product.catalogue.hint')}</span>
         )}
       </div>
 
       <div
+        ref={stageRef}
         className={`catalogue-book__stage${zoomed ? ' catalogue-book__stage--zoomed' : ''}`}
         tabIndex={0}
         onKeyDown={(event) => {

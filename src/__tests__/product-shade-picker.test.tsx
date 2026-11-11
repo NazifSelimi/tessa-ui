@@ -27,7 +27,7 @@ describe('shade picker', () => {
     expect(document.querySelectorAll('.shade-picker__groups .shade-dot')).toHaveLength(14);
     expect(document.querySelector('[data-shade-id="3"]')!.className).toContain('shade-dot--out');
     // 1.0-9.0 are natural, 1.3-5.3 golden: two tone groups with headings
-    expect([...document.querySelectorAll('.shade-picker__groups .shade-group__title')].map((h) => h.textContent))
+    expect([...document.querySelectorAll('.shade-picker__groups .shade-group__title')].map((h) => h.firstChild?.textContent))
       .toEqual(['product.shadeGroups.natural', 'product.shadeGroups.gold']);
   });
 

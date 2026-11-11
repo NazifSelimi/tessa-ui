@@ -53,7 +53,9 @@ export default function MainLayout() {
     { to: '/cart', label: t('newLook.cart'), icon: ShoppingBag },
     { to: user ? '/account' : '/login', label: t('newLook.profile'), icon: UserRound },
   ].filter(({ to }) => to !== '/quiz' || quizOn);
-  const navLinks = () => navigation.map(({ to, label, icon: Icon }) => (
+  // Phone bottom bar stays short: Orders lives in the sidebar and on the account page.
+  const mobileNavigation = navigation.filter(({ to }) => to !== '/account/orders');
+  const navLinks = (items = navigation) => items.map(({ to, label, icon: Icon }) => (
     <NavLink key={to} to={to} end={to === '/' || to === home} className={({ isActive }) => `${isActive ? 'is-active ' : ''}${to.includes('quick-order') ? 'nl-quick-link' : ''}`}>
       <Icon size={20} /><span>{label}</span>
       {to === '/cart' && itemCount > 0 && <em>{itemCount}</em>}
@@ -112,7 +114,7 @@ export default function MainLayout() {
           <small>© {new Date().getFullYear()} Tessa Hair Care<span className="nl-social-links">{site.social.facebook && <a href={site.social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon size={18} /></a>}{site.social.instagram && <a href={site.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon size={18} /></a>}</span></small>
         </footer>
       </div>
-      <nav className="nl-mobile-nav" aria-label={t('newLook.mobileNavigation')}>{navLinks()}</nav>
+      <nav className="nl-mobile-nav" aria-label={t('newLook.mobileNavigation')}>{navLinks(mobileNavigation)}</nav>
       {professionalShell && <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} placement="left" width={280} title={t('newLook.navigation')}><div className="tessa-design nl-drawer-sidebar">{sidebar}</div></Drawer>}
       <Suspense fallback={null}><CartDrawer /></Suspense>
       {isAdmin && <Suspense fallback={null}><AdminDock /></Suspense>}
