@@ -38,6 +38,7 @@ import {
   AppstoreOutlined,
   IdcardOutlined,
   ContactsOutlined,
+  BarChartOutlined,
   WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,6 +58,7 @@ const pageTitles: Record<string, string> = {
   '/admin/stylist-requests': 'Business applications',
   '/admin/stylist-invitations': 'Business invitations',
   '/admin/customers': 'Customers',
+  '/admin/reports': 'Sales reports',
   '/admin/coupons': 'Coupons',
   '/admin/referrals': 'Referral codes',
   '/admin/distributors': 'Distributors',
@@ -101,6 +103,7 @@ export default function AdminLayout() {
       ),
     },
     { key: '/admin/customers', icon: <ContactsOutlined />, label: <Link to="/admin/customers">Customers</Link> },
+    { key: '/admin/reports', icon: <BarChartOutlined />, label: <Link to="/admin/reports">Sales reports</Link> },
     { key: '/admin/users', icon: <UserOutlined />, label: <Link to="/admin/users">Users</Link> },
     {
       key: '/admin/stylist-requests',
