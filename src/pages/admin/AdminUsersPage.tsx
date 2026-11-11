@@ -135,7 +135,7 @@ export default function AdminUsersPage() {
       title: 'Actions',
       key: 'actions',
       fixed: 'right' as const,
-      width: 260,
+      width: 320,
       render: (_: unknown, record: User) => (
         <Space size={4} onClick={(e) => e.stopPropagation()}>
           <Button 
@@ -209,7 +209,7 @@ export default function AdminUsersPage() {
           columns={columns}
           rowKey="id"
           loading={isFetching}
-          scroll={{ x: 800 }}
+          scroll={{ x: 960 }}
           onRow={(record) => ({
             onClick: () => handleView(record),
             style: { cursor: 'pointer' },
