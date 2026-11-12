@@ -26,7 +26,7 @@ const roleColors: Record<UserRole, string> = {
 const roleOptions = [
   { value: 'all', label: 'All Roles' },
   { value: 'user', label: 'Customer' },
-  { value: 'stylist', label: 'Stylist' },
+  { value: 'stylist', label: 'Business account' },
   { value: 'admin', label: 'Admin' },
 ];
 
@@ -283,15 +283,11 @@ export default function AdminUsersPage() {
           </Form.Item>
 
           <Form.Item name="phone" label="Phone">
-            <Input placeholder="+1 234 567 8900" />
+            <Input placeholder="070 123 456" />
           </Form.Item>
 
           <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-            <Select placeholder="Select role">
-              <Select.Option value="user">Customer</Select.Option>
-              <Select.Option value="stylist">Stylist</Select.Option>
-              <Select.Option value="admin">Admin</Select.Option>
-            </Select>
+            <Select placeholder="Select role" options={roleOptions.filter((option) => option.value !== 'all')} />
           </Form.Item>
         </Form>
       </Modal>

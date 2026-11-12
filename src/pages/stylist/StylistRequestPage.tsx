@@ -272,7 +272,7 @@ export default function StylistRequestPage() {
             label={t('pages.stylistRequest.salonPhone')}
             rules={[{ required: true, message: t('pages.stylistRequest.enterSalonPhone') }]}
           >
-            <Input placeholder="+1 234 567 8900" />
+            <Input placeholder="070 123 456" />
           </Form.Item>
 
           <Form.Item name="about" label={t('pages.stylistRequest.about')}>

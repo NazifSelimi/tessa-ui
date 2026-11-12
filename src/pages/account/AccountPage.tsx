@@ -137,7 +137,7 @@ export default function AccountPage() {
               </Form.Item>
 
               <Form.Item name="phone" label={t('auth.phone')} rules={[{ required: true, message: t('auth.enterPhone') }]}>
-                <Input prefix={<PhoneOutlined />} placeholder="+1 234 567 8900" />
+                <Input prefix={<PhoneOutlined />} placeholder="070 123 456" />
               </Form.Item>
 
               <Form.Item name="address" label={t('checkout.address')} rules={[{ required: true, message: t('account.enterAddress') }]}>
