@@ -874,5 +874,9 @@
     "Conditioner": "Balsam",
     "Sets": "Sete",
     "Other": "Të tjera"
+  },
+  "errors": {
+    "tooManyAttempts": "Shumë përpjekje. Prisni një minutë dhe provoni përsëri.",
+    "requestFailed": "Diçka shkoi keq. Provoni përsëri."
   }
 }
