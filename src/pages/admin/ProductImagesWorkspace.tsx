@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Card, Drawer, Empty, Image, Input, InputNumber, Modal, Pagination, Popconfirm, Select, Space, Spin, Table, Tabs, Tag, Typography, Upload, message } from 'antd';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppDispatch } from '@/app/hooks';
+import { baseApi, API_TAGS } from '@/api/baseApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
 const API = import.meta.env.VITE_API_URL as string;
@@ -12,7 +14,7 @@ type Candidate = { product_id: number; candidate_rank: number; current_name: str
 const labels: Record<string, string> = { all: 'All products', missing: 'Missing images', needs_review: 'Needs review', legacy: 'Legacy images', approved: 'Approved' };
 
 export default function ProductImagesWorkspace() {
-  const { token } = useAuth(); const [params, setParams] = useSearchParams(); const productId = params.get('product');
+  const { token } = useAuth(); const dispatch = useAppDispatch(); const [params, setParams] = useSearchParams(); const productId = params.get('product');
   const [health, setHealth] = useState<{ summary: Record<string, number>; products: Product[]; meta: { total: number } }>();
   const [status, setStatus] = useState('needs_review'); const [search, setSearch] = useState(''); const query = useDebounce(search, 300);
   const [sort, setSort] = useState('name_asc'); const [page, setPage] = useState(1); const [refresh, setRefresh] = useState(0);
@@ -24,7 +26,9 @@ export default function ProductImagesWorkspace() {
   async function request(path: string, init: RequestInit = {}) {
     const response = await fetch(`${API}/v1/admin/${path}`, { ...init, headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, ...init.headers } });
     if (response.status === 413) throw new Error('The server rejected this file size. Please use a smaller image.');
-    const body = await response.json(); if (!response.ok) throw new Error(body.message || 'Request failed. Please retry.'); return body;
+    const body = await response.json(); if (!response.ok) throw new Error(body.message || 'Request failed. Please retry.');
+    // Writes bypass RTK Query, so drop its cached product lists and pages.
+    if ((init.method || 'GET').toUpperCase() !== 'GET') dispatch(baseApi.util.invalidateTags([API_TAGS.Products, API_TAGS.Product])); return body;
   }
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError('');

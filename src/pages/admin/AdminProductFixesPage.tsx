@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Badge, Button, Empty, Image, Input, Popconfirm, Select, Space, Spin, Switch, Tag, Tooltip, Typography, message } from 'antd';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppDispatch } from '@/app/hooks';
+import { baseApi, API_TAGS } from '@/api/baseApi';
 import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
 import ProductFixEditor, { type FixProduct } from '@/features/admin/ProductFixEditor';
 
@@ -31,6 +33,7 @@ function readDone(): number[] {
 
 export default function AdminProductFixesPage() {
   const { token } = useAuth();
+  const dispatch = useAppDispatch();
   const [params, setParams] = useSearchParams();
   const [report, setReport] = useState<Report>();
   const [known, setKnown] = useState<Map<number, Row>>(new Map());
@@ -65,8 +68,10 @@ export default function AdminProductFixesPage() {
     if (response.status === 413) throw new Error('The server rejected this file size. Please use a smaller image.');
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.message || 'Request failed. Please retry.');
+    // Photo and product writes here bypass RTK Query, so drop its cached product lists and pages.
+    if ((init.method || 'GET').toUpperCase() !== 'GET') dispatch(baseApi.util.invalidateTags([API_TAGS.Products, API_TAGS.Product]));
     return body;
-  }, [token]);
+  }, [token, dispatch]);
 
   useEffect(() => {
     const controller = new AbortController();

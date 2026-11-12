@@ -6,6 +6,8 @@ import AdminProductFixesPage from '@/pages/admin/AdminProductFixesPage';
 vi.mock('@/features/studio/ProductPhotoEditor', () => ({ default: () => null }));
 vi.mock('@/features/admin/ProductFixEditor', () => ({ default: () => null }));
 vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }));
+const dispatchSpy = vi.fn();
+vi.mock('@/app/hooks', () => ({ useAppDispatch: () => dispatchSpy }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 
 const row = (id: number, name: string, groups: string[]) => ({
@@ -59,5 +61,7 @@ describe('Fix products page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use as is' }));
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/products/1/images'), expect.objectContaining({ method: 'POST', body: expect.any(FormData) })));
     expect(await screen.findByText('Main photo')).toBeVisible();
+    // The photo change must refresh cached product lists (admin Products window, shop).
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: expect.stringContaining("invalidateTags") }));
   });
 });

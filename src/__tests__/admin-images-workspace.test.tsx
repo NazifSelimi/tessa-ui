@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import ProductImagesWorkspace from '@/pages/admin/ProductImagesWorkspace';
+const dispatchSpy = vi.fn();
+vi.mock('@/app/hooks', () => ({ useAppDispatch: () => dispatchSpy }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 describe('image review workflow', () => {
   beforeEach(() => {
