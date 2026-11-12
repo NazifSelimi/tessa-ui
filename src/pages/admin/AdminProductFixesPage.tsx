@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Empty, Image, Input, Select, Space, Spin, Switch,
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
+import ProductFixEditor, { type FixProduct } from '@/features/admin/ProductFixEditor';
 
 /**
  * "Fix products": every product with something to fix, most important first,
@@ -15,9 +16,8 @@ const DONE_KEY = 'tessa.productFixes.done';
 const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 type Problem = { group: string; code: string; label: string; detail?: string | null };
-type Row = {
-  id: number; name: string; brand?: string | null; category?: string | null; size?: string | null; manufacturer_code?: string | null;
-  price?: string | null; stylist_price?: string | null; quantity: number; visible: boolean; live: boolean; orders: number;
+type Row = FixProduct & {
+  size?: string | null; visible: boolean; live: boolean; orders: number;
   image_count: number; thumbnail?: string | null; groups: string[]; problems: Problem[];
 };
 type Report = { total_products: number; products_with_problems: number; summary: { group: string; label: string; products: number }[]; products: Row[] };
@@ -33,6 +33,7 @@ export default function AdminProductFixesPage() {
   const { token } = useAuth();
   const [params, setParams] = useSearchParams();
   const [report, setReport] = useState<Report>();
+  const [known, setKnown] = useState<Map<number, Row>>(new Map());
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
@@ -70,7 +71,11 @@ export default function AdminProductFixesPage() {
     const controller = new AbortController();
     setError('');
     request('products/problems', { signal: controller.signal })
-      .then(setReport)
+      .then((body: Report) => {
+        setReport(body);
+        // Remember rows so a product stays open after its last problem is fixed.
+        setKnown(prev => { const next = new Map(prev); body.products.forEach(p => next.set(p.id, p)); return next; });
+      })
       .catch(e => { if (!controller.signal.aborted) setError(e.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -92,7 +97,9 @@ export default function AdminProductFixesPage() {
     return result;
   }, [report, brand, category, hideDone, done]);
 
-  const selected = (report?.products || []).find(r => r.id === selectedId);
+  const current = (report?.products || []).find(r => r.id === selectedId);
+  const selected = current ?? (selectedId ? known.get(selectedId) : undefined);
+  const fixed = !!selected && !!report && !current;
   const index = rows.findIndex(r => r.id === selectedId);
 
   const select = useCallback((id?: number) => {
@@ -187,15 +194,20 @@ export default function AdminProductFixesPage() {
     finally { setBusy(false); }
   }, [selectedId, busy, token, stage]);
 
-  const makePrimary = async (asset: Asset) => {
+  const patchImage = async (asset: Asset, body: object, done: string) => {
     if (!selectedId) return;
     setBusy(true);
     try {
-      const body = await request(`products/${selectedId}/images/${asset.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ make_primary: true }) });
-      setImages(body.images || []); message.success('Main photo changed. The old one stays in the gallery.'); setRefresh(x => x + 1);
+      const result = await request(`products/${selectedId}/images/${asset.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      setImages(result.images || []); message.success(done); setRefresh(x => x + 1);
     } catch (e) { message.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  const onSaved = (next: boolean) => {
+    const following = rows[index + 1];
+    setRefresh(x => x + 1);
+    if (next && following) select(following.id);
+  };
   // Paste an image or an image address anywhere on the page (Ctrl/Cmd+V).
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
@@ -243,7 +255,7 @@ export default function AdminProductFixesPage() {
         <Typography.Title level={2} style={{ marginBottom: 4 }}>Fix products</Typography.Title>
         <Typography.Text type="secondary">
           {report ? `${report.products_with_problems} of ${report.total_products} products need attention. ` : ''}
-          Most important first: products in stock and shown without a photo. Keys: J / K next / previous · D done · U upload · Ctrl/Cmd+V paste a photo or image address.
+          Most important first. Fix photos and details right here, then Save &amp; next. Keys: J / K next / previous · D done · U upload · Ctrl/Cmd+V paste a photo or image address.
         </Typography.Text>
       </div>
       {error && <Alert type="error" showIcon message={error} action={<Button onClick={() => setRefresh(x => x + 1)}>Retry</Button>} />}
@@ -265,7 +277,7 @@ export default function AdminProductFixesPage() {
       </Space>
 
       <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', flexWrap: 'wrap' }}>
-        <div ref={listRef} role="listbox" aria-label="Products to fix" style={{ flex: '1 1 300px', maxWidth: 420, height: 'calc(100vh - 290px)', minHeight: 360, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 8 }}>
+        <div ref={listRef} role="listbox" aria-label="Products to fix" style={{ flex: '1 1 300px', maxWidth: 420, height: 'min(calc(100vh - 290px), 70vh)', minHeight: 240, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 8 }}>
           {loading ? <div style={{ padding: 32, textAlign: 'center' }}><Spin /></div> : rows.length === 0 ? <Empty style={{ padding: 32 }} description="Nothing to fix here." /> : rows.map(r => (
             <div key={r.id} data-id={r.id} role="option" aria-selected={r.id === selectedId} tabIndex={-1} onClick={() => select(r.id)}
               style={{ display: 'flex', gap: 10, padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5', background: r.id === selectedId ? '#e6f4ff' : undefined, opacity: done.includes(r.id) ? 0.5 : 1 }}>
@@ -281,7 +293,7 @@ export default function AdminProductFixesPage() {
           ))}
         </div>
 
-        <div style={{ flex: '3 1 420px', minWidth: 0 }}>
+        <div style={{ flex: '3 1 340px', minWidth: 0 }}>
           {!selected ? <Empty description={loading ? 'Loading…' : 'Choose a product on the left.'} /> : (
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -303,16 +315,12 @@ export default function AdminProductFixesPage() {
               </div>
 
               <div>
-                {selected.problems.map((p, i) => (
+                {fixed ? <Tag color="green">All problems fixed</Tag> : selected.problems.map((p, i) => (
                   <div key={`${p.code}-${i}`} style={{ marginBottom: 4 }}>
                     <Tag color={GROUP_COLORS[p.group]}>{report?.summary.find(s => s.group === p.group)?.label}</Tag>
                     <Typography.Text strong>{p.label}</Typography.Text>{p.detail ? <Typography.Text type="secondary"> — {p.detail}</Typography.Text> : null}
                   </div>
                 ))}
-                <Space wrap style={{ marginTop: 6 }}>
-                  <Link to={`/admin/products?search=${selected.id}`}>Edit product (name, category, price, texts)</Link>
-                  <Link to={`/admin/catalog-images?product=${selected.id}`}>All photo tools</Link>
-                </Space>
               </div>
 
               <div
@@ -354,10 +362,18 @@ export default function AdminProductFixesPage() {
                         <div style={{ marginTop: 4 }}>
                           {asset.is_primary ? <Tag color="blue">Main photo</Tag> : <Tag>{asset.variant || 'photo'}</Tag>}
                           {asset.review_status === 'needs_review' && <Tag color="gold">needs review</Tag>}
+                          {asset.review_status === 'approved' && <Tag color="green">approved</Tag>}
+                          {asset.review_status === 'rejected' && <Tag color="red">rejected</Tag>}
+                          {asset.review_status === 'hidden' && <Tag color="default">not in shop</Tag>}
                           {/catalog-placeholders\//.test(asset.url || '') && <Tag color="red">placeholder</Tag>}
                         </div>
                         <Space wrap size={4} style={{ marginTop: 4 }}>
-                          {!asset.is_primary && asset.review_status !== 'rejected' && <Button size="small" disabled={busy} onClick={() => void makePrimary(asset)}>Make main photo</Button>}
+                          {asset.review_status !== 'approved' && asset.review_status !== 'hidden' && <Button size="small" disabled={busy} onClick={() => void patchImage(asset, { review_status: 'approved' }, 'Photo approved.')}>Approve</Button>}
+                          {asset.review_status !== 'rejected' && asset.review_status !== 'hidden' && !asset.is_primary && <Button size="small" disabled={busy} onClick={() => void patchImage(asset, { review_status: 'rejected' }, 'Photo marked wrong.')}>Reject</Button>}
+                          {!asset.is_primary && !['rejected', 'hidden'].includes(asset.review_status) && <Button size="small" disabled={busy} onClick={() => void patchImage(asset, { make_primary: true }, 'Main photo changed. The old one stays in the gallery.')}>Make main</Button>}
+                          {asset.review_status === 'hidden'
+                            ? <Button size="small" disabled={busy} onClick={() => void patchImage(asset, { review_status: 'needs_review' }, 'Photo is back in the shop.')}>Show in shop</Button>
+                            : <Tooltip title="Hides it from the shop. The file is kept and you can show it again."><Button size="small" danger disabled={busy} onClick={() => void patchImage(asset, { review_status: 'hidden' }, 'Photo removed from the shop (file kept).')}>Remove from shop</Button></Tooltip>}
                           <Tooltip title="Remove background, crop or center. Saves a new photo; this one stays."><Button size="small" disabled={busy} onClick={() => setEditor({ source: asset.url })}>Edit → new photo</Button></Tooltip>
                         </Space>
                       </div>
@@ -365,6 +381,12 @@ export default function AdminProductFixesPage() {
                   </div>
                 </Image.PreviewGroup>
               )}
+
+              <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
+                <Typography.Title level={4} style={{ marginTop: 0 }}>Product details</Typography.Title>
+                <ProductFixEditor product={selected} request={request} onSaved={onSaved} />
+                <Link to={`/admin/products?search=${selected.id}`}>More fields (hair quiz, shades) in Products ›</Link>
+              </div>
             </Space>
           )}
         </div>

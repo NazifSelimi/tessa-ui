@@ -4,6 +4,7 @@ import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import AdminProductFixesPage from '@/pages/admin/AdminProductFixesPage';
 
 vi.mock('@/features/studio/ProductPhotoEditor', () => ({ default: () => null }));
+vi.mock('@/features/admin/ProductFixEditor', () => ({ default: () => null }));
 vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 

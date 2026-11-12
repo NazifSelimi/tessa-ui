@@ -9,14 +9,10 @@ import type { Product, ProductAudience } from '@/types';
 import { PRODUCT_AUDIENCES, productVisibleTo } from '@/shared/utils/productVisibility';
 import { convertToWebP } from '@/shared/utils/imageUtils';
 import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
+import { BrandCategoryFields, DescriptionFields, PriceStockFields, VisibilityField, visibleToParam } from './ProductFields';
 
 const { Text } = Typography;
 
-/** Sorted, comma-joined audiences for the form post; 'none' = hidden (forms cannot send []). */
-function visibleToParam(audiences: ProductAudience[]): string {
-  const ordered = PRODUCT_AUDIENCES.map((a) => a.value).filter((a) => audiences.includes(a));
-  return ordered.length ? ordered.join(',') : 'none';
-}
 
 /** The fields the backend actually accepts (matching controller validation). */
 interface ProductFormValues {
@@ -282,26 +278,7 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
           <Input placeholder="Product name" />
         </Form.Item>
 
-        <Row gutter={16}>
-          <Col xs={24} sm={12}>
-            <Form.Item name="brand_id" label="Brand" rules={[{ required: !isEditing, message: 'Please select a brand' }]}>
-              <Select placeholder="Select brand" showSearch optionFilterProp="children">
-                {brands.map((b) => (
-                  <Select.Option key={b.id} value={Number(b.id)}>{b.name}</Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item name="category_id" label="Category" rules={[{ required: !isEditing, message: 'Please select a category' }]}>
-              <Select placeholder="Select category" showSearch optionFilterProp="children">
-                {categories.map((c) => (
-                  <Select.Option key={c.id} value={Number(c.id)}>{c.name}</Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
+        <BrandCategoryFields brands={brands} categories={categories} required={!isEditing} />
 
         <Row gutter={16}>
           <Col xs={24} sm={12}>
@@ -324,64 +301,11 @@ export default function ProductEditorModal({ open, product: editingProduct, onCl
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col xs={12} sm={8}>
-            <Form.Item name="price" label="Price (MKD)" rules={[{ required: !isEditing, message: 'Please enter price' }]}>
-              <InputNumber min={0} prefix="MKD" placeholder="0" style={{ width: '100%' }} precision={0} />
-            </Form.Item>
-          </Col>
-          <Col xs={12} sm={8}>
-            <Form.Item
-              name="stylist_price"
-              label="Stylist Price (MKD)"
-              extra={!isEditing ? 'Auto-calculated as 90% of price if empty' : undefined}
-            >
-              <InputNumber min={0} prefix="MKD" placeholder="0" style={{ width: '100%' }} precision={0} />
-            </Form.Item>
-          </Col>
-          <Col xs={12} sm={8}>
-            <Form.Item
-              name="cost_price"
-              label="Cost Price (MKD)"
-              extra="Admin only. Leave empty to use the estimated cost % from Offers."
-            >
-              <InputNumber min={0} prefix="MKD" placeholder="Estimated" style={{ width: '100%' }} precision={0} />
-            </Form.Item>
-          </Col>
-          <Col xs={12} sm={8}>
-            <Form.Item name="quantity" label="Stock Qty" rules={[{ required: !isEditing, message: 'Please enter quantity' }]}>
-              <InputNumber min={0} placeholder="0" style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-        </Row>
+        <PriceStockFields required={!isEditing} isEditing={isEditing} />
 
-        <Form.Item
-          name="visible_to"
-          label="Who can see this product"
-          extra={visibleWatch && visibleWatch.length === 0
-            ? <Text type="danger">Hidden from everyone. Only admins can see it.</Text>
-            : 'Untick a group to hide the product from them (shop, search, quiz and checkout). Untick all to hide it.'}
-        >
-          <Checkbox.Group options={PRODUCT_AUDIENCES.map(({ value, label }) => ({ value, label }))} />
-        </Form.Item>
+        <VisibilityField hiddenFromAll={!!visibleWatch && visibleWatch.length === 0} />
 
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item name="description_en" label="Description (English)">
-              <Input.TextArea rows={3} placeholder="English product description" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item name="description_mk" label="Description (Macedonian)">
-              <Input.TextArea rows={3} placeholder="Македонски опис" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item name="description_shq" label="Description (Albanian)">
-              <Input.TextArea rows={3} placeholder="Pershkrimi ne shqip" />
-            </Form.Item>
-          </Col>
-        </Row>
+        <DescriptionFields />
 
         {isEditing && (
           <>
