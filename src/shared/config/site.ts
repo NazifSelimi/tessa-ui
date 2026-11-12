@@ -1,3 +1,4 @@
+import { formatAmount } from '@/shared/utils/formatPrice';
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from '@/shared/constants/shipping';
 
 function readEnv(name: string): string | null {
@@ -27,7 +28,7 @@ export const site = {
     { label: secondaryPhoneLabel, href: secondaryPhoneHref },
   ],
   deliverySummary: readEnv('VITE_SITE_DELIVERY_SUMMARY')
-    ?? `Cash on delivery. ${SHIPPING_FEE} MKD delivery below ${FREE_SHIPPING_THRESHOLD.toLocaleString('en-US')} MKD; free delivery from ${FREE_SHIPPING_THRESHOLD.toLocaleString('en-US')} MKD.`,
+    ?? `Cash on delivery. ${SHIPPING_FEE} MKD delivery below ${formatAmount(FREE_SHIPPING_THRESHOLD)} MKD; free delivery from ${formatAmount(FREE_SHIPPING_THRESHOLD)} MKD.`,
   // Add only verified official URLs here. Empty values intentionally hide links.
   social: {
     facebook: readEnv('VITE_SITE_SOCIAL_FACEBOOK') ?? '',

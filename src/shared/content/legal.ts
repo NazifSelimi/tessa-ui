@@ -56,7 +56,7 @@ const en: Record<LegalPageKey, LegalDocument> = {
     description: 'Tessa Hair Care delivery coverage, charges, order confirmation, and what to do if a parcel is delayed or damaged.',
     intro: 'We deliver orders within North Macedonia. Delivery details and the final charge are shown during checkout.',
     sections: [
-      { heading: 'Delivery charge', paragraphs: ['Delivery costs 150 MKD for orders below 3,000 MKD. Delivery is free when the order subtotal is 3,000 MKD or more.'] },
+      { heading: 'Delivery charge', paragraphs: ['Delivery costs 150 MKD for orders below 3.000 MKD. Delivery is free when the order subtotal is 3.000 MKD or more.'] },
       { heading: 'Processing and timing', paragraphs: ['We begin processing after the order is accepted. Delivery timing depends on order volume, destination, stock confirmation, weekends, public holidays, and courier conditions. Contact us if you need an update on an existing order.'] },
       { heading: 'Address and contact details', paragraphs: ['Provide a complete delivery address and a reachable telephone number. If a parcel cannot be delivered because the supplied information is incomplete or incorrect, additional delivery arrangements or charges may apply.'] },
       { heading: 'On arrival', paragraphs: ['Inspect the parcel when possible. If it appears damaged, incorrect, or incomplete, keep the packaging and contact us promptly with the order number and photographs.'] },

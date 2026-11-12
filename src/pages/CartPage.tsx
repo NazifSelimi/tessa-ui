@@ -12,7 +12,6 @@ import {
   Button,
   Card,
   Empty,
-  InputNumber,
   Input,
   Space,
   Divider,
@@ -40,6 +39,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useGetQuickOrderProductsQuery } from '@/features/quickorder/api';
 import { Check, Plus } from 'lucide-react';
 import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import QuantityStepper from '@/components/QuantityStepper';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -118,7 +118,7 @@ const CartPage: React.FC = () => {
         </Link>
         <div className="cart-page__title-row">
           <Title level={1} style={{ margin: 0, fontSize: 30 }}>{t('cart.shoppingCart')}</Title>
-          <Text type="secondary">{items.length} {items.length === 1 ? t('cart.item') : t('cart.items')}</Text>
+          <Text type="secondary">{itemCount} {itemCount === 1 ? t('cart.item') : t('cart.items')}</Text>
         </div>
       </div>
 
@@ -172,14 +172,11 @@ const CartPage: React.FC = () => {
                       </div>
                       
                       <div className="cart-item__actions">
-                        <InputNumber
-                          min={1}
-                          max={item.product.quantity || 1}
+                        <QuantityStepper
+                          max={item.product.quantity}
                           value={item.quantity}
                           onChange={(val) => handleQuantityChange(item.productId, val)}
-                          size="middle"
-                          style={{ width: 80 }}
-                          aria-label={t('cart.quantityFor', { name: item.product.name })}
+                          name={item.product.name}
                         />
                         <Text strong className="cart-item__total">
                           {formatPrice(getItemTotal(item))}

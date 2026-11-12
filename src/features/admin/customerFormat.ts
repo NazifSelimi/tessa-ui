@@ -22,10 +22,8 @@ export const orderStatusColor: Record<CustomerOrder['status'], string> = {
   cancelled: 'red',
 };
 
-/** Whole MKD with dot thousands: 12.500 MKD. */
-export function formatMkd(value: number | null | undefined): string {
-  return `${Math.round(Number(value ?? 0)).toLocaleString('de-DE')} MKD`;
-}
+/** Whole MKD with dot thousands: 12.500 MKD (same as the shop's formatPrice). */
+export { formatPrice as formatMkd } from '@/shared/utils/formatPrice';
 
 export function formatDate(value: string | null | undefined): string {
   return value ? dayjs(value).format('DD.MM.YYYY') : '—';

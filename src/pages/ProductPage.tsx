@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  Row, Col, Typography, Button, InputNumber, Space, 
+  Row, Col, Typography, Button, Space, 
   Tag, Spin, message, Breadcrumb, Divider, Collapse,
   Alert,
 } from 'antd';
@@ -37,6 +37,7 @@ import { site } from '@/shared/config/site';
 import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
 import type { ProductMediaAsset } from '@/types';
 import { isPendingPlaceholderUrl, storefrontBrandName, storefrontCategoryName, storefrontPhotos } from '@/shared/utils/storefrontCatalog';
+import QuantityStepper from '@/components/QuantityStepper';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -280,14 +281,12 @@ export default function ProductPage() {
               <Text type="secondary" style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
                 {t('product.quantity')}
               </Text>
-              <InputNumber
-                min={1}
-                max={product.quantity || 1}
-                value={quantity}
-                onChange={(val) => setQuantity(val || 1)}
-                style={{ width: 100 }}
+              <QuantityStepper
                 size="large"
-                aria-label="Product quantity"
+                max={product.quantity}
+                value={quantity}
+                onChange={setQuantity}
+                name={product.name}
               />
             </div>
             <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flex: 1, minWidth: 0 }}>

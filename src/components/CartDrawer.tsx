@@ -9,13 +9,14 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { Drawer, Button, Typography, Space, InputNumber, Empty, Divider, Badge } from 'antd';
+import { Drawer, Button, Typography, Space, Empty, Divider, Badge } from 'antd';
 import { DeleteOutlined, ShoppingOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import ShippingProgress from './ShippingProgress';
 import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import QuantityStepper from '@/components/QuantityStepper';
 
 const { Text } = Typography;
 
@@ -174,14 +175,12 @@ export default function CartDrawer() {
                       alignItems: 'center', 
                       marginTop: 'var(--spacing-md)',
                     }}>
-                      <InputNumber
-                        min={1}
-                        max={item.product.quantity || 1}
-                        value={item.quantity}
-                        onChange={(val) => updateQuantity(item.productId, val || 1)}
+                      <QuantityStepper
                         size="small"
-                        style={{ width: 70 }}
-                        aria-label={t('cart.quantityFor', { name: item.product.name })}
+                        max={item.product.quantity}
+                        value={item.quantity}
+                        onChange={(val) => updateQuantity(item.productId, val)}
+                        name={item.product.name}
                       />
                       <Space size="middle">
                         <Text strong>{formatPrice(total)}</Text>

@@ -7,10 +7,17 @@
  * Example output: "1.250 MKD". Denars are shown whole (no deni).
  */
 
-const formatter = new Intl.NumberFormat('mk-MK', { maximumFractionDigits: 0 });
+/**
+ * Whole number with dot thousands separators ("1.250"). Written by hand because
+ * browsers without Macedonian locale data (e.g. Chrome) fell back to "1,250".
+ */
+export function formatAmount(amount: number | string | undefined | null): string {
+  const value = Math.round(Number(amount ?? 0));
+  if (!Number.isFinite(value)) return '0';
+  const digits = String(Math.abs(value)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return value < 0 ? `-${digits}` : digits;
+}
 
 export function formatPrice(amount: number | string | undefined | null): string {
-  const value = Number(amount ?? 0);
-  if (!Number.isFinite(value)) return '0 MKD';
-  return formatter.format(value) + ' MKD';
+  return `${formatAmount(amount)} MKD`;
 }
