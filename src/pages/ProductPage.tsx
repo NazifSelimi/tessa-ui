@@ -244,7 +244,7 @@ export default function ProductPage() {
           </Text>}
           
           {/* Title */}
-          <Title level={2} className="product-detail__title">
+          <Title level={1} className="product-detail__title">
             {product.name}
           </Title>
           

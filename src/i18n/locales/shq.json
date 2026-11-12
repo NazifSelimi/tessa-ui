@@ -658,5 +658,10 @@
     "signInCopy": "Kyçuni ose hapni një llogari falas për të marrë zbritjen e parukierit tuaj. Shporta dhe kodi do t'ju presin.",
     "signIn": "Kyçu",
     "createAccount": "Krijo llogari"
+  },
+  "notFoundPage": {
+    "title": "Faqja nuk u gjet",
+    "text": "Faqja që kërkuat nuk ekziston ose është zhvendosur.",
+    "back": "Kthehu te dyqani"
   }
 }

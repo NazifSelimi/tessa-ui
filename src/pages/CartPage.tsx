@@ -117,7 +117,7 @@ const CartPage: React.FC = () => {
           <span>{t('cart.continueShopping')}</span>
         </Link>
         <div className="cart-page__title-row">
-          <Title level={2} style={{ margin: 0 }}>{t('cart.shoppingCart')}</Title>
+          <Title level={1} style={{ margin: 0, fontSize: 30 }}>{t('cart.shoppingCart')}</Title>
           <Text type="secondary">{items.length} {items.length === 1 ? t('cart.item') : t('cart.items')}</Text>
         </div>
       </div>

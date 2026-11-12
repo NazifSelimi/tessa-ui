@@ -29,7 +29,7 @@ import Logo from '@/components/Logo';
 import AuthPageHeader from '@/components/AuthPageHeader';
 import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 
-const { Text, Paragraph } = Typography;
+const { Text, Title } = Typography;
 
 interface LoginFormValues {
   identifier: string;
@@ -105,9 +105,9 @@ const LoginPage: React.FC = () => {
           <Link to="/" style={{ display: 'inline-block' }}>
             <Logo variant="dark" height={36} />
           </Link>
-          <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
+          <Title level={1} type="secondary" style={{ marginTop: 8, marginBottom: 0, fontSize: 14, fontWeight: 400, lineHeight: 1.5715 }}>
             {t('auth.signInToAccount')}
-          </Paragraph>
+          </Title>
         </div>
 
         {/* Login Form */}

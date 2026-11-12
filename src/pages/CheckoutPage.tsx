@@ -288,7 +288,7 @@ export default function CheckoutPage() {
       >
         {t('common.back')}
       </Button>
-      <Title level={2} style={{ marginBottom: 'var(--spacing-xl)' }}>{t('checkout.title')}</Title>
+      <Title level={1} style={{ marginBottom: 'var(--spacing-xl)', fontSize: 30 }}>{t('checkout.title')}</Title>
 
       <Steps 
         current={currentStep} 

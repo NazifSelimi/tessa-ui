@@ -42,7 +42,7 @@ import {
   filterLocationOption,
 } from '@/shared/data/macedoniaLocations';
 
-const { Text, Paragraph } = Typography;
+const { Text, Title } = Typography;
 const { Option } = Select;
 
 interface RegisterFormValues {
@@ -137,9 +137,9 @@ const RegisterPage: React.FC = () => {
           <Link to="/" style={{ display: 'inline-block' }}>
             <Logo variant="dark" height={36} />
           </Link>
-          <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
+          <Title level={1} type="secondary" style={{ marginTop: 8, marginBottom: 0, fontSize: 14, fontWeight: 400, lineHeight: 1.5715 }}>
             {t('auth.createYourAccount')}
-          </Paragraph>
+          </Title>
         </div>
 
         {/* Registration Form */}

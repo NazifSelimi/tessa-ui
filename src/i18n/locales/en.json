@@ -658,5 +658,10 @@
     "signInCopy": "Sign in or create a free account to get your stylist's discount. Your cart and code will be waiting.",
     "signIn": "Sign in",
     "createAccount": "Create account"
+  },
+  "notFoundPage": {
+    "title": "Page not found",
+    "text": "The page you requested does not exist or has moved.",
+    "back": "Back to shop"
   }
 }

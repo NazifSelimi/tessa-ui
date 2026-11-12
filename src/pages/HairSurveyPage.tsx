@@ -282,7 +282,7 @@ export default function HairSurveyPage() {
       />
       <header className="hair-quiz__header">
         <div className="hair-quiz__mark"><ExperimentOutlined /></div>
-        <Title level={2}>{t('survey.hairCareSurvey')}</Title>
+        <Title level={1} style={{ fontSize: 30 }}>{t('survey.hairCareSurvey')}</Title>
         <Paragraph>
           {t('survey.surveyIntro')}
         </Paragraph>
