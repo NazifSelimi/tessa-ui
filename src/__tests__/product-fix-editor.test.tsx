@@ -23,8 +23,10 @@ describe('Fix products inline editor', () => {
     const onSaved = vi.fn();
     const request = vi.fn(async () => ({ drafts: { en: null, mk: null, shq: null } }));
     render(<App><ProductFixEditor product={product} request={request} onSaved={onSaved} onDeleted={vi.fn()} /></App>);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Suggest description' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Suggest descriptions (MK, SQ, EN)' }));
     await waitFor(() => expect((screen.getByLabelText('Description (Macedonian)') as HTMLTextAreaElement).value).toContain('шампон'));
+    expect((screen.getByLabelText('Description (Albanian)') as HTMLTextAreaElement).value).toContain('shampo');
+    expect((screen.getByLabelText('Description (English)') as HTMLTextAreaElement).value).toContain('shampoo');
     expect(update).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /Save & next/ }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(true));
@@ -49,5 +51,16 @@ describe('Fix products inline editor', () => {
     expect(templateDescription('mk', input)).toContain('маска');
     expect(templateDescription('shq', input)).toContain('maskë');
     expect(templateDescription('en', input)).toContain('1000 ml');
+  });
+
+  it('describes tools and testers by what they are, not care benefits', () => {
+    const brush = templateDescription('mk', { name: 'Magic Curved Detangling Brush, Natural Bristles', brand: 'Other', category: 'Other' });
+    expect(brush).toContain('четка за коса');
+    expect(brush).not.toContain('Главни придобивки');
+    expect(brush).not.toContain(' од Other');
+    expect(templateDescription('en', { name: 'Hairstyle Net Set', category: 'Other' })).toContain('hair net');
+    expect(templateDescription('en', { name: 'Keratin Star Mask Tester', category: 'Tester' })).toContain('shop tester');
+    expect(templateDescription('shq', { name: 'Colour Application Brush', category: 'Other' })).toContain('furçë');
+    expect(templateDescription('en', { name: 'Чешел за сечење', category: 'Other' })).toContain('comb');
   });
 });

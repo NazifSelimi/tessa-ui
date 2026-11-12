@@ -69,24 +69,27 @@ export default function ProductFixEditor({ product, request, onSaved, onDeleted 
   // A new product resets the form; refreshes of the same product keep the admin's typing.
   useEffect(() => { form.setFieldsValue(initial); setDrafts(undefined); }, [initial, form]);
 
-  const suggest = async (locale: DescriptionLocale) => {
+  /** Drafts for all three languages: empty boxes are filled; if none is empty, all are redrafted. */
+  const suggest = async () => {
     let found = drafts;
     if (!found) {
       try { found = (await request(`products/${product.id}/description-suggestions`)).drafts; setDrafts(found); }
       catch { found = undefined; }
     }
     const current = form.getFieldsValue();
-    const draft = found?.[locale];
-    if (draft) {
-      form.setFieldValue(`description_${locale}`, draft.text);
-      message.info(`Copied from #${draft.from.id} ${draft.from.name} — check it, then Save.`);
-      return;
-    }
+    const locales: DescriptionLocale[] = ['mk', 'shq', 'en'];
+    const empty = locales.filter((l) => !String(current[`description_${l}`] ?? '').trim());
+    const targets = empty.length ? empty : locales;
     const brand = brands.find((b) => Number(b.id) === current.brand_id)?.name ?? product.brand;
     const category = categories.find((c) => Number(c.id) === current.category_id)?.name ?? product.category;
     const size = current.size_value ? `${current.size_value} ${current.size_unit || ''}`.trim() : null;
-    form.setFieldValue(`description_${locale}`, templateDescription(locale, { name: current.name || product.name, brand, category, size }));
-    message.info('Draft from the category template — check it, then Save.');
+    const copied = new Set<string>();
+    for (const locale of targets) {
+      const draft = found?.[locale];
+      if (draft) copied.add(`#${draft.from.id} ${draft.from.name}`);
+      form.setFieldValue(`description_${locale}`, draft ? draft.text : templateDescription(locale, { name: current.name || product.name, brand, category, size }));
+    }
+    message.info(`${copied.size ? `Copied from ${[...copied].join(', ')}` : 'Drafted from the template'} (${targets.map((l) => (l === 'shq' ? 'SQ' : l.toUpperCase())).join(', ')}) — check, then Save.`);
   };
 
   const save = async (next: boolean) => {
@@ -116,11 +119,6 @@ export default function ProductFixEditor({ product, request, onSaved, onDeleted 
     }
   };
 
-  const suggestButton = (locale: DescriptionLocale) => (
-    <Tooltip title="Fills a draft from a sibling product or a template. Nothing is saved until you press Save.">
-      <Button size="small" onClick={() => void suggest(locale)}>Suggest description</Button>
-    </Tooltip>
-  );
 
   return (
     <Form form={form} layout="vertical" initialValues={initial} onFinish={() => void save(false)}>
@@ -139,7 +137,10 @@ export default function ProductFixEditor({ product, request, onSaved, onDeleted 
       </Row>
       <PriceStockFields />
       <VisibilityField hiddenFromAll={!!visible && visible.length === 0} />
-      <DescriptionFields rows={5} order={['mk', 'shq', 'en']} extra={suggestButton} />
+      <Tooltip title="Fills the empty description boxes in Macedonian, Albanian and English (all three if none is empty). Nothing is saved until you press Save.">
+        <Button style={{ marginBottom: 8 }} onClick={() => void suggest()}>Suggest descriptions (MK, SQ, EN)</Button>
+      </Tooltip>
+      <DescriptionFields rows={5} order={['mk', 'shq', 'en']} />
       <Space wrap style={{ position: 'sticky', bottom: 0, background: 'var(--ant-color-bg-container, #fff)', padding: '8px 0', width: '100%' }}>
         <Button type="primary" loading={isLoading} onClick={() => void save(true)}>Save &amp; next ›</Button>
         <Button loading={isLoading} htmlType="submit">Save</Button>
