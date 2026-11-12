@@ -1,5 +1,5 @@
 /** Draws a canvas document onto a <canvas>: used for the PNG export and thumbnails. */
-import { cssFont, displayText, type CanvasDoc, type ImageLayer, type Layer, type ShapeLayer, type TextLayer } from './model';
+import { cssFont, displayText, imageFilter, type CanvasDoc, type ImageLayer, type Layer, type ShapeLayer, type TextLayer } from './model';
 
 /** Splits text into lines that fit `width`, like the editor's text boxes (wrap on spaces). */
 export function wrapText(measure: (text: string) => number, text: string, width: number): string[] {
@@ -79,6 +79,8 @@ function drawImage(ctx: Ctx, layer: ImageLayer, image: HTMLImageElement | undefi
   roundRectPath(ctx, layer.w, layer.h, layer.radius);
   ctx.clip();
   const p = imagePlacement(layer, image.naturalWidth, image.naturalHeight);
+  const filter = imageFilter(layer);
+  if (filter !== 'none') ctx.filter = filter;
   ctx.drawImage(image, p.x, p.y, p.w, p.h);
   ctx.restore();
 }

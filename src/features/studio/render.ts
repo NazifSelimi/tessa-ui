@@ -286,6 +286,12 @@ export interface CapturedText {
 }
 let textCapture: CapturedText[] | null = null;
 
+/** Where each text block was drawn on the last render (source text = the value before wrapping). */
+export interface DrawnTextBox { source: string; x: number; y: number; w: number; h: number; align: CanvasTextAlign; fontSize: number; font: string; color: string }
+let drawnTexts: DrawnTextBox[] = [];
+/** Text blocks drawn by the last renderDesign call, so the page can make them clickable. */
+export const drawnTextBoxes = (): DrawnTextBox[] => drawnTexts;
+
 /** Draws wrapped text, shrinking the font until it fits in maxLines. Returns the bottom y. */
 function drawText(ctx: CanvasRenderingContext2D, box: TextBox): number {
   if (!box.text.trim()) return box.y;
@@ -303,6 +309,12 @@ function drawText(ctx: CanvasRenderingContext2D, box: TextBox): number {
     lines[lines.length - 1] = `${lines[lines.length - 1].replace(/\s*\S*$/, '')}…`;
   }
   const lineHeight = size * (box.lineHeight ?? 1.12);
+  {
+    const align = box.align ?? 'left';
+    const widest = Math.min(box.maxWidth, Math.max(size, ...lines.map((line) => ctx.measureText(line).width)));
+    const left = align === 'center' ? box.x - widest / 2 : align === 'right' || align === 'end' ? box.x - widest : box.x;
+    drawnTexts.push({ source: box.text, x: left, y: box.y, w: widest, h: lines.length * lineHeight, align, fontSize: size, font: box.font(size), color: box.color });
+  }
   if (textCapture) {
     const align = box.align ?? 'left';
     const left = align === 'center' ? box.x - box.maxWidth / 2 : align === 'right' || align === 'end' ? box.x - box.maxWidth : box.x;
@@ -994,6 +1006,7 @@ const TEMPLATE_RENDERERS: Record<TemplateId, typeof spotlight> = { spotlight, of
 
 export function renderDesign(canvas: HTMLCanvasElement, design: StudioDesign, assets: RenderAssets): PhotoHitBox[] {
   hitBoxes = [];
+  drawnTexts = [];
   const format = formatById(design.format);
   if (canvas.width !== format.width) canvas.width = format.width;
   if (canvas.height !== format.height) canvas.height = format.height;

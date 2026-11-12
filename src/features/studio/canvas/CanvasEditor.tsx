@@ -3,21 +3,21 @@
  * handles to resize / rotate, double-click text to type, smart guides,
  * zoom and pan, layers and properties panels, undo / redo, PNG export.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { App, Button, Dropdown, Modal, Tooltip } from 'antd';
 import {
   AimOutlined, BorderOutlined, CompressOutlined, DownloadOutlined, DragOutlined, ExpandOutlined, FontSizeOutlined,
   ImportOutlined, PictureOutlined, QuestionOutlined, RedoOutlined, UndoOutlined, ZoomInOutlined, ZoomOutOutlined,
 } from '@ant-design/icons';
 import { Circle, FilePlus2, History, MousePointer2, PanelLeft, PanelRight } from 'lucide-react';
-import { blankDoc, makeImage, makeShape, makeText, parseDoc, type Box, type CanvasDoc, type ImageLayer, type Layer } from './model';
+import { blankDoc, imageFilter, makeImage, makeShape, makeText, parseDoc, type Box, type CanvasDoc, type ImageLayer, type Layer } from './model';
 import { HANDLES, boxFromPoints, resizeBox, boxesIntersect, layerBounds, rotationFromPointer, snapBox, snapToGrid, type Guide, type Handle } from './geometry';
 import {
   alignLayers, distributeLayers, duplicateLayers, expandGroups, groupLayers, moveLayers, pasteLayers, removeLayers,
   reorder, resizeLayer, resizeMany, selectionBounds, ungroupLayers, updateLayers, type AlignEdge, type OrderMove,
 } from './ops';
 import { historyReducer, initHistory } from './history';
-import { exportDocPng, imagePlacement } from './draw';
+import { exportDocPng, imagePlacement, renderDoc } from './draw';
 import LayersPanel from './LayersPanel';
 import PropertiesPanel from './PropertiesPanel';
 import ContextBubble, { type BubbleActions } from './ContextBubble';
@@ -25,6 +25,8 @@ import StartScreen from './StartScreen';
 import AddPanel from './AddPanel';
 import { overlayLayer, widgets, type Widget } from './widgets';
 import { hasPlainBackground, removeBackground as cutBackground, type WithOriginal } from './imageTools';
+import { usePanels } from '../panels';
+import ProductPhotoEditor from '../ProductPhotoEditor';
 import './canvas.css';
 
 export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'hand';
@@ -44,6 +46,22 @@ export interface CanvasEditorProps {
   active?: boolean;
   /** Opens the ready post ideas (in the Create tab). */
   onOpenIdeas?: () => void;
+  /** Extra buttons for the top bar (caption, share, video… from the page). */
+  toolbarExtra?: ReactNode;
+  /** Lets the page draw the design and add pictures (QR code, video frames). */
+  apiRef?: MutableRefObject<CanvasEditorApi | null>;
+  /** Changes when the page asks to bring in the Create post ("Edit freely" button). */
+  importRequest?: number;
+  /** Told the frame size whenever it changes (for the video export). */
+  onFrameSize?: (width: number, height: number) => void;
+}
+
+export interface CanvasEditorApi {
+  /** The whole design at full post size. */
+  render: () => Promise<HTMLCanvasElement>;
+  /** Adds a picture in the middle of the post. */
+  addImage: (src: string, name: string) => Promise<void>;
+  size: () => { width: number; height: number };
 }
 
 const MIN_ZOOM = 0.05;
@@ -108,7 +126,7 @@ export const SHORTCUTS: [string, string][] = [
   ["'", 'Show / hide grid'], ['⌘/Ctrl + E', 'Export PNG'], ['?', 'This list'],
 ];
 
-export default function CanvasEditor({ frames, onImportPost, productPhotos = [], storageKey = 'postStudio.canvas.v1', active = true, onOpenIdeas }: CanvasEditorProps) {
+export default function CanvasEditor({ frames, onImportPost, productPhotos = [], storageKey = 'postStudio.canvas.v1', active = true, onOpenIdeas, toolbarExtra, apiRef, importRequest = 0, onFrameSize }: CanvasEditorProps) {
   const { message } = App.useApp();
   const [history, dispatch] = useReducer(historyReducer, storageKey, (key) => initHistory(loadSavedDoc(key) ?? blankDoc()));
   const doc = history.present;
@@ -143,8 +161,10 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
   const [bubble, setBubble] = useState<{ x: number; y: number; at: { x: number; y: number } } | null>(null);
   const [plainBg, setPlainBg] = useState<boolean | null>(null);
   const [leftTab, setLeftTab] = useState<'add' | 'layers'>('add');
-  const [showLeft, setShowLeft] = useState(true);
-  const [showRight, setShowRight] = useState(true);
+  // Remembered per browser; phones start with both panels closed so the post gets the screen.
+  const [panels, togglePanel] = usePanels('tessa.studio.canvas.panels', typeof window !== 'undefined' && window.innerWidth < 768 ? { left: false, right: false } : undefined);
+  const showLeft = panels.left;
+  const showRight = panels.right;
   const panelsRef = useRef({ left: true, right: true });
   useLayoutEffect(() => { panelsRef.current = { left: showLeft, right: showRight }; });
   const [hasClip, setHasClip] = useState(false);
@@ -439,6 +459,34 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
     addImagesRow(items, undefined, 'Products');
   }, [addImagesRow, productPhotos]);
 
+  useImperativeHandle(apiRef, () => ({
+    render: () => renderDoc(docRef.current),
+    addImage: async (src: string, name: string) => {
+      const item = await loadPhoto({ src, name });
+      if (item) addImagesRow([item]);
+    },
+    size: () => ({ width: docRef.current.width, height: docRef.current.height }),
+  }), [addImagesRow]);
+
+  /** Image layer open in the product-photo cleaner. */
+  const [photoEditId, setPhotoEditId] = useState<string | null>(null);
+  const photoEditLayer = doc.layers.find((layer): layer is ImageLayer => layer.id === photoEditId && layer.type === 'image') ?? null;
+  const savePhotoEdit = useCallback((blob: Blob) => {
+    const id = photoEditId;
+    if (!id) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const layer = docRef.current.layers.find((item) => item.id === id);
+      if (!layer || layer.type !== 'image') return;
+      const original = (layer as WithOriginal).originalSrc ?? layer.src;
+      // The cleaned photo is square: keep the width and centre, make the box square.
+      const side = layer.w;
+      commit(updateLayers(docRef.current, [id], { src: String(reader.result), originalSrc: original, fit: 'contain', zoom: 1, y: layer.y + (layer.h - side) / 2, h: side } as Partial<Layer>));
+      setPhotoEditId(null);
+    };
+    reader.readAsDataURL(blob);
+  }, [commit, photoEditId]);
+
   const addWidget = useCallback((widget: Widget, at?: { x: number; y: number }) => {
     const d = docRef.current;
     if (widget.id === 'shade') {
@@ -546,6 +594,16 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
       hide();
     }
   }, [commit, fit, keepAsPrevious, message, onImportPost]);
+
+  useEffect(() => { onFrameSize?.(doc.width, doc.height); }, [doc.width, doc.height, onFrameSize]);
+
+  // Each new request from the page imports once (also when the editor opens because of it).
+  const handledImport = useRef(0);
+  useEffect(() => {
+    if (!importRequest || handledImport.current === importRequest) return;
+    handledImport.current = importRequest;
+    void importPost();
+  }, [importRequest, importPost]);
 
   const toggleFullscreen = useCallback(() => {
     const el = rootRef.current;
@@ -1039,7 +1097,7 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
       const at = bubble?.at ?? { x: doc.width / 2, y: doc.height / 2 };
       addLayers([makeShape(type, { x: at.x - 100, y: at.y - 100, w: 200, h: 200 })]);
     },
-    openWidgets: () => { setShowLeft(true); setLeftTab('add'); },
+    openWidgets: () => { if (!showLeft) togglePanel('left'); setLeftTab('add'); },
     paste: () => { paste(); },
     canPaste: hasClip,
     selectAll,
@@ -1130,7 +1188,7 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
                 const img = e.currentTarget;
                 if (!natural[layer.src]) setNatural((n) => ({ ...n, [layer.src]: { w: img.naturalWidth, h: img.naturalHeight } }));
               }}
-              style={{ left: placed.x, top: placed.y, width: placed.w, height: placed.h }}
+              style={{ left: placed.x, top: placed.y, width: placed.w, height: placed.h, filter: imageFilter(layer) }}
             />
           </div>
         </div>
@@ -1202,10 +1260,11 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
         <Tooltip title="Zoom in (⌘/Ctrl +)"><Button size="small" type="text" icon={<ZoomInOutlined />} onClick={() => zoomAt(zoom * 1.25)} aria-label="Zoom in" /></Tooltip>
         <Tooltip title="Fit to screen (⇧1)"><Button size="small" type="text" icon={<AimOutlined />} onClick={fit} aria-label="Fit to screen" /></Tooltip>
         <span className="ce-sep" />
-        <Tooltip title={showLeft ? 'Hide the left panel' : 'Show widgets and layers'}><Button size="small" type={showLeft ? 'default' : 'text'} icon={<PanelLeft size={14} />} onClick={() => setShowLeft((v) => !v)} aria-label="Toggle left panel" /></Tooltip>
-        <Tooltip title={showRight ? 'Hide the right panel' : 'Show properties'}><Button size="small" type={showRight ? 'default' : 'text'} icon={<PanelRight size={14} />} onClick={() => setShowRight((v) => !v)} aria-label="Toggle right panel" /></Tooltip>
+        <Tooltip title={showLeft ? 'Hide the left panel' : 'Show widgets and layers'}><Button size="small" type={showLeft ? 'default' : 'text'} icon={<PanelLeft size={14} />} onClick={() => togglePanel('left')} aria-label="Toggle left panel" /></Tooltip>
+        <Tooltip title={showRight ? 'Hide the right panel' : 'Show properties'}><Button size="small" type={showRight ? 'default' : 'text'} icon={<PanelRight size={14} />} onClick={() => togglePanel('right')} aria-label="Toggle right panel" /></Tooltip>
         <Tooltip title="Full screen"><Button size="small" type="text" icon={document.fullscreenElement ? <CompressOutlined /> : <ExpandOutlined />} onClick={toggleFullscreen} aria-label="Full screen" /></Tooltip>
         <Tooltip title="Keyboard shortcuts (?)"><Button size="small" type="text" icon={<QuestionOutlined />} onClick={() => setHelpOpen(true)} aria-label="Keyboard shortcuts" /></Tooltip>
+        {toolbarExtra}
         <Button size="small" type="primary" icon={<DownloadOutlined />} onClick={() => void exportPng()}>Export PNG</Button>
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) void addImageFiles(e.target.files, bubble?.at); e.target.value = ''; }} />
       </div>
@@ -1326,6 +1385,7 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
             onDelete={deleteSelected}
             onCrop={(id) => setCroppingId(croppingId === id ? null : id)}
             cropping={croppingId}
+            onPhotoEdit={setPhotoEditId}
             gridSize={gridSize}
             onGridSize={setGridSize}
             snapping={snapping}
@@ -1371,6 +1431,13 @@ export default function CanvasEditor({ frames, onImportPost, productPhotos = [],
         )}
       </div>
 
+      <ProductPhotoEditor
+        open={!!photoEditLayer}
+        source={(photoEditLayer && ((photoEditLayer as WithOriginal).originalSrc ?? photoEditLayer.src)) || undefined}
+        title="Clean photo: background, eraser, square — replaces this picture in the design only"
+        onCancel={() => setPhotoEditId(null)}
+        onSave={(blob) => savePhotoEdit(blob)}
+      />
       <Modal open={helpOpen} onCancel={() => setHelpOpen(false)} footer={null} title="Keyboard shortcuts" width={620}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <tbody>

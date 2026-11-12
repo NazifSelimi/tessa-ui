@@ -28,6 +28,8 @@ interface Props {
   onDelete: () => void;
   onCrop: (id: string) => void;
   cropping: string | null;
+  /** Opens the product-photo cleaner (background, eraser, square, white) for an image layer. */
+  onPhotoEdit?: (id: string) => void;
   gridSize: number;
   onGridSize: (size: number) => void;
   snapping: boolean;
@@ -281,11 +283,22 @@ export default function PropertiesPanel(props: Props) {
                 <Slider min={1} max={4} step={0.01} value={image.zoom} onChange={(v) => set({ zoom: v }, 'zoom')} />
               </label>
             </div>
+            {(['brightness', 'contrast', 'saturation'] as const).map((key) => (
+              <div className="ce-row ce-row--1" key={key}>
+                <label className="ce-field">
+                  <span>{key === 'brightness' ? 'Brightness' : key === 'contrast' ? 'Contrast' : 'Colour'} {image[key] ?? 100}%</span>
+                  <Slider min={40} max={160} value={image[key] ?? 100} onChange={(v) => set({ [key]: v } as Partial<ImageLayer>, key)} />
+                </label>
+              </div>
+            ))}
             <div className="ce-icons">
               <Button size="small" icon={<Crop size={13} />} type={props.cropping === image.id ? 'primary' : 'default'} onClick={() => props.onCrop(image.id)}>
                 {props.cropping === image.id ? 'Done cropping' : 'Crop (double-click)'}
               </Button>
               <Button size="small" onClick={() => void removeBackground(image)}>Remove background</Button>
+              {props.onPhotoEdit && (
+                <Button size="small" onClick={() => props.onPhotoEdit?.(image.id)}>Clean as product photo</Button>
+              )}
               {(image as ImageLayer & { originalSrc?: string }).originalSrc && (
                 <Button size="small" type="text" onClick={() => onChange(updateLayers(doc, [image.id], { src: (image as ImageLayer & { originalSrc?: string }).originalSrc, originalSrc: undefined } as Partial<Layer>))}>Restore original</Button>
               )}

@@ -121,3 +121,32 @@
 .post-studio__safe i { font-style: normal; font-size: 10px; line-height: 1.2; color: #b93a17; background: rgba(255, 255, 255, .85); padding: 2px 6px; border-radius: 4px; align-self: center; text-align: center; }
 .post-studio__safe--top { top: 0; height: 13%; border-bottom: 1.5px dashed #ff4d1f; }
 .post-studio__safe--bottom { bottom: 0; height: 18%; border-top: 1.5px dashed #ff4d1f; }
+
+/* Template text picked on the preview: outline, label, and the box you type in. */
+.post-studio__text-select {
+  position: absolute; z-index: 3; border: 1.5px dashed #b0477a; border-radius: 4px; pointer-events: none;
+  box-sizing: border-box; margin: -4px; padding: 4px; min-height: 28px;
+}
+.post-studio__text-select.is-editing { border-style: solid; }
+.post-studio__text-tag {
+  position: absolute; left: -2px; top: -28px; pointer-events: auto; cursor: pointer; white-space: nowrap;
+  border: 0; border-radius: 6px; background: #b0477a; color: #fff; font-size: 12px; padding: 3px 8px; line-height: 18px;
+}
+.post-studio__text-input {
+  pointer-events: auto; position: absolute; inset: 0; width: 100%; min-height: 100%; min-width: 120px;
+  resize: none; border: 0; outline: 2px solid #b0477a; border-radius: 4px; padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.96); color: #242124; line-height: 1.15; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* Show / hide the side panels so the post can use the full width. */
+.post-studio__panelbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
+.post-studio__panelbar-hint { font-size: 12px; margin-left: auto; }
+@media (max-width: 575px) { .post-studio__panelbar-hint { display: none; } }
+
+/* Product photo tab */
+.post-studio__photo-tab { max-width: 880px; }
+.post-studio__photo-result { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.post-studio__photo-checker {
+  border-radius: 8px; border: 1px solid #ece4e0; object-fit: contain;
+  background: repeating-conic-gradient(#ececec 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+}

@@ -15,7 +15,11 @@ import {
   AppstoreOutlined, ArrowDownOutlined, BgColorsOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
+import { PanelLeft, PanelRight } from 'lucide-react';
 import CropModal from '@/features/studio/CropModal';
+import { usePanels } from '@/features/studio/panels';
+import ProductPhotoTab, { type PhotoProductOption } from '@/features/studio/ProductPhotoTab';
+import type { CanvasEditorApi } from '@/features/studio/canvas/CanvasEditor';
 import StudioHelp from '@/features/studio/StudioHelp';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { lazyWithReload } from '@/shared/utils/chunkReload';
@@ -37,9 +41,9 @@ import type { Product } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { site } from '@/shared/config/site';
 import {
-  FORMATS, THEMES, ensureFonts, formatById, loadImage, loadLogo, quickBadges, renderDesign, templateDefaults, themeById,
+  FORMATS, THEMES, drawnTextBoxes, ensureFonts, formatById, loadImage, loadLogo, quickBadges, renderDesign, templateDefaults, themeById,
   DEFAULT_ADJUST, DEFAULT_CUTOUT,
-  type FormatId, type PhotoCrop, type PhotoHitBox, type PriceMode, type StudioDesign, type StudioLang, type StudioProduct, type TemplateId, type ThemeId,
+  type DrawnTextBox, type FormatId, type PhotoCrop, type PhotoHitBox, type PriceMode, type StudioDesign, type StudioLang, type StudioProduct, type TemplateId, type ThemeId,
 } from '@/features/studio/render';
 
 const { Title, Text, Paragraph } = Typography;
@@ -187,6 +191,27 @@ function findHit(boxes: PhotoHitBox[], x: number, y: number, canvas: HTMLCanvasE
     && y >= box.y - margin && y <= box.y + box.h + margin);
 }
 
+/** Post fields whose text the layouts draw; clicking that text on the preview edits the field. */
+type TextField = 'headline' | 'eyebrow' | 'subline' | 'badge' | 'cta' | 'ctaText' | 'badgeText' | 'promoCode';
+const TEXT_FIELDS: { key: TextField; label: string }[] = [
+  { key: 'headline', label: 'Headline' }, { key: 'eyebrow', label: 'Small title' }, { key: 'subline', label: 'Second line' },
+  { key: 'badge', label: 'Sticker' }, { key: 'cta', label: 'Bottom text' }, { key: 'ctaText', label: 'Call to action' },
+  { key: 'badgeText', label: 'Badge text' }, { key: 'promoCode', label: 'Promo code' },
+];
+const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+/** Which editable value a drawn text block shows: a post field, a product's name, or nothing (made-up text such as prices). */
+export function textKeyFor(source: string, design: StudioDesign, products: Pick<StudioProduct, 'id' | 'name'>[]): string | null {
+  if (!source.trim()) return null;
+  for (const { key } of TEXT_FIELDS) {
+    const value = String(design[key] ?? '');
+    if (value.trim() && same(source, value)) return key;
+  }
+  // Tip steps draw the second line one step at a time.
+  if (design.subline.split('\n').some((line) => line.trim() && (same(line, source) || same(line.replace(/^\s*\d+[.)]\s*/, ''), source)))) return 'subline';
+  const product = products.find((item) => item.name.trim() && same(item.name, source));
+  return product ? `product:${product.id}` : null;
+}
+
 const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   format: 'portrait',
   template: 'spotlight',
@@ -209,8 +234,8 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   qrUrl: '',
 });
 
-type StudioTab = 'create' | 'canvas' | 'templates' | 'drafts' | 'help';
-const STUDIO_TABS: StudioTab[] = ['create', 'canvas', 'templates', 'drafts', 'help'];
+type StudioTab = 'create' | 'canvas' | 'photo' | 'templates' | 'drafts' | 'help';
+const STUDIO_TABS: StudioTab[] = ['create', 'canvas', 'photo', 'templates', 'drafts', 'help'];
 // The Figma-style editor is a big piece of code: only load it when its tab opens.
 const CanvasEditor = lazyWithReload(() => import('@/features/studio/canvas/CanvasEditor'));
 const CANVAS_FRAMES = FORMATS.map((format) => ({ id: format.id, label: format.label, width: format.width, height: format.height }));
@@ -238,7 +263,19 @@ export default function AdminPostStudioPage() {
   // Wide screens get Figma-style side panels; smaller ones open the photo tools in a drawer.
   const screens = Grid.useBreakpoint();
   const wide = !!screens.xl;
+  /** Left (settings) and right (photo tools & caption) panels of the Create tab, remembered in this browser. */
+  const [panels, togglePanel] = usePanels('tessa.studio.create.panels');
   const [toolsOpen, setToolsOpen] = useState(false);
+  /** Canvas tab: drawing / adding pictures from here, and its caption drawer. */
+  const canvasApi = useRef<CanvasEditorApi | null>(null);
+  const [canvasCaptionOpen, setCanvasCaptionOpen] = useState(false);
+  const [canvasFrame, setCanvasFrame] = useState({ width: 1080, height: 1350 });
+  /** Bumped by "Edit freely" in Create: the canvas brings this post in as layers. */
+  const [importRequest, setImportRequest] = useState(0);
+  /** Text on the preview that is selected (key from textKeyFor or el:<id>), and the one being typed in. */
+  const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string | null>(null);
+  const textBoxesRef = useRef<DrawnTextBox[]>([]);
   const [renderVersion, setRenderVersion] = useState(0);
   /** Where the selected item is on the image, for its dashed outline. */
   const [selectionBox, setSelectionBox] = useState<PhotoHitBox | null>(null);
@@ -299,6 +336,13 @@ export default function AdminPostStudioPage() {
   const productOptions = useMemo(() => (catalogue?.data ?? []).map((product) => ({
     value: String(product.id),
     label: `${product.name} · ${nameOf(product.brand)}${Number(product.price) > 0 ? ` · ${formatPrice(product.price)}` : ''}`,
+  })), [catalogue]);
+
+  const photoProductOptions = useMemo<PhotoProductOption[]>(() => (catalogue?.data ?? []).map((product) => ({
+    value: String(product.id),
+    label: `${product.name} · ${nameOf(product.brand)}`,
+    name: product.name,
+    hasPhoto: photoUrls(product).length > 0,
   })), [catalogue]);
 
   // The picker gets the same list object until the chosen products change, so moving or
@@ -471,6 +515,8 @@ export default function AdminPostStudioPage() {
         event.preventDefault();
         redo();
       } else if (event.key === 'Escape') {
+        setSelectedText(null);
+        setEditingText(null);
         setSelectedEl(null);
         setSelectedImage(null);
         setErasingId(null);
@@ -492,6 +538,48 @@ export default function AdminPostStudioPage() {
   };
 
   const hitAt = (x: number, y: number) => findHit(hitBoxesRef.current, x, y, canvasRef.current);
+
+  const textValue = (key: string): string => {
+    if (key.startsWith('el:')) return elements.find((item) => item.id === key.slice(3))?.text ?? '';
+    if (key.startsWith('product:')) return products.find((item) => item.id === key.slice(8))?.name ?? '';
+    return String(design[key as TextField] ?? '');
+  };
+  const setTextValue = (key: string, value: string) => {
+    if (key.startsWith('el:')) updateElement(key.slice(3), { text: value });
+    else if (key.startsWith('product:')) adjustProduct(key.slice(8), { name: value });
+    else update(key as TextField, value);
+  };
+  const textLabel = (key: string) => key.startsWith('el:') ? 'Text'
+    : key.startsWith('product:') ? 'Product name (this post only)'
+      : TEXT_FIELDS.find((item) => item.key === key)?.label ?? 'Text';
+  /** Outline (and typing box) of the selected text, in post pixels. */
+  type TextSelection = { key: string; x: number; y: number; w: number; h: number; family: string; cssSize: number; align: 'left' | 'center' | 'right' };
+  const [textSelection, setTextSelection] = useState<TextSelection | null>(null);
+  function findTextSelection(): TextSelection | null {
+    const key = editingText ?? selectedText;
+    if (!key) return null;
+    const canvas = canvasRef.current;
+    const scale = canvas && canvas.width ? canvas.getBoundingClientRect().width / canvas.width : 0.4;
+    if (key.startsWith('el:')) {
+      const hit = hitBoxesRef.current.find((item) => item.id === key);
+      const element = elements.find((item) => item.id === key.slice(3));
+      if (!hit || !element) return null;
+      const unit = Math.min(format.width, format.height);
+      return { key, x: hit.x, y: hit.y, w: Math.max(hit.w, unit * 0.3), h: hit.h, family: element.font === 'serif' ? getBrandKit().fonts.serif : getBrandKit().fonts.sans, cssSize: Math.max(12, element.size * unit * scale), align: element.align };
+    }
+    const box = textBoxesRef.current.find((item) => textKeyFor(item.source, design, products) === key);
+    if (!box) return null;
+    const family = box.font.replace(/^.*?[\d.]+px\s+/, '');
+    const align: 'left' | 'center' | 'right' = box.align === 'center' ? 'center' : box.align === 'right' || box.align === 'end' ? 'right' : 'left';
+    return { key, x: box.x, y: box.y, w: box.w, h: box.h, family, cssSize: Math.max(12, box.fontSize * scale), align };
+  }
+  useEffect(() => {
+    const found = findTextSelection();
+    // While typing, keep the box even if the text is emptied (then nothing is drawn).
+    setTextSelection((current) => (!found && editingText && current?.key === editingText ? current : found));
+    // renderVersion: boxes change after each redraw.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingText, selectedText, renderVersion, format.width, format.height]);
 
   const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const point = canvasPoint(event);
@@ -516,8 +604,14 @@ export default function AdminPostStudioPage() {
       if (!element) return;
       event.preventDefault();
       try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* optional */ }
+      if (selectedEl === element.id && element.kind !== 'shape' && !event.shiftKey) {
+        setEditingText(`el:${element.id}`);
+        return;
+      }
       setSelectedEl(element.id);
       setSelectedImage(null);
+      setSelectedText(null);
+      setEditingText(null);
       pointer.current = {
         id: box.id, resize: event.shiftKey, startX: point.x, startY: point.y, scale: 1, offsetX: 0, offsetY: 0,
         spaceW: box.spaceW, spaceH: box.spaceH, element: { x: element.x, y: element.y, size: element.size },
@@ -526,6 +620,17 @@ export default function AdminPostStudioPage() {
       return;
     }
     setSelectedEl(null);
+    setEditingText(null);
+    // Template text: first click selects it, a second click (or double-click) types in it.
+    const textHit = [...textBoxesRef.current].reverse().find((item) => point.x >= item.x - 6 && point.x <= item.x + item.w + 6 && point.y >= item.y - 6 && point.y <= item.y + item.h + 6);
+    const textKey = textHit ? textKeyFor(textHit.source, design, products) : null;
+    if (textKey) {
+      event.preventDefault();
+      setSelectedImage(null);
+      if (selectedText === textKey) setEditingText(textKey); else setSelectedText(textKey);
+      return;
+    }
+    setSelectedText(null);
     const product = box && products.find((item) => item.id === box.id);
     setSelectedImage(product ? product.id : null);
     if (!box || !product) return;
@@ -811,6 +916,7 @@ export default function AdminPostStudioPage() {
       if (token !== renderToken.current) return;
       const qr = design.qr ? qrRef.current?.querySelector('canvas') ?? null : null;
       hitBoxesRef.current = renderDesign(canvas, design, { ...assets, qr });
+      textBoxesRef.current = [...drawnTextBoxes()];
       setRendering(false);
       setRenderVersion((version) => version + 1);
     });
@@ -1072,8 +1178,8 @@ export default function AdminPostStudioPage() {
   const copyHashtags = () => copyText(hashtags.join(' '), 'Hashtags copied — paste them as the first comment');
 
   const canShareFiles = typeof navigator !== 'undefined' && typeof navigator.canShare === 'function';
-  const share = async () => {
-    const blob = await canvasBlob();
+  const share = async (getBlob: () => Promise<Blob | null> = canvasBlob) => {
+    const blob = await getBlob();
     if (!blob) return;
     const file = new File([blob], fileName(), { type: 'image/png' });
     if (!navigator.canShare?.({ files: [file] })) {
@@ -1088,6 +1194,24 @@ export default function AdminPostStudioPage() {
     } catch {
       // Closing the share sheet is not an error.
     }
+  };
+  const shareCanvas = () => share(async () => {
+    const drawn = await canvasApi.current?.render();
+    return drawn ? new Promise<Blob | null>((resolve) => drawn.toBlob(resolve, 'image/png')) : null;
+  });
+  const canvasQrRef = useRef<HTMLDivElement>(null);
+  const addCanvasQr = async () => {
+    const qr = canvasQrRef.current?.querySelector('canvas');
+    if (!qr || !canvasApi.current) return;
+    // White tile around the code so phones can scan it on any background.
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = qr.width + 48;
+    const ctx = tile.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tile.width, tile.height);
+    ctx.drawImage(qr, 24, 24);
+    await canvasApi.current.addImage(tile.toDataURL('image/png'), `QR ${qrValue.replace(/^https?:\/\//, '')}`);
   };
 
   /* ------------------------------------------------------------ drafts */
@@ -1483,7 +1607,17 @@ export default function AdminPostStudioPage() {
             label: <span><EditOutlined /> Create</span>,
             children: (
       <ErrorBoundary resetKey={`create:${activeTab}`}>
+      <div className="post-studio__panelbar" role="toolbar" aria-label="Panels">
+        <Tooltip title={panels.left ? 'Hide the settings panel' : 'Show ideas, products and text settings'}>
+          <Button size="small" type={panels.left ? 'default' : 'text'} icon={<PanelLeft size={14} />} onClick={() => togglePanel('left')} aria-pressed={panels.left}>Settings</Button>
+        </Tooltip>
+        <Tooltip title={panels.right ? 'Hide photo tools and caption' : 'Show photo tools and caption'}>
+          <Button size="small" type={panels.right ? 'default' : 'text'} icon={<PanelRight size={14} />} onClick={() => togglePanel('right')} aria-pressed={panels.right}>Photo & caption</Button>
+        </Tooltip>
+        <Text type="secondary" className="post-studio__panelbar-hint">Click any text on the post to change it</Text>
+      </div>
       <Row gutter={[24, 24]}>
+        {panels.left && (
         <Col xs={24} lg={10} xl={7} className="post-studio__side">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Card
@@ -1852,8 +1986,9 @@ export default function AdminPostStudioPage() {
             </Card>
           </Space>
         </Col>
+        )}
 
-        <Col xs={24} lg={14} xl={10}>
+        <Col xs={24} lg={panels.left ? 14 : 24} xl={(panels.left ? 0 : 7) + (panels.right ? 0 : 7) + 10}>
           <div className="post-studio__preview-wrap">
             <Card
               size="small"
@@ -1889,7 +2024,7 @@ export default function AdminPostStudioPage() {
                   onPointerUp={onCanvasPointerUp}
                   onPointerCancel={onCanvasPointerUp}
                   onPointerLeave={() => { if (!pointer.current) setHovering(false); }}
-                  onDoubleClick={() => { if (selectedImage) setToolsOpen(true); }}
+                  onDoubleClick={() => { if (selectedImage) setToolsOpen(true); else if (selectedText) setEditingText(selectedText); else if (selectedElement && selectedElement.kind !== 'shape') setEditingText(`el:${selectedElement.id}`); }}
                   style={{ aspectRatio: `${format.width} / ${format.height}` }}
                   aria-label="Post preview"
                 />
@@ -1914,6 +2049,37 @@ export default function AdminPostStudioPage() {
                         aria-hidden
                       />
                     ))}
+                  </span>
+                )}
+                {textSelection && (
+                  <span
+                    className={`post-studio__text-select${editingText ? ' is-editing' : ''}`}
+                    style={{
+                      left: `${(textSelection.x / format.width) * 100}%`,
+                      top: `${(textSelection.y / format.height) * 100}%`,
+                      width: `${(textSelection.w / format.width) * 100}%`,
+                      height: `${(textSelection.h / format.height) * 100}%`,
+                    }}
+                  >
+                    {editingText ? (
+                      <textarea
+                        autoFocus
+                        className="post-studio__text-input"
+                        value={textValue(editingText)}
+                        onChange={(event) => setTextValue(editingText, event.target.value)}
+                        onBlur={() => setEditingText(null)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape' || (event.key === 'Enter' && (event.metaKey || event.ctrlKey))) { event.preventDefault(); setEditingText(null); }
+                        }}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        style={{ fontFamily: textSelection.family, fontSize: textSelection.cssSize, textAlign: textSelection.align }}
+                        aria-label={`Edit ${textLabel(editingText)}`}
+                      />
+                    ) : (
+                      <button type="button" className="post-studio__text-tag" onClick={() => setEditingText(textSelection.key)}>
+                        <EditOutlined /> {textLabel(textSelection.key)}
+                      </button>
+                    )}
                   </span>
                 )}
                 {design.format === 'story' && safeZone && (
@@ -1955,7 +2121,10 @@ export default function AdminPostStudioPage() {
                 <Text type="secondary">{format.width} × {format.height} px · {format.hint}{slides.length ? ` · slide ${activeSlide + 1} of ${slides.length}` : ''}</Text>
                 {design.format === 'story' && <Space size={6}><Switch size="small" checked={safeZone} onChange={setSafeZone} /><Text type="secondary">Show safe area</Text></Space>}
                 <Space wrap>
-                  {canShareFiles && <Button icon={<ShareAltOutlined />} onClick={share}>Share</Button>}
+                  {canShareFiles && <Button icon={<ShareAltOutlined />} onClick={() => void share()}>Share</Button>}
+                  <Tooltip title="Open this post in free editing: every text, photo and sticker becomes its own layer (rotate, fonts, layers, align…)">
+                    <Button icon={<BgColorsOutlined />} onClick={() => { setImportRequest((n) => n + 1); setActiveTab('canvas'); }}>Edit freely</Button>
+                  </Tooltip>
                   <VideoExport renderSlides={renderSlidesForVideo} slideCount={slides.length} width={format.width} height={format.height} fileBase={fileName().replace(/\.png$/, '')} />
                   {slides.length > 0 && <Button icon={<DownloadOutlined />} onClick={exportSlides}>All {slides.length} slides</Button>}
                   <Button type="primary" icon={<DownloadOutlined />} onClick={download}>{slides.length ? 'This slide' : 'Download PNG'}</Button>
@@ -1966,10 +2135,10 @@ export default function AdminPostStudioPage() {
 
 
 
-            {!wide && captionCard}
+            {!wide && panels.right && captionCard}
           </div>
         </Col>
-        {wide && (
+        {wide && panels.right && (
           <Col xl={7} className="post-studio__side">
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
               {imagePanel ?? (
@@ -2029,6 +2198,23 @@ export default function AdminPostStudioPage() {
               <ErrorBoundary resetKey={`canvas:${activeTab}`}>
               <Suspense fallback={<Spin style={{ display: 'block', margin: '80px auto' }} />}>
                 <CanvasEditor
+                  apiRef={canvasApi}
+                  importRequest={importRequest}
+                  onFrameSize={(width, height) => setCanvasFrame((current) => (current.width === width && current.height === height ? current : { width, height }))}
+                  toolbarExtra={(
+                    <>
+                      <Tooltip title="Caption & hashtags for this design"><Button size="small" type="text" icon={<HighlightOutlined />} onClick={() => setCanvasCaptionOpen(true)}>Caption</Button></Tooltip>
+                      <Tooltip title="Add a QR code to the shop or a product page"><Button size="small" type="text" onClick={() => void addCanvasQr()}>QR</Button></Tooltip>
+                      {canShareFiles && <Tooltip title="Share the image (caption is copied first)"><Button size="small" type="text" icon={<ShareAltOutlined />} onClick={() => void shareCanvas()} aria-label="Share" /></Tooltip>}
+                      <VideoExport
+                        renderSlides={async () => { const c = await canvasApi.current?.render(); return c ? [c] : []; }}
+                        slideCount={0}
+                        width={canvasFrame.width}
+                        height={canvasFrame.height}
+                        fileBase="design"
+                      />
+                    </>
+                  )}
                   active={activeTab === 'canvas'}
                   onOpenIdeas={() => setActiveTab('create')}
                   frames={CANVAS_FRAMES}
@@ -2040,6 +2226,29 @@ export default function AdminPostStudioPage() {
                   }}
                 />
               </Suspense>
+              <div ref={canvasQrRef} style={{ display: 'none' }} aria-hidden>
+                <QRCodeCanvas value={qrValue} size={512} level="M" marginSize={1} />
+              </div>
+              <Drawer
+                open={canvasCaptionOpen}
+                onClose={() => setCanvasCaptionOpen(false)}
+                placement={screens.md ? 'right' : 'bottom'}
+                size={screens.md ? 440 : '80vh'}
+                title="Caption & hashtags"
+                styles={{ body: { padding: 12 } }}
+              >
+                <Paragraph type="secondary" style={{ fontSize: 12 }}>Written from the products and texts picked in Create. Change it here, then copy it.</Paragraph>
+                {captionCard}
+              </Drawer>
+              </ErrorBoundary>
+            ),
+          },
+          {
+            key: 'photo',
+            label: <span><ScissorOutlined /> Product photo</span>,
+            children: (
+              <ErrorBoundary resetKey={`photo:${activeTab}`}>
+                <ProductPhotoTab products={photoProductOptions} loading={catalogueLoading} active={activeTab === 'photo'} />
               </ErrorBoundary>
             ),
           },

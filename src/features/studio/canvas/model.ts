@@ -55,7 +55,19 @@ export interface ImageLayer extends BaseLayer {
   focusX: number;
   focusY: number;
   radius: number;
+  /** Colour adjustments in percent (100 = unchanged); missing on older saves. */
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
 }
+
+/** CSS / canvas filter for an image layer's colour adjustments ('none' when unchanged). */
+export const imageFilter = (layer: Pick<ImageLayer, 'brightness' | 'contrast' | 'saturation'>) => {
+  const b = layer.brightness ?? 100;
+  const c = layer.contrast ?? 100;
+  const s = layer.saturation ?? 100;
+  return b === 100 && c === 100 && s === 100 ? 'none' : `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+};
 
 export interface ShapeLayer extends BaseLayer {
   type: 'rect' | 'ellipse';
