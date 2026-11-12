@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Badge, Button, Empty, Image, Input, Select, Space, Spin, Switch, Tag, Tooltip, Typography, message } from 'antd';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
 
 /**
  * "Fix products": every product with something to fix, most important first,
@@ -46,6 +47,13 @@ export default function AdminProductFixesPage() {
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState('');
   const [dragging, setDragging] = useState(false);
+  // A picture waiting for "Remove background / edit" or "Use as is".
+  const [pending, setPending] = useState<{ file: File; preview: string } | null>(null);
+  const [editor, setEditor] = useState<{ file?: File; source?: string } | null>(null);
+  const editing = !!pending || !!editor;
+  const clearPending = useCallback(() => {
+    setPending(old => { if (old) URL.revokeObjectURL(old.preview); return null; });
+  }, []);
   const fileInput = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const selectedId = Number(params.get('product')) || undefined;
@@ -109,12 +117,13 @@ export default function AdminProductFixesPage() {
   }, [request]);
 
   useEffect(() => {
+    clearPending(); setEditor(null);
     setImages(undefined);
     if (!selectedId) return;
     const controller = new AbortController();
     loadImages(selectedId, controller.signal);
     return () => controller.abort();
-  }, [selectedId, loadImages]);
+  }, [selectedId, loadImages, clearPending]);
 
   const move = useCallback((step: number) => {
     if (!rows.length) return;
@@ -141,27 +150,42 @@ export default function AdminProductFixesPage() {
   }, []);
 
   const uploadFile = useCallback(async (file: File) => {
-    if (!selectedId || busy) return;
-    if (!TYPES.includes(file.type)) { message.error('Use a JPG, PNG or WebP image (iPhone HEIC photos: export as JPG first).'); return; }
-    if (file.size > 10 * 1024 * 1024) { message.error('The image is larger than 10 MB.'); return; }
+    if (!selectedId || busy) return false;
+    if (!TYPES.includes(file.type)) { message.error('Use a JPG, PNG or WebP image (iPhone HEIC photos: export as JPG first).'); return false; }
+    if (file.size > 10 * 1024 * 1024) { message.error('The image is larger than 10 MB.'); return false; }
     const data = new FormData();
     data.append('image', file);
     data.append('alt', selected?.name || '');
     setBusy(true);
-    try { afterUpload(await request(`products/${selectedId}/images`, { method: 'POST', body: data })); }
-    catch (e) { message.error((e as Error).message); }
+    try { afterUpload(await request(`products/${selectedId}/images`, { method: 'POST', body: data })); return true; }
+    catch (e) { message.error((e as Error).message); return false; }
     finally { setBusy(false); }
   }, [selectedId, busy, selected, request, afterUpload]);
+
+  /** Hold a new picture so it can be cleaned (remove background, crop) before it is added. */
+  const stage = useCallback((file: File) => {
+    if (!selectedId) return;
+    if (!TYPES.includes(file.type)) { message.error('Use a JPG, PNG or WebP image (iPhone HEIC photos: export as JPG first).'); return; }
+    setPending(old => { if (old) URL.revokeObjectURL(old.preview); return { file, preview: URL.createObjectURL(file) }; });
+  }, [selectedId]);
 
   const uploadUrl = useCallback(async (address: string) => {
     const value = address.trim();
     if (!selectedId || busy || !value) return;
     if (!/^https?:\/\//i.test(value)) { message.error('Paste a web address that starts with http:// or https://'); return; }
     setBusy(true);
-    try { afterUpload(await request(`products/${selectedId}/images/from-url`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: value }) })); setUrl(''); }
+    try {
+      // Downloaded by the server: websites usually block the browser from reading their pictures.
+      const response = await fetch(`${API}/v1/admin/products/image-preview`, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ url: value }) });
+      if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.message || 'The picture could not be downloaded.'); }
+      const blob = await response.blob();
+      const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+      stage(new File([blob], `from-link.${ext}`, { type: blob.type || 'image/jpeg' }));
+      setUrl('');
+    }
     catch (e) { message.error((e as Error).message); }
     finally { setBusy(false); }
-  }, [selectedId, busy, request, afterUpload]);
+  }, [selectedId, busy, token, stage]);
 
   const makePrimary = async (asset: Asset) => {
     if (!selectedId) return;
@@ -175,21 +199,22 @@ export default function AdminProductFixesPage() {
   // Paste an image or an image address anywhere on the page (Ctrl/Cmd+V).
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
+      if (editor) return;
       const target = event.target as HTMLElement | null;
       const file = Array.from(event.clipboardData?.files || []).find(f => f.type.startsWith('image/'));
-      if (file) { event.preventDefault(); void uploadFile(file); return; }
+      if (file) { event.preventDefault(); stage(file); return; }
       if (target?.closest?.('input, textarea, [contenteditable="true"]')) return;
       const text = event.clipboardData?.getData('text') || '';
       if (/^https?:\/\//i.test(text.trim())) { event.preventDefault(); void uploadUrl(text); }
     };
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
-  }, [uploadFile, uploadUrl]);
+  }, [stage, uploadUrl, editor]);
 
   // J/K or arrow keys move through the list; D (or Enter) = done, next.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || editing) return;
       if ((event.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable="true"], .ant-select')) return;
       const key = event.key.toLowerCase();
       if (key === 'j' || key === 'arrowdown' || key === 'arrowright') { event.preventDefault(); move(1); }
@@ -199,12 +224,12 @@ export default function AdminProductFixesPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [move, markDone]);
+  }, [move, markDone, editing]);
 
   const onDrop = (event: React.DragEvent) => {
     event.preventDefault(); setDragging(false);
     const file = Array.from(event.dataTransfer.files).find(f => f.type.startsWith('image/'));
-    if (file) { void uploadFile(file); return; }
+    if (file) { stage(file); return; }
     const link = event.dataTransfer.getData('text/uri-list') || event.dataTransfer.getData('text/plain');
     if (link) void uploadUrl(link.split('\n')[0]);
   };
@@ -295,9 +320,9 @@ export default function AdminProductFixesPage() {
                 style={{ border: `2px dashed ${dragging ? '#1677ff' : '#d9d9d9'}`, borderRadius: 8, padding: 16, background: dragging ? '#f0f7ff' : '#fafafa', textAlign: 'center' }}
               >
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Typography.Text strong>Add a photo: drop a file or an image from another tab here, or press Ctrl/Cmd+V</Typography.Text>
+                  <Typography.Text strong>Add a photo: drop a file or an image from another tab here, or press Ctrl/Cmd+V — then remove the background or use it as is</Typography.Text>
                   <Space wrap style={{ justifyContent: 'center' }}>
-                    <input ref={fileInput} type="file" accept={TYPES.join(',')} hidden multiple onChange={e => { Array.from(e.target.files || []).forEach(f => void uploadFile(f)); e.target.value = ''; }} />
+                    <input ref={fileInput} type="file" accept={TYPES.join(',')} hidden onChange={e => { const f = e.target.files?.[0]; if (f) stage(f); e.target.value = ''; }} />
                     <Button type="primary" loading={busy} onClick={() => fileInput.current?.click()}>Choose file (U)</Button>
                     <Input aria-label="Image web address" placeholder="…or paste an image address (https://…)" value={url} onChange={e => setUrl(e.target.value)} onPressEnter={() => void uploadUrl(url)} style={{ width: 340 }} />
                     <Button onClick={() => void uploadUrl(url)} disabled={!url.trim()} loading={busy}>Add from address</Button>
@@ -305,6 +330,20 @@ export default function AdminProductFixesPage() {
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>JPG, PNG or WebP up to 10 MB. New photos are added to the gallery; existing photos are never replaced. Check the photo shows this exact product and size.</Typography.Text>
                 </Space>
               </div>
+
+              {pending && (
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #91caff', background: '#f0f7ff', borderRadius: 8, padding: 12 }}>
+                  <img src={pending.preview} alt="New photo" style={{ width: 140, height: 140, objectFit: 'contain', background: '#fff', borderRadius: 4 }} />
+                  <Space direction="vertical">
+                    <Typography.Text strong>New photo — clean it first?</Typography.Text>
+                    <Space wrap>
+                      <Button type="primary" onClick={() => setEditor({ file: pending.file })}>Remove background / crop</Button>
+                      <Button loading={busy} onClick={async () => { if (await uploadFile(pending.file)) clearPending(); }}>Use as is</Button>
+                      <Button onClick={clearPending}>Cancel</Button>
+                    </Space>
+                  </Space>
+                </div>
+              )}
 
               {imagesLoading && !images ? <Spin /> : images && images.length === 0 ? <Empty description="No photos yet." /> : (
                 <Image.PreviewGroup>
@@ -317,7 +356,10 @@ export default function AdminProductFixesPage() {
                           {asset.review_status === 'needs_review' && <Tag color="gold">needs review</Tag>}
                           {/catalog-placeholders\//.test(asset.url || '') && <Tag color="red">placeholder</Tag>}
                         </div>
-                        {!asset.is_primary && asset.review_status !== 'rejected' && <Button size="small" style={{ marginTop: 4 }} disabled={busy} onClick={() => void makePrimary(asset)}>Make main photo</Button>}
+                        <Space wrap size={4} style={{ marginTop: 4 }}>
+                          {!asset.is_primary && asset.review_status !== 'rejected' && <Button size="small" disabled={busy} onClick={() => void makePrimary(asset)}>Make main photo</Button>}
+                          <Tooltip title="Remove background, crop or center. Saves a new photo; this one stays."><Button size="small" disabled={busy} onClick={() => setEditor({ source: asset.url })}>Edit → new photo</Button></Tooltip>
+                        </Space>
                       </div>
                     ))}
                   </div>
@@ -327,6 +369,17 @@ export default function AdminProductFixesPage() {
           )}
         </div>
       </div>
+      <ProductPhotoEditor
+        open={!!editor}
+        file={editor?.file}
+        source={editor?.source}
+        title={selected ? `${selected.name} — saves a new photo` : undefined}
+        busy={busy}
+        onCancel={() => setEditor(null)}
+        onSave={async (blob, ext) => {
+          if (await uploadFile(new File([blob], `edited-product.${ext}`, { type: `image/${ext}` }))) { setEditor(null); clearPending(); }
+        }}
+      />
     </div>
   );
 }

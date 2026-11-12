@@ -3,6 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import AdminProductFixesPage from '@/pages/admin/AdminProductFixesPage';
 
+vi.mock('@/features/studio/ProductPhotoEditor', () => ({ default: () => null }));
+vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ token: 'test-token' }) }));
 
 const row = (id: number, name: string, groups: string[]) => ({
@@ -20,6 +22,7 @@ describe('Fix products page', () => {
     try { localStorage.removeItem('tessa.productFixes.done'); } catch { /* no storage in this test env */ }
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       if (url.includes('/products/problems')) return { ok: true, status: 200, json: async () => report };
+      if (url.includes('/image-preview')) return { ok: true, status: 200, blob: async () => new Blob(['x'], { type: 'image/jpeg' }) };
       const images = init?.method === 'POST' ? [{ id: 9, url: '/new.png', alt: '', variant: 'gallery', review_status: 'needs_review', is_primary: true }] : [];
       return { ok: true, status: 200, json: async () => ({ product: { id: 1, name: 'First shampoo' }, images }) };
     }));
@@ -45,12 +48,15 @@ describe('Fix products page', () => {
     expect(screen.getByRole('option', { name: /Second mask/ })).toBeVisible();
   });
 
-  it('adds a photo from an image address through the admin upload path', async () => {
+  it('downloads a linked picture through the server, offers cleaning, and uploads it as is', async () => {
     render(<MemoryRouter><AdminProductFixesPage /></MemoryRouter>);
     await screen.findByRole('heading', { name: 'First shampoo' });
     fireEvent.change(screen.getByLabelText('Image web address'), { target: { value: 'https://example.com/a.jpg' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add from address' }));
-    await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/products/1/images/from-url'), expect.objectContaining({ method: 'POST', body: JSON.stringify({ url: 'https://example.com/a.jpg' }) })));
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/products/image-preview'), expect.objectContaining({ method: 'POST', body: JSON.stringify({ url: 'https://example.com/a.jpg' }) })));
+    expect(await screen.findByRole('button', { name: 'Remove background / crop' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Use as is' }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/products/1/images'), expect.objectContaining({ method: 'POST', body: expect.any(FormData) })));
     expect(await screen.findByText('Main photo')).toBeVisible();
   });
 });
