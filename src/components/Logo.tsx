@@ -1,3 +1,4 @@
+import { site } from '@/shared/config/site';
 interface LogoProps {
   variant?: 'dark' | 'light' | 'underline';
   height?: number;
@@ -58,7 +59,7 @@ export default function Logo({ variant = 'dark', height = 40, className = '' }: 
   };
 
   return (
-    <div className={`logo-container ${className}`} style={{ display: 'flex', alignItems: 'center' }}>
+    <div className={`logo-container ${className}`} style={{ display: 'flex', alignItems: 'center' }} role="img" aria-label={site.name}>
       {logos[variant]}
     </div>
   );

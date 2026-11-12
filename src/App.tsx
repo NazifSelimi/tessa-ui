@@ -145,6 +145,7 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/shop" element={<ShopPage />} />
+                <Route path="/collections" element={<Navigate to="/shop" replace />} />
                 <Route path="/collections/:slug" element={<CollectionPage />} />
                 <Route path="/for-professionals" element={<ForProfessionalsPage />} />
                 <Route path="/privacy" element={<LegalPage />} />

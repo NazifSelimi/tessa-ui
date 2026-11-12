@@ -9,6 +9,13 @@ const NAMED_PATHS: Record<string, string> = {
   '/account/orders': 'My orders',
   '/login': 'Sign in',
   '/register': 'Create account',
+  '/forgot-password': 'Forgot password',
+  '/reset-password': 'Reset password',
+  '/complete-profile': 'Complete your profile',
+  '/stylist/workspace': 'Business workspace',
+  '/stylist/referral': 'My referral code',
+  '/stylist/quick-order': 'Quick order',
+  '/stylist/request': 'Business account request',
 };
 
 function words(segment: string): string {
