@@ -50,12 +50,14 @@ interface Props {
   product: FixProduct;
   /** GET helper for the admin API (adds the token). */
   request: (path: string) => Promise<{ drafts: Record<DescriptionLocale, Draft> }>;
+  /** Marks the product as checked so it leaves the problem list. */
+  markChecked: () => Promise<void>;
   onSaved: (next: boolean) => void;
   /** Called after the product was deleted. */
   onDeleted: () => void;
 }
 
-export default function ProductFixEditor({ product, request, onSaved, onDeleted }: Props) {
+export default function ProductFixEditor({ product, request, markChecked, onSaved, onDeleted }: Props) {
   const { message } = App.useApp();
   const [form] = Form.useForm<Values>();
   const visible = Form.useWatch('visible_to', form);
@@ -92,7 +94,8 @@ export default function ProductFixEditor({ product, request, onSaved, onDeleted 
     message.info(`${copied.size ? `Copied from ${[...copied].join(', ')}` : 'Drafted from the template'} (${targets.map((l) => (l === 'shq' ? 'SQ' : l.toUpperCase())).join(', ')}) — check, then Save.`);
   };
 
-  const save = async (next: boolean) => {
+  /** next: open the following product; check: also take this one off the list. */
+  const save = async (next: boolean, check = false) => {
     let values: Values;
     try { values = await form.validateFields(); } catch { return; }
     const data = new FormData();
@@ -109,10 +112,11 @@ export default function ProductFixEditor({ product, request, onSaved, onDeleted 
       locales.forEach((l) => data.append(`translations[${l}]`, values[`description_${l}`] ?? ''));
       changed = true;
     }
-    if (!changed) { if (next) onSaved(true); else message.info('No changes to save.'); return; }
+    if (!changed && !check) { if (next) onSaved(true); else message.info('No changes to save.'); return; }
     try {
-      await updateProduct({ id: String(product.id), data }).unwrap();
-      message.success('Saved.');
+      if (changed) await updateProduct({ id: String(product.id), data }).unwrap();
+      if (check) await markChecked();
+      message.success(check ? 'Saved and removed from the list.' : 'Saved.');
       onSaved(next);
     } catch (error) {
       message.error((error as { data?: { message?: string } })?.data?.message || 'Could not save. Please try again.');
@@ -142,7 +146,9 @@ export default function ProductFixEditor({ product, request, onSaved, onDeleted 
       </Tooltip>
       <DescriptionFields rows={5} order={['mk', 'shq', 'en']} />
       <Space wrap style={{ position: 'sticky', bottom: 0, background: 'var(--ant-color-bg-container, #fff)', padding: '8px 0', width: '100%' }}>
-        <Button type="primary" loading={isLoading} onClick={() => void save(true)}>Save &amp; next ›</Button>
+        <Tooltip title="Saves your changes and takes this product off the list, even if some flags remain. It comes back only if a new problem appears.">
+          <Button type="primary" size="large" loading={isLoading} onClick={() => void save(true, true)}>Save &amp; remove from list ›</Button>
+        </Tooltip>
         <Button loading={isLoading} htmlType="submit">Save</Button>
         <Button onClick={() => form.setFieldsValue(initial)}>Undo changes</Button>
         <Popconfirm

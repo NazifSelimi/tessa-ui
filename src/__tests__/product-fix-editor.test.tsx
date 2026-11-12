@@ -21,15 +21,17 @@ describe('Fix products inline editor', () => {
 
   it('fills a template draft without saving, then saves only what changed and moves on', async () => {
     const onSaved = vi.fn();
+    const markChecked = vi.fn(async () => {});
     const request = vi.fn(async () => ({ drafts: { en: null, mk: null, shq: null } }));
-    render(<App><ProductFixEditor product={product} request={request} onSaved={onSaved} onDeleted={vi.fn()} /></App>);
+    render(<App><ProductFixEditor product={product} request={request} onSaved={onSaved} onDeleted={vi.fn()} markChecked={markChecked} /></App>);
     fireEvent.click(screen.getByRole('button', { name: 'Suggest descriptions (MK, SQ, EN)' }));
     await waitFor(() => expect((screen.getByLabelText('Description (Macedonian)') as HTMLTextAreaElement).value).toContain('шампон'));
     expect((screen.getByLabelText('Description (Albanian)') as HTMLTextAreaElement).value).toContain('shampo');
     expect((screen.getByLabelText('Description (English)') as HTMLTextAreaElement).value).toContain('shampoo');
     expect(update).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Save & next/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Save & remove from list/ }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(true));
+    expect(markChecked).toHaveBeenCalled();
     const data = update.mock.calls[0][0].data as FormData;
     expect(data.get('translations[mk]')).toContain('Botugen Shampoo 300ml');
     expect(data.get('price')).toBeNull();
@@ -37,7 +39,7 @@ describe('Fix products inline editor', () => {
 
   it('asks before deleting the product and names it', async () => {
     const onDeleted = vi.fn();
-    render(<App><ProductFixEditor product={product} request={vi.fn()} onSaved={vi.fn()} onDeleted={onDeleted} /></App>);
+    render(<App><ProductFixEditor product={product} request={vi.fn()} onSaved={vi.fn()} onDeleted={onDeleted} markChecked={vi.fn()} /></App>);
     fireEvent.click(screen.getByRole('button', { name: 'Delete product' }));
     expect(await screen.findByText('Delete “Botugen Shampoo 300ml”?')).toBeTruthy();
     expect(onDeleted).not.toHaveBeenCalled();

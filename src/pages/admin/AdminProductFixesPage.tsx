@@ -18,9 +18,9 @@ const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 type Problem = { group: string; code: string; label: string; detail?: string | null };
 type Row = FixProduct & {
   size?: string | null; visible: boolean; live: boolean; orders: number;
-  image_count: number; thumbnail?: string | null; groups: string[]; problems: Problem[];
+  image_count: number; thumbnail?: string | null; groups: string[]; problems: Problem[]; checked?: boolean;
 };
-type Report = { total_products: number; products_with_problems: number; summary: { group: string; label: string; products: number }[]; products: Row[] };
+type Report = { total_products: number; products_with_problems: number; checked?: number; summary: { group: string; label: string; products: number }[]; products: Row[] };
 type Asset = { id: number; url: string; alt: string; variant: string; review_status: string; is_primary: boolean };
 
 const GROUP_COLORS: Record<string, string> = { photo: 'red', description: 'orange', category: 'gold', duplicate: 'purple', price: 'magenta', size: 'cyan', stock: 'blue', hidden: 'default' };
@@ -42,6 +42,7 @@ export default function AdminProductFixesPage() {
   const [brand, setBrand] = useState<string>();
   const [category, setCategory] = useState<string>();
   const [hideDone, setHideDone] = useState(true);
+  const [showChecked, setShowChecked] = useState(false);
   const [done, setDone] = useState<number[]>(readDone);
   const [images, setImages] = useState<Asset[]>();
   const [imagesLoading, setImagesLoading] = useState(false);
@@ -84,18 +85,19 @@ export default function AdminProductFixesPage() {
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (report?.products || []).filter(r =>
-      (group === 'all' || r.groups.includes(group))
+      (showChecked || !r.checked || r.id === selectedId)
+      && (group === 'all' || r.groups.includes(group))
       && (!brand || r.brand === brand) && (!category || r.category === category)
       && (!hideDone || !done.includes(r.id) || r.id === selectedId)
       && (!q || `${r.id} ${r.name} ${r.brand} ${r.category} ${r.manufacturer_code}`.toLowerCase().includes(q)));
-  }, [report, group, brand, category, hideDone, done, search, selectedId]);
+  }, [report, group, brand, category, hideDone, done, search, selectedId, showChecked]);
 
   const counts = useMemo(() => {
-    const base = (report?.products || []).filter(r => (!brand || r.brand === brand) && (!category || r.category === category) && (!hideDone || !done.includes(r.id)));
+    const base = (report?.products || []).filter(r => (showChecked || !r.checked) && (!brand || r.brand === brand) && (!category || r.category === category) && (!hideDone || !done.includes(r.id)));
     const result: Record<string, number> = { all: base.length };
     base.forEach(r => r.groups.forEach(g => { result[g] = (result[g] || 0) + 1; }));
     return result;
-  }, [report, brand, category, hideDone, done]);
+  }, [report, brand, category, hideDone, done, showChecked]);
 
   const current = (report?.products || []).find(r => r.id === selectedId);
   const selected = current ?? (selectedId ? known.get(selectedId) : undefined);
@@ -289,7 +291,8 @@ export default function AdminProductFixesPage() {
         <Input.Search aria-label="Search products" placeholder="Name, ID or code" allowClear value={search} onChange={e => setSearch(e.target.value)} style={{ width: 240 }} />
         <Select aria-label="Brand" placeholder="All brands" allowClear value={brand} onChange={setBrand} options={brands.map(b => ({ value: b, label: b }))} style={{ width: 170 }} />
         <Select aria-label="Category" placeholder="All categories" allowClear value={category} onChange={setCategory} options={categories.map(c => ({ value: c, label: c }))} style={{ width: 190 }} />
-        <Space size={6}><Switch size="small" checked={hideDone} onChange={setHideDone} /> Hide done ({done.length})</Space>
+        <Space size={6}><Switch size="small" checked={showChecked} onChange={setShowChecked} /> Show checked ({report?.checked ?? 0})</Space>
+        <Space size={6}><Switch size="small" checked={hideDone} onChange={setHideDone} /> Hide skipped ({done.length})</Space>
         {done.length > 0 && <Button size="small" onClick={() => { setDone([]); try { localStorage.removeItem(DONE_KEY); } catch { /* ignore */ } }}>Reset done</Button>}
         <Button size="small" onClick={() => setRefresh(x => x + 1)}>Refresh</Button>
       </Space>
@@ -328,11 +331,12 @@ export default function AdminProductFixesPage() {
                   <Tooltip title="Previous (K)"><Button onClick={() => move(-1)} disabled={index <= 0}>‹ Prev</Button></Tooltip>
                   <Typography.Text type="secondary">{index + 1} / {rows.length}</Typography.Text>
                   <Tooltip title="Next (J)"><Button onClick={() => move(1)} disabled={index >= rows.length - 1}>Next ›</Button></Tooltip>
-                  <Tooltip title="Done, go to next (D)"><Button type="primary" onClick={markDone}>Done / skip ›</Button></Tooltip>
+                  <Tooltip title="Skip for now, go to next (D). Only on this computer."><Button onClick={markDone}>Skip ›</Button></Tooltip>
                 </Space>
               </div>
 
               <div>
+                {selected.checked && <Tag color="green">Checked — off the list</Tag>}
                 {fixed ? <Tag color="green">All problems fixed</Tag> : selected.problems.map((p, i) => (
                   <div key={`${p.code}-${i}`} style={{ marginBottom: 4 }}>
                     <Tag color={GROUP_COLORS[p.group]}>{report?.summary.find(s => s.group === p.group)?.label}</Tag>
@@ -407,7 +411,9 @@ export default function AdminProductFixesPage() {
 
               <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
                 <Typography.Title level={4} style={{ marginTop: 0 }}>Product details</Typography.Title>
-                <ProductFixEditor product={selected} request={request} onSaved={onSaved} onDeleted={onDeleted} />
+                <ProductFixEditor product={selected} request={request} onSaved={onSaved} onDeleted={onDeleted}
+                  markChecked={async () => { await request(`products/${selected.id}/fix-checked`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: true }) }); }} />
+                {selected.checked && <Button size="small" type="link" onClick={async () => { try { await request(`products/${selected.id}/fix-checked`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: false }) }); message.success('Back on the list.'); setRefresh(x => x + 1); } catch (e) { message.error((e as Error).message); } }}>Put back on the list</Button>}
                 <Link to={`/admin/products?search=${selected.id}`}>More fields (hair quiz, shades) in Products ›</Link>
               </div>
             </Space>
