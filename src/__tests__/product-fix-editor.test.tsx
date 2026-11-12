@@ -37,6 +37,17 @@ describe('Fix products inline editor', () => {
     expect(data.get('price')).toBeNull();
   });
 
+  it('Ctrl/Cmd+S saves and removes the product from the list, and shows unsaved changes first', async () => {
+    const onSaved = vi.fn(); const markChecked = vi.fn(async () => {});
+    render(<App><ProductFixEditor product={product} request={vi.fn()} onSaved={onSaved} onDeleted={vi.fn()} markChecked={markChecked} /></App>);
+    fireEvent.change(screen.getByLabelText('Product name'), { target: { value: 'Botugen Shampoo 300ml new' } });
+    expect(await screen.findByText('Unsaved changes')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+    await waitFor(() => expect(markChecked).toHaveBeenCalled());
+    expect(onSaved).toHaveBeenCalledWith(true);
+    expect((update.mock.calls[0][0].data as FormData).get('name')).toBe('Botugen Shampoo 300ml new');
+  });
+
   it('asks before deleting the product and names it', async () => {
     const onDeleted = vi.fn();
     render(<App><ProductFixEditor product={product} request={vi.fn()} onSaved={vi.fn()} onDeleted={onDeleted} markChecked={vi.fn()} /></App>);

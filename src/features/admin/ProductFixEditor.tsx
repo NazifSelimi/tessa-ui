@@ -4,13 +4,14 @@
  * free "Suggest" draft per description language. Saving only sends what
  * changed, through the normal admin product update.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { App, Button, Col, Form, Input, Popconfirm, Row, Select, Space, Tooltip } from 'antd';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { App, Button, Col, Form, Input, Popconfirm, Row, Select, Tooltip } from 'antd';
 import { useGetBrandsQuery, useGetCategoriesQuery } from '@/features/products/api';
 import { useDeleteProductMutation, useUpdateProductMutation } from '@/features/admin/api';
 import type { ProductAudience } from '@/types';
 import { BrandCategoryFields, DescriptionFields, PriceStockFields, VisibilityField, visibleToParam, type DescriptionLocale } from './ProductFields';
 import { templateDescription } from './descriptionDraft';
+import './product-fix-editor.css';
 
 export interface FixProduct {
   id: number; name: string; brand?: string | null; category?: string | null;
@@ -55,9 +56,11 @@ interface Props {
   onSaved: (next: boolean) => void;
   /** Called after the product was deleted. */
   onDeleted: () => void;
+  /** Prev / next buttons shown in the floating bar. */
+  nav?: ReactNode;
 }
 
-export default function ProductFixEditor({ product, request, markChecked, onSaved, onDeleted }: Props) {
+export default function ProductFixEditor({ product, request, markChecked, onSaved, onDeleted, nav }: Props) {
   const { message } = App.useApp();
   const [form] = Form.useForm<Values>();
   const visible = Form.useWatch('visible_to', form);
@@ -69,7 +72,8 @@ export default function ProductFixEditor({ product, request, markChecked, onSave
   const initial = useMemo(() => valuesOf(product), [product.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A new product resets the form; refreshes of the same product keep the admin's typing.
-  useEffect(() => { form.setFieldsValue(initial); setDrafts(undefined); }, [initial, form]);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { form.setFieldsValue(initial); setDrafts(undefined); setDirty(false); }, [initial, form]);
 
   /** Drafts for all three languages: empty boxes are filled; if none is empty, all are redrafted. */
   const suggest = async () => {
@@ -116,6 +120,7 @@ export default function ProductFixEditor({ product, request, markChecked, onSave
     try {
       if (changed) await updateProduct({ id: String(product.id), data }).unwrap();
       if (check) await markChecked();
+      setDirty(false);
       message.success(check ? 'Saved and removed from the list.' : 'Saved.');
       onSaved(next);
     } catch (error) {
@@ -124,8 +129,19 @@ export default function ProductFixEditor({ product, request, markChecked, onSave
   };
 
 
+  // Ctrl/Cmd+S = Save & remove from list.
+  const saveRef = useRef(save);
+  useEffect(() => { saveRef.current = save; });
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void saveRef.current(true, true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   return (
-    <Form form={form} layout="vertical" initialValues={initial} onFinish={() => void save(false)}>
+    <Form form={form} layout="vertical" className="pfx-form" initialValues={initial} onValuesChange={() => setDirty(true)} onFinish={() => void save(false)}>
       <Form.Item name="name" label="Product name" rules={[{ required: true, message: 'Please enter a name' }]}>
         <Input />
       </Form.Item>
@@ -145,12 +161,15 @@ export default function ProductFixEditor({ product, request, markChecked, onSave
         <Button style={{ marginBottom: 8 }} onClick={() => void suggest()}>Suggest descriptions (MK, SQ, EN)</Button>
       </Tooltip>
       <DescriptionFields rows={5} order={['mk', 'shq', 'en']} />
-      <Space wrap style={{ position: 'sticky', bottom: 0, background: 'var(--ant-color-bg-container, #fff)', padding: '8px 0', width: '100%' }}>
-        <Tooltip title="Saves your changes and takes this product off the list, even if some flags remain. It comes back only if a new problem appears.">
+      <div className="pfx-bar" role="toolbar" aria-label="Save product">
+        {dirty && <span className="pfx-bar__dirty">Unsaved changes</span>}
+        {nav}
+        <Tooltip title="Saves your changes and takes this product off the list, even if some flags remain (Ctrl/Cmd+S). It comes back only if a new problem appears.">
           <Button type="primary" size="large" loading={isLoading} onClick={() => void save(true, true)}>Save &amp; remove from list ›</Button>
         </Tooltip>
         <Button loading={isLoading} htmlType="submit">Save</Button>
-        <Button onClick={() => form.setFieldsValue(initial)}>Undo changes</Button>
+        <Button onClick={() => { form.setFieldsValue(initial); setDirty(false); }}>Undo changes</Button>
+        <span className="pfx-bar__sep" />
         <Popconfirm
           title={`Delete “${product.name}”?`}
           description="The product and its texts are removed from the shop. Products that were ever ordered cannot be deleted (order history is kept); hide them instead."
@@ -160,9 +179,9 @@ export default function ProductFixEditor({ product, request, markChecked, onSave
             catch (error) { message.error((error as { data?: { message?: string } })?.data?.message || 'Could not delete. Please try again.'); }
           }}
         >
-          <Button danger loading={deleting}>Delete product</Button>
+          <Button danger size="small" loading={deleting}>Delete product</Button>
         </Popconfirm>
-      </Space>
+      </div>
     </Form>
   );
 }

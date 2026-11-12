@@ -412,6 +412,7 @@ export default function AdminProductFixesPage() {
               <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
                 <Typography.Title level={4} style={{ marginTop: 0 }}>Product details</Typography.Title>
                 <ProductFixEditor product={selected} request={request} onSaved={onSaved} onDeleted={onDeleted}
+                  nav={<><Button aria-label="Previous product" onClick={() => move(-1)} disabled={index <= 0}>‹</Button><Button aria-label="Next product" onClick={() => move(1)} disabled={index >= rows.length - 1}>›</Button></>}
                   markChecked={async () => { await request(`products/${selected.id}/fix-checked`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: true }) }); }} />
                 {selected.checked && <Button size="small" type="link" onClick={async () => { try { await request(`products/${selected.id}/fix-checked`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checked: false }) }); message.success('Back on the list.'); setRefresh(x => x + 1); } catch (e) { message.error((e as Error).message); } }}>Put back on the list</Button>}
                 <Link to={`/admin/products?search=${selected.id}`}>More fields (hair quiz, shades) in Products ›</Link>
