@@ -89,7 +89,7 @@ export default function ActivateStylistInvitationPage() {
     }
 
     void loadInvitation();
-  }, [form, token]);
+  }, [form, token, t]);
 
   const needs = (field: string) => invitation?.missing_fields.includes(field) ?? false;
 

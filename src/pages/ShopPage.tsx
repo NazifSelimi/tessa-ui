@@ -18,7 +18,7 @@ import { useFeature } from '@/shared/hooks/useFeature';
 import { AdminAddProductShortcut } from '@/components/storefront/AdminShortcuts';
 
 export default function ShopPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const quizOn = useFeature('hair_quiz');
   const { isStylist, isAdmin } = useAuth();
   const { data: contentBlocks = [] } = useGetPublishedContentBlocksQuery('shop', { skip: isStylist });
@@ -38,7 +38,7 @@ export default function ShopPage() {
   const maxPrice = params.get('max_price');
   const inStock = params.get('in_stock') === 'true';
   const { data: allCategories = [] } = useGetCategoriesQuery();
-  const categories = visibleCategories(allCategories);
+  const categories = [...visibleCategories(allCategories)].sort((a, b) => categoryLabel(a.name).localeCompare(categoryLabel(b.name), i18n.language));
   const { data: allBrands = [] } = useGetBrandsQuery();
   const brands = visibleBrands(allBrands);
   const { data: collections = [] } = useGetProductCollectionsQuery();

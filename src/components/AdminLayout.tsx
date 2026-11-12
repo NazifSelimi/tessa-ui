@@ -219,7 +219,7 @@ export default function AdminLayout() {
   ];
 
   // Sidebar content (shared between desktop and mobile)
-  const SidebarContent = () => (
+  const sidebarContent = (
     <>
       {/* Logo */}
       <div className="admin-sidebar__logo" style={{ 
@@ -296,7 +296,7 @@ export default function AdminLayout() {
             flexDirection: 'column',
           }}
         >
-          <SidebarContent />
+          {sidebarContent}
         </Sider>
       )}
 
@@ -314,7 +314,7 @@ export default function AdminLayout() {
             header: { display: 'none' }
           }}
         >
-          <SidebarContent />
+          {sidebarContent}
         </Drawer>
       )}
 
