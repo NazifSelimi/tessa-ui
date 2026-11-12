@@ -53,6 +53,7 @@ const AdminStylistInvitationsPage = lazyWithReload(() => import('./pages/admin/A
 const AdminBundlesPage = lazyWithReload(() => import('./pages/admin/AdminBundlesPage'));
 const AdminContentBlocksPage = lazyWithReload(() => import('./pages/admin/AdminContentBlocksPage'));
 const AdminCatalogImagesPage = lazyWithReload(() => import('./pages/admin/ProductImagesWorkspace'));
+const AdminProductFixesPage = lazyWithReload(() => import('./pages/admin/AdminProductFixesPage'));
 const AdminCatalogueReviewPage = lazyWithReload(() => import('./pages/admin/AdminCatalogueReviewPage'));
 const AdminHairQuizPage = lazyWithReload(() => import('./pages/admin/AdminHairQuizPage'));
 const AdminPostStudioPage = lazyWithReload(() => import('./pages/admin/AdminPostStudioPage'));
@@ -257,6 +258,7 @@ function App() {
                 <Route path="/admin/bundles" element={<FeatureGate feature="bundles" fallback="/admin/features"><AdminBundlesPage /></FeatureGate>} />
                 <Route path="/admin/content-blocks" element={<FeatureGate feature="content_blocks" fallback="/admin/features"><AdminContentBlocksPage /></FeatureGate>} />
                 <Route path="/admin/catalog-images" element={<FeatureGate feature="image_review" fallback="/admin/features"><AdminCatalogImagesPage /></FeatureGate>} />
+                <Route path="/admin/product-fixes" element={<FeatureGate feature="image_review" fallback="/admin/features"><AdminProductFixesPage /></FeatureGate>} />
                 <Route path="/admin/catalogue-review" element={<FeatureGate feature="supplier_list" fallback="/admin/features"><AdminCatalogueReviewPage /></FeatureGate>} />
                 <Route path="/admin/hair-quiz" element={<FeatureGate feature="hair_quiz" fallback="/admin/features"><AdminHairQuizPage /></FeatureGate>} />
                 <Route path="/admin/studio" element={<FeatureGate feature="post_studio" fallback="/admin/features"><AdminPostStudioPage /></FeatureGate>} />

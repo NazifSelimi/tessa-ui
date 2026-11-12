@@ -327,6 +327,7 @@ export const ADMIN_PATH_FEATURE: Record<string, FeatureKey> = {
   '/admin/reports': 'sales_reports',
   '/admin/content-blocks': 'content_blocks',
   '/admin/catalog-images': 'image_review',
+  '/admin/product-fixes': 'image_review',
   '/admin/catalogue-review': 'supplier_list',
   '/admin/hair-quiz': 'hair_quiz',
   '/admin/distributors': 'distributors',
