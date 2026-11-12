@@ -611,11 +611,14 @@
     "add": "Add",
     "currentOrder": "Current order",
     "thisOrder": "This order",
-    "unitsAndProducts": "{{units}} units · {{products}} products",
     "checkoutCalculation": "Delivery and discounts are calculated at checkout.",
     "reviewCart": "Review cart",
     "addedQuantity": "Added {{count}} × {{name}} to your cart.",
-    "noOffers": "No active salon offers right now. Explore the catalog for your next restock."
+    "noOffers": "No active salon offers right now. Explore the catalog for your next restock.",
+    "unitCount_one": "{{count}} unit",
+    "unitCount_other": "{{count}} units",
+    "productCount_one": "{{count}} product",
+    "productCount_other": "{{count}} products"
   },
   "referral": {
     "navLabel": "Earn",

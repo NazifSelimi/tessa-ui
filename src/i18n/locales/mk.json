@@ -611,11 +611,14 @@
     "add": "Додај",
     "currentOrder": "Тековна нарачка",
     "thisOrder": "Оваа нарачка",
-    "unitsAndProducts": "{{units}} единици · {{products}} производи",
     "checkoutCalculation": "Доставата и попустите се пресметуваат при нарачката.",
     "reviewCart": "Прегледај кошничка",
     "addedQuantity": "Додадени {{count}} × {{name}} во кошничката.",
-    "noOffers": "Во моментов нема активни салонски понуди. Разгледај го каталогот за следната нарачка."
+    "noOffers": "Во моментов нема активни салонски понуди. Разгледај го каталогот за следната нарачка.",
+    "unitCount_one": "{{count}} единица",
+    "unitCount_other": "{{count}} единици",
+    "productCount_one": "{{count}} производ",
+    "productCount_other": "{{count}} производи"
   },
   "referral": {
     "navLabel": "Заработи",

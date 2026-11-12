@@ -611,11 +611,14 @@
     "add": "Shto",
     "currentOrder": "Porosia aktuale",
     "thisOrder": "Kjo porosi",
-    "unitsAndProducts": "{{units}} njësi · {{products}} produkte",
     "checkoutCalculation": "Dërgesa dhe zbritjet llogariten në përfundim të porosisë.",
     "reviewCart": "Shiko shportën",
     "addedQuantity": "U shtuan {{count}} × {{name}} në shportë.",
-    "noOffers": "Aktualisht nuk ka oferta aktive për sallonin. Shfleto katalogun për furnizimin e radhës."
+    "noOffers": "Aktualisht nuk ka oferta aktive për sallonin. Shfleto katalogun për furnizimin e radhës.",
+    "unitCount_one": "{{count}} njësi",
+    "unitCount_other": "{{count}} njësi",
+    "productCount_one": "{{count}} produkt",
+    "productCount_other": "{{count}} produkte"
   },
   "referral": {
     "navLabel": "Fito",
