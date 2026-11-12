@@ -133,7 +133,7 @@
   border: 0; border-radius: 6px; background: #b0477a; color: #fff; font-size: 12px; padding: 3px 8px; line-height: 18px;
 }
 .post-studio__text-input {
-  pointer-events: auto; position: absolute; inset: 0; width: 100%; min-height: 100%; min-width: 120px;
+  pointer-events: auto; position: absolute; left: 0; top: 0; width: 100%; height: max(100%, 2.8em); min-width: min(220px, 70vw); max-width: 90vw;
   resize: none; border: 0; outline: 2px solid #b0477a; border-radius: 4px; padding: 2px 4px;
   background: rgba(255, 255, 255, 0.96); color: #242124; line-height: 1.15; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
