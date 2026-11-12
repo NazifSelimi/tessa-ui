@@ -4773,3 +4773,6 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 
 /* Shared − n + quantity control */
 .quantity-stepper .ant-input-number-input { text-align: center; }
+
+/* Product name sits right under the brand (antd adds 1.2em above a heading that follows text) */
+.ant-typography + h1.product-detail__title.ant-typography { margin-top: 6px; }
