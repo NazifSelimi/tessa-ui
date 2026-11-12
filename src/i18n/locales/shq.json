@@ -878,5 +878,20 @@
   "errors": {
     "tooManyAttempts": "Shumë përpjekje. Prisni një minutë dhe provoni përsëri.",
     "requestFailed": "Diçka shkoi keq. Provoni përsëri."
+  },
+  "pageTitles": {
+    "cart": "Shporta",
+    "checkout": "Pagesa",
+    "account": "Llogaria ime",
+    "orders": "Porositë e mia",
+    "login": "Hyrje",
+    "register": "Krijo llogari",
+    "forgotPassword": "Fjalëkalimi i harruar",
+    "resetPassword": "Rivendos fjalëkalimin",
+    "completeProfile": "Plotësoni profilin",
+    "workspace": "Hapësira e biznesit",
+    "referral": "Kodi im i rekomandimit",
+    "quickOrder": "Porosi e shpejtë",
+    "businessRequest": "Kërkesë për llogari biznesi"
   }
 }

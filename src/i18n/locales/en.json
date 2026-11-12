@@ -878,5 +878,20 @@
   "errors": {
     "tooManyAttempts": "Too many attempts. Please wait a minute and try again.",
     "requestFailed": "Something went wrong. Please try again."
+  },
+  "pageTitles": {
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "account": "My account",
+    "orders": "My orders",
+    "login": "Sign in",
+    "register": "Create account",
+    "forgotPassword": "Forgot password",
+    "resetPassword": "Reset password",
+    "completeProfile": "Complete your profile",
+    "workspace": "Business workspace",
+    "referral": "My referral code",
+    "quickOrder": "Quick order",
+    "businessRequest": "Business account request"
   }
 }

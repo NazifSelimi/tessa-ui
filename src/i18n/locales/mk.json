@@ -878,5 +878,20 @@
   "errors": {
     "tooManyAttempts": "Премногу обиди. Почекајте една минута и обидете се повторно.",
     "requestFailed": "Нешто тргна наопаку. Обидете се повторно."
+  },
+  "pageTitles": {
+    "cart": "Кошничка",
+    "checkout": "Наплата",
+    "account": "Мој профил",
+    "orders": "Мои нарачки",
+    "login": "Најава",
+    "register": "Креирај профил",
+    "forgotPassword": "Заборавена лозинка",
+    "resetPassword": "Нова лозинка",
+    "completeProfile": "Дополнете го профилот",
+    "workspace": "Бизнис простор",
+    "referral": "Мој код за препорака",
+    "quickOrder": "Брза нарачка",
+    "businessRequest": "Барање за бизнис профил"
   }
 }
