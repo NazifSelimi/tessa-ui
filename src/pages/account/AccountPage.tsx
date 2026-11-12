@@ -9,9 +9,12 @@
 
 import { Link, useNavigate } from 'react-router-dom';
 import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider, Select } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, ArrowLeftOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { PageHeading } from '@/components/storefront/DesignPrimitives';
+import { Headphones, LogOut, Sparkles } from 'lucide-react';
+import { useFeature } from '@/shared/hooks/useFeature';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
@@ -23,8 +26,9 @@ const { Title, Text } = Typography;
 
 export default function AccountPage() {
   const { t } = useTranslation();
+  const quizOn = useFeature('hair_quiz');
   const navigate = useNavigate();
-  const { user, currentRole, updateProfile, isLoading } = useAuth();
+  const { user, currentRole, updateProfile, changePassword, isLoading, logout } = useAuth();
   const [form] = Form.useForm();
 
   const handleUpdateProfile = async (values: {
@@ -44,8 +48,13 @@ export default function AccountPage() {
     }
   };
 
-  const handleChangePassword = async (_values: { currentPassword: string; newPassword: string }) => {
+  const handleChangePassword = async (values: { currentPassword: string; newPassword: string; confirmPassword: string }) => {
     try {
+      await changePassword({
+        currentPassword: values.currentPassword,
+        password: values.newPassword,
+        passwordConfirmation: values.confirmPassword,
+      });
       message.success(t('account.passwordUpdated'));
     } catch (_error) {
       message.error(t('account.passwordUpdateFailed'));
@@ -53,23 +62,13 @@ export default function AccountPage() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Button
-        type="text"
-        icon={<ArrowLeftOutlined />}
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: 8, padding: '4px 0' }}
-      >
-        {t('common.back')}
-      </Button>
-      <Title level={2}>{t('account.myAccount')}</Title>
-      <Text type="secondary">
-        {t('account.manageSettings')}
-      </Text>
+    <div className="nl-account-page" style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <PageHeading eyebrow={t('newLook.profile')} title={t('account.myAccount')} description={t('account.manageSettings')} />
+      <section className="nl-account-banner"><div className="nl-account-avatar">{(user?.firstName?.[0] || user?.name?.[0] || 'T').toUpperCase()}{user?.lastName?.[0]?.toUpperCase()}</div><div><span className="nl-eyebrow">{currentRole === 'stylist' ? t('newLook.professionalAccount') : 'MY TESSA'}</span><h2>{user?.name}</h2><p>{user?.email}</p></div></section>
 
       <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className="nl-account-menu">
             <div style={{ textAlign: 'center' }}>
               <Avatar size={80} icon={<UserOutlined />} style={{ marginBottom: 16 }} />
               <Title level={4} style={{ margin: 0 }}>{user?.name || t('account.guestUser')}</Title>
@@ -84,6 +83,9 @@ export default function AccountPage() {
                   {t('auth.myOrders')}
                 </Button>
               </Link>
+              {quizOn && <Link to="/quiz"><Button icon={<Sparkles size={16} />} block>{t('newLook.myHair')}</Button></Link>}
+              <Link to="/contact"><Button icon={<Headphones size={16} />} block>{t('newLook.support')}</Button></Link>
+              <Button icon={<LogOut size={16} />} block onClick={() => void logout().then(() => navigate('/'))}>{t('auth.logout')}</Button>
               {(currentRole === 'user' || currentRole === 'guest') && (
                 <Link to="/stylist/request">
                   <Button icon={<ScissorOutlined />} block>
@@ -119,11 +121,11 @@ export default function AccountPage() {
               onFinish={handleUpdateProfile}
             >
               <Form.Item name="first_name" label={t('auth.firstName')} rules={[{ required: true }]}>
-                <Input prefix={<UserOutlined />} placeholder="First name" />
+                <Input prefix={<UserOutlined />} placeholder={t('auth.firstName')} />
               </Form.Item>
 
               <Form.Item name="last_name" label={t('auth.lastName')} rules={[{ required: true }]}>
-                <Input prefix={<UserOutlined />} placeholder="Last name" />
+                <Input prefix={<UserOutlined />} placeholder={t('auth.lastName')} />
               </Form.Item>
 
               <Form.Item
@@ -135,11 +137,11 @@ export default function AccountPage() {
               </Form.Item>
 
               <Form.Item name="phone" label={t('auth.phone')} rules={[{ required: true, message: t('auth.enterPhone') }]}>
-                <Input prefix={<PhoneOutlined />} placeholder="+1 234 567 8900" />
+                <Input prefix={<PhoneOutlined />} placeholder="070 123 456" />
               </Form.Item>
 
               <Form.Item name="address" label={t('checkout.address')} rules={[{ required: true, message: t('account.enterAddress') }]}>
-                <Input prefix={<HomeOutlined />} placeholder="Street and number" />
+                <Input prefix={<HomeOutlined />} placeholder={t('auth.streetPlaceholder')} />
               </Form.Item>
 
               <Form.Item name="city" label={t('checkout.municipality')} rules={[{ required: true, message: t('account.enterMunicipality') }]}>
@@ -186,7 +188,7 @@ export default function AccountPage() {
                 label={t('account.currentPassword')}
                 rules={[{ required: true, message: t('account.enterCurrentPassword') }]}
               >
-                <Input.Password placeholder="Current password" />
+                <Input.Password placeholder={t('account.currentPassword')} />
               </Form.Item>
               <Form.Item 
                 name="newPassword" 
@@ -196,7 +198,7 @@ export default function AccountPage() {
                   { min: 8, message: t('auth.passwordMin') },
                 ]}
               >
-                <Input.Password placeholder="New password" />
+                <Input.Password placeholder={t('account.newPassword')} />
               </Form.Item>
               <Form.Item 
                 name="confirmPassword" 
@@ -214,9 +216,9 @@ export default function AccountPage() {
                   }),
                 ]}
               >
-                <Input.Password placeholder="Confirm new password" />
+                <Input.Password placeholder={t('account.confirmNewPassword')} />
               </Form.Item>
-              <Button type="primary" htmlType="submit">{t('account.updatePassword')}</Button>
+              <Button type="primary" htmlType="submit" loading={isLoading}>{t('account.updatePassword')}</Button>
             </Form>
           </Card>
         </Col>

@@ -13,6 +13,7 @@ import {
 import { PlusOutlined, CopyOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetDistributorCodesQuery, useGenerateDistributorCodeMutation } from '@/features/stylist/api';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -85,13 +86,13 @@ export default function DistributorCodesPage() {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => formatDate(date),
     },
     {
       title: 'Used At',
       dataIndex: 'usedAt',
       key: 'usedAt',
-      render: (date: string | undefined) => date ? new Date(date).toLocaleDateString() : '-',
+      render: (date: string | undefined) => date ? formatDate(date) : '-',
     },
   ];
 

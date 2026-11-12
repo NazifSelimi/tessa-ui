@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', '.claude'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -22,6 +22,11 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // New React Compiler rules in eslint-plugin-react-hooks 7. Existing code
+      // predates them; keep them visible as warnings until each effect is
+      // reworked deliberately rather than as part of a version upgrade.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/static-components': 'warn',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // Downgrade no-explicit-any — too pervasive in RTK query error handlers to fix in one pass
       '@typescript-eslint/no-explicit-any': 'warn',

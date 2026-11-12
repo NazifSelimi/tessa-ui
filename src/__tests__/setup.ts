@@ -14,8 +14,9 @@ expect.extend(matchers);
 // Cleanup after each test
 afterEach(() => {
   cleanup();
-  localStorage.clear();
-  sessionStorage.clear();
+  // Some Node/Vitest environments expose storage shims without `clear`.
+  localStorage?.clear?.();
+  sessionStorage?.clear?.();
 });
 
 // Mock window.matchMedia

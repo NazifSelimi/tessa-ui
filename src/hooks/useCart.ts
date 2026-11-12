@@ -12,14 +12,17 @@ import {
   removeItem,
   updateQuantity,
   clearCart,
+  applyBundle,
   openDrawer,
   closeDrawer,
   toggleDrawer,
   selectCartItems,
   selectCartDrawerOpen,
   selectCartItemCount,
+  selectCartBundleIds,
 } from '@/features/cart/slice';
-import { selectIsProfessional } from '@/features/auth/slice';
+import { selectIsStylist } from '@/features/auth/slice';
+import { cartPriceForRole } from '@/shared/utils/checkoutPricing';
 import type { CartItem, Product } from '@/types';
 
 /** Convert any price-like value to a safe finite number (≥ 0). */
@@ -36,9 +39,10 @@ export function useCart() {
   const items = useAppSelector(selectCartItems);
   const isDrawerOpen = useAppSelector(selectCartDrawerOpen);
   const itemCount = useAppSelector(selectCartItemCount);
-  const isProfessional = useAppSelector(selectIsProfessional);
+  const bundleIds = useAppSelector(selectCartBundleIds);
+  const isProfessional = useAppSelector(selectIsStylist);
 
-  // Add item to cart with frozen price snapshot
+  // Add item with both retail and role price snapshots so it can be repriced if the role changes
   const handleAddItem = useCallback((product: Product, quantity = 1) => {
     const retailPrice = toSafePrice(product.price);
     const rolePrice = toSafePrice(product.stylistPrice);
@@ -66,6 +70,10 @@ export function useCart() {
     dispatch(clearCart());
   }, [dispatch]);
 
+  const handleApplyBundle = useCallback((bundleId: string) => {
+    dispatch(applyBundle({ bundleId }));
+  }, [dispatch]);
+
   // Drawer controls
   const handleOpenDrawer = useCallback(() => {
     dispatch(openDrawer());
@@ -79,15 +87,9 @@ export function useCart() {
     dispatch(toggleDrawer());
   }, [dispatch]);
 
-  // Get price based on frozen cart-item price (immutable after add)
+  // Price for the current role from the item's saved snapshots (not a live server quote)
   const getItemPrice = useCallback((item: CartItem): number => {
-    // Prefer frozen unit price set when item was added to cart
-    if (item.unitPrice != null && Number.isFinite(item.unitPrice)) {
-      return item.unitPrice;
-    }
-    // Fallback for legacy items persisted before frozen-price migration
-    const price = isProfessional ? item.product.stylistPrice : item.product.price;
-    return toSafePrice(price);
+    return cartPriceForRole(item, isProfessional);
   }, [isProfessional]);
 
   // Get total for an item
@@ -117,6 +119,7 @@ export function useCart() {
   return {
     // State
     items,
+    bundleIds,
     isLoading: false, // Cart operations are synchronous with redux-persist
     isDrawerOpen,
     
@@ -125,6 +128,7 @@ export function useCart() {
     removeItem: handleRemoveItem,
     updateQuantity: handleUpdateQuantity,
     clearCart: handleClearCart,
+    applyBundle: handleApplyBundle,
     
     // Drawer controls
     openDrawer: handleOpenDrawer,

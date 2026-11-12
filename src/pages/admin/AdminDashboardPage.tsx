@@ -25,14 +25,19 @@ import {
   UserOutlined,
   ScissorOutlined,
   RiseOutlined,
+  ShareAltOutlined,
   FileTextOutlined,
   TeamOutlined,
   ShoppingCartOutlined,
+  PictureOutlined,
+  CheckCircleFilled,
+  RightOutlined,
 } from '@ant-design/icons';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import type { Order } from '@/types';
 import { useGetDashboardStatsQuery } from '@/features/admin/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Text } = Typography;
 
@@ -47,6 +52,21 @@ const AdminDashboardPage: React.FC = () => {
   const lowStockProducts = dashboardStats?.lowStockProducts ?? 0;
   const pendingRequests = dashboardStats?.pendingStylistRequests ?? 0;
   const recentOrders = dashboardStats?.recentOrders ?? [];
+  const revenueThisMonth = dashboardStats?.revenueThisMonth ?? 0;
+  const todo = dashboardStats?.todo;
+
+  // Each item opens the admin list already filtered to the work it describes.
+  const todoItems = todo ? [
+    { key: 'orders', count: todo.pendingOrders, label: 'Orders waiting for confirmation', to: '/admin/orders?status=pending', tone: 'urgent' },
+    { key: 'stylists', count: todo.pendingStylistRequests, label: 'Business account applications to approve', to: '/admin/stylist-requests', tone: 'urgent' },
+    { key: 'emails', count: todo.failedEmails, label: 'Emails that were not sent', to: '/admin/emails?tab=outbox', tone: 'urgent' },
+    { key: 'review-stock', count: todo.inReviewInStock, label: 'In-stock products hidden (no photo, brand or category)', to: '/admin/products?review=in_review', tone: 'urgent' },
+    { key: 'price', count: todo.missingPrice, label: 'Products missing a retail or salon price', to: '/admin/products?queue=missing_price', tone: 'warn' },
+    { key: 'low', count: todo.lowStock, label: 'Products running low (1–3 left)', to: '/admin/products?queue=low_stock', tone: 'warn' },
+    { key: 'review', count: todo.inReview, label: 'Products in review (admin only)', to: '/admin/products?review=in_review', tone: 'info' },
+    { key: 'out', count: todo.outOfStock, label: 'Sellable products out of stock', to: '/admin/products?queue=out_of_stock', tone: 'info' },
+  ] : [];
+  const openTodo = todoItems.filter((item) => item.count > 0);
 
   // Responsive columns for mobile
   const orderColumns = [
@@ -82,7 +102,7 @@ const AdminDashboardPage: React.FC = () => {
       title: 'Date',
       key: 'date',
       render: (_: unknown, record: Order) => (
-        <Text type="secondary">{record.createdAt ? new Date(record.createdAt).toLocaleDateString() : '—'}</Text>
+        <Text type="secondary">{record.createdAt ? formatDate(record.createdAt) : '—'}</Text>
       ),
       responsive: ['lg', 'xl'] as Breakpoint[],
     },
@@ -148,7 +168,7 @@ const AdminDashboardPage: React.FC = () => {
             />
             <div className="stat-card__change">
               <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
-                All time revenue
+                Excl. cancelled · {formatPrice(revenueThisMonth)} this month
               </Text>
             </div>
           </Card>
@@ -200,6 +220,30 @@ const AdminDashboardPage: React.FC = () => {
         </Col>
       </Row>
 
+      {/* To-do */}
+      <Card
+        className="admin-todo"
+        title={<Space><CheckCircleFilled style={{ color: 'var(--color-primary)' }} /><span>To do</span></Space>}
+        style={{ marginBottom: 'var(--spacing-xl)' }}
+        bodyStyle={{ padding: openTodo.length ? 0 : 'var(--spacing-lg)' }}
+      >
+        {openTodo.length === 0 ? (
+          <Text type="secondary">Nothing waiting. Nice work.</Text>
+        ) : (
+          <ul className="admin-todo__list">
+            {openTodo.map((item) => (
+              <li key={item.key}>
+                <Link to={item.to} className={`admin-todo__item admin-todo__item--${item.tone}`}>
+                  <span className="admin-todo__count">{item.count}</span>
+                  <span className="admin-todo__label">{item.label}</span>
+                  <RightOutlined className="admin-todo__go" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       {/* Main Content */}
       <Row gutter={[24, 24]}>
         {/* Recent Orders */}
@@ -234,6 +278,11 @@ const AdminDashboardPage: React.FC = () => {
           {/* Quick Actions */}
           <Card title="Quick Actions" style={{ marginBottom: 'var(--spacing-lg)' }}>
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
+              <Link to="/admin/studio" style={{ display: 'block' }}>
+                <Button icon={<PictureOutlined />} block type="primary">
+                  Post Studio – make social images
+                </Button>
+              </Link>
               <Link to="/admin/products" style={{ display: 'block' }}>
                 <Button icon={<ShoppingOutlined />} block>
                   Manage Products
@@ -250,12 +299,17 @@ const AdminDashboardPage: React.FC = () => {
                   block
                   type={pendingRequests > 0 ? 'primary' : 'default'}
                 >
-                  Stylist Requests {pendingRequests > 0 && `(${pendingRequests})`}
+                  Business applications {pendingRequests > 0 && `(${pendingRequests})`}
                 </Button>
               </Link>
               <Link to="/admin/coupons" style={{ display: 'block' }}>
                 <Button icon={<RiseOutlined />} block>
                   Manage Coupons
+                </Button>
+              </Link>
+              <Link to="/admin/referrals" style={{ display: 'block' }}>
+                <Button icon={<ShareAltOutlined />} block>
+                  Referral codes &amp; credit
                 </Button>
               </Link>
               <Link to="/admin/users" style={{ display: 'block' }}>
@@ -285,14 +339,14 @@ const AdminDashboardPage: React.FC = () => {
                   </Text>
                 </div>
                 <Progress
-                  percent={Math.round((lowStockProducts / totalProducts) * 100)}
+                  percent={totalProducts > 0 ? Math.round((lowStockProducts / totalProducts) * 100) : 0}
                   showInfo={false}
                   strokeColor={lowStockProducts > 0 ? 'var(--color-warning)' : 'var(--color-success)'}
                 />
               </div>
 
               {lowStockProducts > 0 && (
-                <Link to="/admin/products?filter=low-stock">
+                <Link to="/admin/products?queue=low_stock">
                   <Button type="link" style={{ padding: 0 }}>
                     View low stock items &rarr;
                   </Button>

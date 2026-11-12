@@ -29,6 +29,11 @@ export interface User {
 
 // ==================== PRODUCTS ====================
 
+export type ProductReviewReason = 'no_photo' | 'no_brand' | 'no_category';
+
+/** Who a product can be shown to; set per product by admins. */
+export type ProductAudience = 'guests' | 'customers' | 'stylists';
+
 export interface Product {
   id: string | number;
   name: string;
@@ -40,19 +45,115 @@ export interface Product {
   translations?: Record<string, string>;
   images?: string[];
   image?: string | null;
+  media?: ProductMediaAsset[] | null;
+  collections?: ProductCollectionMembership[];
+  collectionAssignments?: ProductCollectionAssignment[];
   price?: string | number;
   compareAtPrice?: string | number | null;
   stylistPrice?: string | number;
+  /** Admin-only: real purchase cost; null means the estimated cost % is used. */
+  costPrice?: number | null;
   stylistOnly?: boolean;
+  /** Admin-only: audiences the product is shown to; [] = hidden from everyone but admins. */
+  visibleTo?: ProductAudience[];
+  /** Admin-only: the product lacks a real photo, brand or category and is hidden from everyone else. */
+  inReview?: boolean | null;
+  reviewReasons?: ProductReviewReason[] | null;
+  catalogGuidance?: {
+    audience: 'consumer' | 'professional';
+    professionalOnly: boolean;
+    consumerRoutineRole: 'cleanse' | 'tone' | 'nourish' | 'protect' | 'repair' | 'define' | 'smooth' | null;
+    compatibleWith: string[];
+    professionalGuidance: {
+      compatibleSystems: string[];
+      verificationStatus: 'compatible_system_only';
+      notes: string[];
+    } | null;
+  };
   inStock?: boolean;
   quantity?: number;
+  /** Colour lines: this product's shade and the other shades of its line (product page only). */
+  shadeCode?: string | null;
+  shadeName?: string | null;
+  swatch?: string | null;
+  shadeSortOrder?: number | null;
+  shadeFamilyId?: string | null;
+  shadeFamily?: { id: string; name: string; catalogue?: ShadeCatalogue | null } | null;
+  shades?: ProductShade[];
+  /** Shop cards only: this card stands for a colour line with this many shades. */
+  shadeCount?: number;
+  shadePreview?: string[];
   featured?: boolean;
   tags?: string[];
+  hairTypeIds?: number[];
+  hairConcernIds?: number[];
   sale?: any;
   metaTitle?: string;
   metaDescription?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** A colour line's brand catalogue (product page only): page images with clickable shade spots. */
+export interface ShadeCatalogue {
+  title: string;
+  pages: {
+    image: string;
+    width: number;
+    height: number;
+    /** Positions are fractions of the page; productId is null when the viewer cannot buy that shade. */
+    spots: { code: string; x: number; y: number; w: number; h: number; productId: string | null; name: string | null; inStock: boolean | null }[];
+  }[];
+}
+
+export interface ProductShade {
+  id: string;
+  name: string;
+  shadeCode: string | null;
+  shadeName: string | null;
+  swatch: string | null;
+  inStock: boolean;
+}
+
+export interface ProductMediaAsset {
+  url: string | null;
+  alt: string | null;
+  variant: 'legacy' | 'original' | 'card' | 'detail' | 'transparent_master';
+  background: 'unknown' | 'opaque' | 'transparent';
+  reviewStatus: 'legacy' | 'preserved' | 'ready' | 'needs_review';
+  sortOrder: number;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface ProductCollectionMembership {
+  slug: string;
+  name: string;
+  title: string;
+  mappingStatus: 'confirmed';
+}
+
+export interface ProductCollectionAssignment {
+  slug: string;
+  name: string;
+  mappingStatus: 'confirmed' | 'uncertain';
+  source?: string | null;
+  notes?: string | null;
+}
+
+export interface ProductCollection {
+  slug: string;
+  name: string;
+  title: string;
+  description?: string | null;
+  sortPriority: number;
+  routineRoles: string[];
+  supportedCategoryNames: string[];
+  productCount?: number;
+}
+
+export interface HairProfileOption {
+  id: number;
+  name: string;
 }
 
 export interface Category {
@@ -90,6 +191,7 @@ export interface CartItem {
 export interface ShippingAddress {
   fullName: string;
   phone: string;
+  email?: string;
   address: string;
   city: string;
   state: string;
@@ -134,6 +236,8 @@ export interface Order {
   discount: number;
   shipping: number;
   tax?: number;
+  /** Paid with the buyer's store credit; total is what is left to pay. */
+  storeCreditUsed?: number;
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
@@ -143,11 +247,15 @@ export interface Order {
   customMessage?: string;
   internalNotes?: string;
   couponCode?: string;
+  /** Admin order views only: the stylist whose referral code was used. */
+  referral?: { stylistId: string; stylistName: string; commission: number } | null;
   trackingNumber?: string;
   estimatedDelivery?: string;
   statusHistory?: OrderStatusHistory[];
   createdAt: string;
   updatedAt: string;
+  /** Admin: set when the order is in the Trash. */
+  deletedAt?: string | null;
 }
 
 // ==================== STYLIST REQUESTS ====================
@@ -335,6 +443,17 @@ export interface StylistApplicationFormData {
 
 // ==================== DASHBOARD STATS ====================
 
+export interface AdminTodoCounts {
+  inReview: number;
+  inReviewInStock: number;
+  missingPrice: number;
+  lowStock: number;
+  outOfStock: number;
+  pendingOrders: number;
+  pendingStylistRequests: number;
+  failedEmails: number;
+}
+
 export interface DashboardStats {
   totalRevenue: number;
   totalOrders: number;
@@ -342,6 +461,9 @@ export interface DashboardStats {
   totalProducts: number;
   pendingStylistRequests: number;
   lowStockProducts: number;
+  revenueThisMonth: number;
+  pendingOrders: number;
+  todo: AdminTodoCounts;
   recentOrders: Order[];
   ordersByStatus: Record<string, number>;
   revenueByMonth: { month: string; revenue: number }[];
@@ -381,8 +503,31 @@ export interface BundleProduct {
   id: string;
   name: string;
   price: number;
+  stylistPrice?: number;
   quantity: number;
   image: string | null;
+  isBonus?: boolean;
+  bonusQuantity?: number;
+}
+
+export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items';
+
+export interface StoreBundle {
+  id: string;
+  name: string;
+  description: string | null;
+  isDynamic: false;
+  discountPercentage: number | null;
+  promotionType: BundlePromotionType;
+  bundlePrice: number | null;
+  audience: 'all' | 'stylist';
+  isActive: boolean;
+  isFeatured: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  products: BundleProduct[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StaticBundle {
@@ -392,6 +537,8 @@ export interface StaticBundle {
   isDynamic: false;
   discountPercentage: number | null;
   products: BundleProduct[];
+  promotionType?: BundlePromotionType;
+  bundlePrice?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -428,6 +575,7 @@ export interface QuickOrderQueryParams {
   page?: number;
   perPage?: number;
   search?: string;
+  colorRestock?: boolean;
 }
 
 export interface QuickOrderResponse {

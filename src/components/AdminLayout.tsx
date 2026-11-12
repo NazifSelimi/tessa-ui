@@ -9,7 +9,8 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import PageOutlet from './PageOutlet';
 import { Layout, Menu, Typography, Button, Space, Avatar, Dropdown, Badge, Drawer } from 'antd';
 import {
   DashboardOutlined,
@@ -18,6 +19,8 @@ import {
   UserOutlined,
   ScissorOutlined,
   TagOutlined,
+  ShareAltOutlined,
+  GiftOutlined,
   TeamOutlined,
   ArrowLeftOutlined,
   MenuFoldOutlined,
@@ -25,8 +28,24 @@ import {
   LogoutOutlined,
   BellOutlined,
   CloseOutlined,
+  QrcodeOutlined,
+  PictureOutlined,
+  AuditOutlined,
+  ExperimentOutlined,
+  LayoutOutlined,
+  InstagramOutlined,
+  MailOutlined,
+  AppstoreOutlined,
+  IdcardOutlined,
+  ContactsOutlined,
+  FileExcelOutlined,
+  FilePdfOutlined,
+  BarChartOutlined,
+  WhatsAppOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
+import { useGetDashboardStatsQuery } from '@/features/admin/api';
+import { ADMIN_PATH_FEATURE, useFeatureStates } from '@/features/admin/platformApi';
 import Logo from './Logo';
 
 const { Sider, Content, Header } = Layout;
@@ -36,11 +55,27 @@ const { Title, Text } = Typography;
 const pageTitles: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/products': 'Products',
+  '/admin/import': 'Excel import',
   '/admin/orders': 'Orders',
   '/admin/users': 'Users',
-  '/admin/stylist-requests': 'Stylist Requests',
+  '/admin/stylist-requests': 'Business applications',
+  '/admin/stylist-invitations': 'Business invitations',
+  '/admin/customers': 'Customers',
+  '/admin/documents': 'PDF documents',
+  '/admin/reports': 'Sales reports',
   '/admin/coupons': 'Coupons',
+  '/admin/referrals': 'Referral codes',
   '/admin/distributors': 'Distributors',
+  '/admin/bundles': 'Offers & Bundles',
+  '/admin/content-blocks': 'Editable Sections',
+  '/admin/catalog-images': 'Image Review',
+  '/admin/catalogue-review': 'Supplier list (old)',
+  '/admin/hair-quiz': 'Hair Quiz',
+  '/admin/studio': 'Post Studio',
+  '/admin/emails': 'Emails',
+  '/admin/features': 'Features',
+  '/admin/business': 'Business profile',
+  '/admin/messages': 'Viber & WhatsApp',
 };
 
 export default function AdminLayout() {
@@ -48,14 +83,33 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-const pendingCount = 0;
+  // Same numbers as the dashboard to-do list; refreshed when orders or requests change.
+  const { data: stats } = useGetDashboardStatsQuery(undefined, { pollingInterval: 120_000 });
+  const pendingCount = stats?.pendingStylistRequests ?? 0;
+  const pendingOrders = stats?.pendingOrders ?? 0;
+  const failedEmails = stats?.todo?.failedEmails ?? 0;
+  const features = useFeatureStates();
 
-  // Sidebar menu items — memoized inside the component so it can react to
-  // dynamic values like pendingCount once wired to the API.
+  // Sidebar menu items, with live badges for work waiting.
   const menuItems = useMemo(() => [
     { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
     { key: '/admin/products', icon: <ShoppingOutlined />, label: <Link to="/admin/products">Products</Link> },
-    { key: '/admin/orders', icon: <FileTextOutlined />, label: <Link to="/admin/orders">Orders</Link> },
+    { key: '/admin/import', icon: <FileExcelOutlined />, label: <Link to="/admin/import">Excel import</Link> },
+    {
+      key: '/admin/orders',
+      icon: <FileTextOutlined />,
+      label: (
+        <Link to="/admin/orders">
+          <Space>
+            Orders
+            {pendingOrders > 0 && <Badge count={pendingOrders} size="small" />}
+          </Space>
+        </Link>
+      ),
+    },
+    { key: '/admin/customers', icon: <ContactsOutlined />, label: <Link to="/admin/customers">Customers</Link> },
+    { key: '/admin/documents', icon: <FilePdfOutlined />, label: <Link to="/admin/documents">PDF documents</Link> },
+    { key: '/admin/reports', icon: <BarChartOutlined />, label: <Link to="/admin/reports">Sales reports</Link> },
     { key: '/admin/users', icon: <UserOutlined />, label: <Link to="/admin/users">Users</Link> },
     {
       key: '/admin/stylist-requests',
@@ -63,15 +117,60 @@ const pendingCount = 0;
       label: (
         <Link to="/admin/stylist-requests">
           <Space>
-            Stylist Requests
+            Business applications
             {pendingCount > 0 && <Badge count={pendingCount} size="small" />}
           </Space>
         </Link>
       ),
     },
+    { key: '/admin/stylist-invitations', icon: <QrcodeOutlined />, label: <Link to="/admin/stylist-invitations">Business invitations</Link> },
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
+    { key: '/admin/referrals', icon: <ShareAltOutlined />, label: <Link to="/admin/referrals">Referral codes</Link> },
+    { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
+    {
+      key: '/admin/emails',
+      icon: <MailOutlined />,
+      label: (
+        <Link to="/admin/emails">
+          <Space>
+            Emails
+            {failedEmails > 0 && <Badge count={failedEmails} size="small" title={`${failedEmails} not sent`} />}
+          </Space>
+        </Link>
+      ),
+    },
+    { key: '/admin/studio', icon: <InstagramOutlined />, label: <Link to="/admin/studio">Post Studio</Link> },
+    { key: '/admin/messages', icon: <WhatsAppOutlined />, label: <Link to="/admin/messages">Viber & WhatsApp</Link> },
+    { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
+    { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
+    { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },
+    { key: '/admin/hair-quiz', icon: <ExperimentOutlined />, label: <Link to="/admin/hair-quiz">Hair Quiz</Link> },
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
-  ], [pendingCount]);
+    { key: '/admin/business', icon: <IdcardOutlined />, label: <Link to="/admin/business">Business profile</Link> },
+    { key: '/admin/features', icon: <AppstoreOutlined />, label: <Link to="/admin/features">Features</Link> },
+  ].filter((item) => !ADMIN_PATH_FEATURE[item.key] || features?.[ADMIN_PATH_FEATURE[item.key]]?.enabled !== false && features?.[ADMIN_PATH_FEATURE[item.key]]?.included !== false),
+  [pendingCount, pendingOrders, failedEmails, features]);
+
+  // The same links under short headings, so a long list is easy to scan.
+  const groupedMenuItems = useMemo(() => {
+    const sections: { label: string; keys: string[] }[] = [
+      { label: 'Daily work', keys: ['/admin', '/admin/orders', '/admin/products', '/admin/customers'] },
+      { label: 'Sales & documents', keys: ['/admin/reports', '/admin/documents', '/admin/import'] },
+      { label: 'Offers & codes', keys: ['/admin/bundles', '/admin/coupons', '/admin/referrals'] },
+      { label: 'Marketing', keys: ['/admin/studio', '/admin/emails', '/admin/messages'] },
+      { label: 'Accounts', keys: ['/admin/users', '/admin/stylist-requests', '/admin/stylist-invitations', '/admin/distributors'] },
+      { label: 'Shop content', keys: ['/admin/content-blocks', '/admin/catalog-images', '/admin/hair-quiz', '/admin/catalogue-review'] },
+      { label: 'Settings', keys: ['/admin/business', '/admin/features'] },
+    ];
+    const byKey = new Map(menuItems.map((item) => [item.key, item]));
+    const placed = new Set(sections.flatMap((section) => section.keys));
+    const groups = sections
+      .map((section) => ({ type: 'group' as const, key: `group-${section.label}`, label: section.label, children: section.keys.flatMap((key) => byKey.get(key) ?? []) }))
+      .filter((group) => group.children.length > 0);
+    // Anything new that has no section yet still shows up.
+    const rest = menuItems.filter((item) => !placed.has(item.key));
+    return rest.length ? [...groups, { type: 'group' as const, key: 'group-more', label: 'More', children: rest }] : groups;
+  }, [menuItems]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -120,7 +219,7 @@ const pendingCount = 0;
   ];
 
   // Sidebar content (shared between desktop and mobile)
-  const SidebarContent = () => (
+  const sidebarContent = (
     <>
       {/* Logo */}
       <div className="admin-sidebar__logo" style={{ 
@@ -140,12 +239,16 @@ const pendingCount = 0;
       <Menu
         mode="inline"
         selectedKeys={[location.pathname]}
-        items={menuItems}
+        items={groupedMenuItems}
         onClick={() => isMobile && setMobileMenuOpen(false)}
+        className="admin-sidebar__menu"
         style={{ 
           borderRight: 'none', 
-          padding: '12px 8px',
-          flex: 1,
+          padding: '4px 8px 12px',
+          flex: '1 1 0',
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       />
 
@@ -193,7 +296,7 @@ const pendingCount = 0;
             flexDirection: 'column',
           }}
         >
-          <SidebarContent />
+          {sidebarContent}
         </Sider>
       )}
 
@@ -211,7 +314,7 @@ const pendingCount = 0;
             header: { display: 'none' }
           }}
         >
-          <SidebarContent />
+          {sidebarContent}
         </Drawer>
       )}
 
@@ -239,12 +342,13 @@ const pendingCount = 0;
 
           {/* Right: Notifications & User */}
           <Space size={isMobile ? 'small' : 'middle'}>
-            <Badge count={pendingCount} size="small">
-              <Button 
-                type="text" 
+            <Badge count={pendingCount + pendingOrders} size="small">
+              <Button
+                type="text"
                 icon={<BellOutlined style={{ fontSize: 18 }} />}
-                onClick={() => navigate('/admin/stylist-requests')}
-                aria-label="Notifications"
+                onClick={() => navigate('/admin')}
+                aria-label="Work waiting (dashboard to-do list)"
+                title="Work waiting: see the dashboard to-do list"
               />
             </Badge>
 
@@ -271,7 +375,7 @@ const pendingCount = 0;
 
         {/* Content */}
         <Content className="admin-content">
-          <Outlet />
+          <PageOutlet />
         </Content>
       </Layout>
     </Layout>

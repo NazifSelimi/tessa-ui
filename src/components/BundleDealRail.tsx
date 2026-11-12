@@ -1,0 +1,74 @@
+import { useTranslation } from 'react-i18next';
+import { CatalogState } from './storefront/DesignPrimitives';
+import { Button, Tag, Typography, message } from 'antd';
+import { GiftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { useGetBundlesQuery } from '@/features/products/api';
+import { useCart } from '@/hooks/useCart';
+import { useAuth } from '@/hooks/useAuth';
+import type { StoreBundle } from '@/types';
+import { useFeature } from '@/shared/hooks/useFeature';
+import { formatPrice } from '@/shared/utils/formatPrice';
+
+const { Text, Title } = Typography;
+
+function effectiveProductPrice(bundleProduct: StoreBundle['products'][number], isProfessional: boolean) {
+  return isProfessional ? bundleProduct.stylistPrice ?? bundleProduct.price : bundleProduct.price;
+}
+
+function bundlePrice(bundle: StoreBundle, isProfessional: boolean) {
+  const total = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
+  if (bundle.promotionType === 'fixed_price' && bundle.bundlePrice != null) return bundle.bundlePrice;
+  if (bundle.promotionType === 'percentage' && bundle.discountPercentage != null) return total * (1 - bundle.discountPercentage / 100);
+  if (bundle.promotionType === 'bonus_items') {
+    return total - bundle.products.reduce((sum, product) => (
+      sum + effectiveProductPrice(product, isProfessional) * (product.bonusQuantity ?? (product.isBonus ? product.quantity : 0))
+    ), 0);
+  }
+  return total;
+}
+
+export default function BundleDealRail({ showEmpty = false, bundleIds }: { showEmpty?: boolean; bundleIds?: string[] }) {
+  const { t } = useTranslation();
+  const { data: bundles = [], isLoading, error, refetch } = useGetBundlesQuery();
+  const { addItem, applyBundle } = useCart();
+  const { isProfessional } = useAuth();
+  const bundlesOn = useFeature('bundles');
+
+  const visibleBundles = bundleIds?.length ? bundles.filter((bundle) => bundleIds.includes(String(bundle.id))) : bundles;
+
+  if (!bundlesOn) return null;
+  if (showEmpty && (isLoading || error)) return <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />;
+  if (!visibleBundles.length) return showEmpty ? <p className="nl-no-offers">{t('newLook.noOffers')}</p> : null;
+
+  const addBundle = (bundle: StoreBundle) => {
+    bundle.products.forEach((product) => addItem({
+      id: product.id, name: product.name, price: product.price, stylistPrice: product.stylistPrice ?? product.price,
+      brand: null, category: null, description: '', image: product.image, quantity: product.quantity, inStock: true,
+    }, product.quantity));
+    applyBundle(bundle.id);
+    message.success(`${bundle.name} added to your cart`);
+  };
+
+  return (
+    <section className="bundle-deal-rail" aria-label="Current offers">
+      <div className="bundle-deal-rail__heading">
+        <div><Text className="bundle-deal-rail__eyebrow">CURATED VALUE</Text><Title level={3}>Better together</Title></div>
+        <Text type="secondary">Salon restocks, routines, and limited bundles.</Text>
+      </div>
+      <div className="bundle-deal-rail__scroller">
+        {visibleBundles.map((bundle) => {
+          const regular = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
+          const price = bundlePrice(bundle, isProfessional);
+          return <article className="bundle-deal-card" key={bundle.id}>
+            <div className="bundle-deal-card__top"><Tag>{bundle.audience === 'stylist' ? 'STYLIST OFFER' : 'LIMITED OFFER'}</Tag><GiftOutlined /></div>
+            <Title level={4}>{bundle.name}</Title>
+            <Text type="secondary" className="bundle-deal-card__copy">{bundle.description}</Text>
+            <div className="bundle-deal-card__items">{bundle.products.map((product) => <span key={product.id}>{product.quantity}x {product.name}{(product.bonusQuantity ?? 0) > 0 ? ` - ${product.bonusQuantity} free` : ''}</span>)}</div>
+            <div className="bundle-deal-card__price"><Text delete>{formatPrice(regular)}</Text><strong>{formatPrice(price)}</strong></div>
+            <Button type="primary" block icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>Add offer</Button>
+          </article>;
+        })}
+      </div>
+    </section>
+  );
+}

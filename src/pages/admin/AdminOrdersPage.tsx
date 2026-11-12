@@ -1,12 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Typography, Table, Tag, Select, Input, Space, Card, Button, Modal, App } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { useUrlState } from '@/shared/hooks/useUrlState';
+import { useNavigate } from 'react-router-dom';
+import { useFeature, useForceDeleteOrderMutation, useRestoreOrderMutation, useTrashOrderMutation } from '@/features/admin/platformApi';
+import { Typography, Table, Tag, Select, Input, Space, Card, Modal, App, Button, Segmented, Tooltip } from 'antd';
+import { SearchOutlined, DeleteOutlined, UndoOutlined, MailOutlined } from '@ant-design/icons';
 import type { Order, OrderStatus } from '@/types';
 import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import OrderDocumentButtons from '@/features/admin/OrderDocumentButtons';
+import MessageButtons from '@/features/messaging/MessageButtons';
+import { firstName, ORDER_STATUS_TEMPLATE } from '@/features/messaging/templates';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -27,11 +34,19 @@ const statusOptions: { value: string; label: string }[] = [
 ];
 
 export default function AdminOrdersPage() {
-  const { message } = App.useApp();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const { message, modal } = App.useApp();
+  const navigate = useNavigate();
+  const canDelete = useFeature('order_delete');
+  const emailsOn = useFeature('admin_emails');
+  const documentsOn = useFeature('pdf_documents');
+  const [view, setView] = useUrlState<'orders' | 'trash'>('view', 'orders', ['orders', 'trash']);
+  const [trashOrder] = useTrashOrderMutation();
+  const [restoreOrder] = useRestoreOrderMutation();
+  const [forceDeleteOrder] = useForceDeleteOrderMutation();
+  const [search, setSearch] = useUrlState('search', '');
+  const [statusFilter, setStatusFilter] = useUrlState('status', 'all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useUrlState('page', 1);
 
   const debouncedSearch = useDebounce(search, 300);
   const searchQuery = debouncedSearch && debouncedSearch.length >= 2 ? debouncedSearch : undefined;
@@ -41,6 +56,7 @@ export default function AdminOrdersPage() {
     per_page: 10,
     status: statusFilter === 'all' ? undefined : statusFilter,
     search: searchQuery,
+    trashed: view === 'trash' ? 'only' : undefined,
   });
 
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
@@ -57,6 +73,36 @@ export default function AdminOrdersPage() {
     } catch (error: any) {
       message.error(error?.data?.message || 'Failed to update status');
     }
+  };
+
+  const inTrash = view === 'trash';
+
+  const askTrash = (order: Order) => modal.confirm({
+    title: `Move order #${order.id} to the Trash?`,
+    content: 'It disappears from orders, revenue and referral credit. You can restore it from the Trash any time.',
+    okText: 'Move to Trash',
+    okButtonProps: { danger: true },
+    onOk: async () => {
+      await trashOrder(String(order.id)).unwrap();
+      setSelectedOrder(null);
+      message.success(`Order #${order.id} moved to the Trash`);
+    },
+  });
+
+  const askForceDelete = (order: Order) => modal.confirm({
+    title: `Delete order #${order.id} forever?`,
+    content: 'Its products, delivery details and note are erased. This cannot be undone.',
+    okText: 'Delete forever',
+    okButtonProps: { danger: true },
+    onOk: async () => {
+      await forceDeleteOrder(String(order.id)).unwrap();
+      message.success(`Order #${order.id} deleted forever`);
+    },
+  });
+
+  const restore = async (order: Order) => {
+    await restoreOrder(String(order.id)).unwrap();
+    message.success(`Order #${order.id} restored`);
   };
 
   const columns = [
@@ -81,13 +127,16 @@ export default function AdminOrdersPage() {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
-      render: (items: Order['items']) => `${items?.length ?? 0} item(s)`,
+      render: (items: Order['items']) => !items?.length ? '—' : <Space direction="vertical" size={0}>{items.slice(0, 3).map((item) => <Text key={item.productId} style={{ fontSize: 12 }}>{item.quantity}× {item.productName}<Text type="secondary">{(item.brandName || item.categoryName) ? ` · ${[item.brandName, item.categoryName].filter(Boolean).join(' · ')}` : ''}</Text></Text>)}{items.length > 3 && <Text type="secondary" style={{ fontSize: 12 }}>+{items.length - 3} more</Text>}</Space>,
     },
     {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
-      render: (total: number) => <Text strong>{formatPrice(total)}</Text>,
+      render: (total: number, order: Order) => <Space direction="vertical" size={0}>
+        <Text strong>{formatPrice(total)}</Text>
+        {order.couponCode && <Tag color={order.referral ? 'magenta' : 'green'} style={{ marginInlineEnd: 0 }}>{order.couponCode}</Tag>}
+      </Space>,
     },
     {
       title: 'Status',
@@ -116,18 +165,44 @@ export default function AdminOrdersPage() {
       title: 'Date',
       dataIndex: 'createdAt',
       key: 'date',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : '—',
+      render: (date: string) => date ? formatDate(date) : '—',
     },
+    ...(canDelete ? [{
+      title: '',
+      key: 'trash',
+      width: inTrash ? 230 : 56,
+      render: (_: unknown, record: Order) => (
+        <Space size={4} onClick={(event) => event.stopPropagation()}>
+          {inTrash ? (
+            <>
+              <Button size="small" icon={<UndoOutlined />} onClick={() => restore(record)}>Restore</Button>
+              <Button size="small" danger icon={<DeleteOutlined />} onClick={() => askForceDelete(record)}>Delete forever</Button>
+            </>
+          ) : (
+            <Tooltip title="Move to Trash">
+              <Button size="small" type="text" danger icon={<DeleteOutlined />} aria-label={`Move order ${record.id} to Trash`} onClick={() => askTrash(record)} />
+            </Tooltip>
+          )}
+        </Space>
+      ),
+    }] : []),
   ];
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Orders</Title>
-          <Text type="secondary">{pagination?.total ?? 0} total orders</Text>
+          <Text type="secondary">{pagination?.total ?? 0} {inTrash ? 'in the Trash' : 'total orders'}</Text>
         </div>
-        <Space>
+        <Space wrap>
+          {canDelete && (
+            <Segmented
+              value={view}
+              onChange={(value) => { setView(value as 'orders' | 'trash'); setCurrentPage(1); }}
+              options={[{ value: 'orders', label: 'Orders' }, { value: 'trash', label: <span><DeleteOutlined /> Trash</span> }]}
+            />
+          )}
           <Input
             placeholder="Search orders (min 2 chars)..."
             prefix={<SearchOutlined />}
@@ -192,9 +267,50 @@ export default function AdminOrdersPage() {
               <Text strong>Customer:</Text> {selectedOrder.shippingAddress?.fullName ?? '—'}
               <br />
               <Text strong>Phone:</Text> {selectedOrder.shippingAddress?.phone ?? '—'}
+              {selectedOrder.shippingAddress?.email && (
+                <>
+                  <br />
+                  <Text strong>Email:</Text> {selectedOrder.shippingAddress.email}
+                </>
+              )}
               <br />
               <Text strong>Address:</Text> {selectedOrder.shippingAddress?.address ?? ''}, {selectedOrder.shippingAddress?.city ?? ''} {selectedOrder.shippingAddress?.zipCode ?? ''}
+              {selectedOrder.couponCode && (
+                <>
+                  <br />
+                  <Text strong>Code used:</Text> <Tag color={selectedOrder.referral ? 'magenta' : 'green'}>{selectedOrder.couponCode}</Tag>
+                  {selectedOrder.referral && (
+                    <Text type="secondary">
+                      stylist referral · {selectedOrder.referral.stylistName || 'stylist'} earns {formatPrice(selectedOrder.referral.commission)} credit
+                      {selectedOrder.status === 'cancelled' ? ' (cancelled, not earned)' : selectedOrder.status === 'pending' ? ' once you confirm the order' : ''}
+                    </Text>
+                  )}
+                </>
+              )}
             </div>
+
+            <Space wrap style={{ marginBottom: 16 }}>
+              {emailsOn && selectedOrder.shippingAddress?.email && (
+                <Button icon={<MailOutlined />} onClick={() => navigate(`/admin/emails?tab=compose&to=${encodeURIComponent(selectedOrder.shippingAddress.email ?? '')}`)}>
+                  Write an email
+                </Button>
+              )}
+              {documentsOn && <OrderDocumentButtons orderId={selectedOrder.id} />}
+              {canDelete && !selectedOrder.deletedAt && (
+                <Button danger icon={<DeleteOutlined />} onClick={() => askTrash(selectedOrder)}>Move to Trash</Button>
+              )}
+            </Space>
+
+            {ORDER_STATUS_TEMPLATE[selectedOrder.status] && (
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ display: 'block', marginBottom: 6 }}>Message the customer about this status:</Text>
+                <MessageButtons
+                  phone={selectedOrder.shippingAddress?.phone}
+                  templateKey={ORDER_STATUS_TEMPLATE[selectedOrder.status]}
+                  vars={{ name: firstName(selectedOrder.shippingAddress?.fullName), order: selectedOrder.id, total: formatPrice(selectedOrder.total) }}
+                />
+              </div>
+            )}
 
             <Table
               dataSource={selectedOrder.items}
@@ -227,7 +343,17 @@ export default function AdminOrdersPage() {
               <br />
               {(selectedOrder.discount ?? 0) > 0 && (
                 <>
-                  <Text type="success">Discount: -{formatPrice(selectedOrder.discount ?? 0)}</Text>
+                  <Text type="success">
+                    Discount{selectedOrder.couponCode ? ` (${selectedOrder.couponCode})` : ''}: -{formatPrice(selectedOrder.discount ?? 0)}
+                  </Text>
+                  <br />
+                </>
+              )}
+              <Text>Shipping: {(selectedOrder.shipping ?? 0) > 0 ? formatPrice(selectedOrder.shipping) : 'Free'}</Text>
+              <br />
+              {(selectedOrder.storeCreditUsed ?? 0) > 0 && (
+                <>
+                  <Text type="success">Paid with store credit: -{formatPrice(selectedOrder.storeCreditUsed)}</Text>
                   <br />
                 </>
               )}

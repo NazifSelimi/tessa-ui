@@ -5,6 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import en from './locales/en.json';
 import mk from './locales/mk.json';
 import shq from './locales/shq.json';
+import { appLocaleFromUrl, urlLocaleFromPathname } from './routing';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'mk', label: 'MK', name: 'Македонски' },
@@ -18,10 +19,15 @@ export function isSupportedLocale(value: string): value is Locale {
   return SUPPORTED_LANGUAGES.some((language) => language.code === value);
 }
 
+const localeFromPath = typeof window !== 'undefined'
+  ? urlLocaleFromPathname(window.location.pathname)
+  : null;
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    ...(localeFromPath ? { lng: appLocaleFromUrl(localeFromPath) } : {}),
     resources: {
       en: { translation: en },
       mk: { translation: mk },

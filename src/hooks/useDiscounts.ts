@@ -7,13 +7,23 @@
 
 import { useState, useCallback } from 'react';
 import { useValidateCouponMutation } from '@/features/coupons/api';
+import { couponDiscount } from '@/shared/utils/checkoutPricing';
+import { extractErrorMessage } from '@/shared/utils/error';
 
 interface DiscountState {
   appliedCode: string | null;
   discountAmount: number;
   discountPercent: number;
+  couponValue: number;
   error: string | null;
+  /** A stylist's code a guest tried: it works once they sign in or register. */
+  loginRequiredCode: string | null;
   isValidating: boolean;
+}
+
+function requiresLogin(error: unknown): boolean {
+  const data = (error as { data?: { errors?: { requires_login?: boolean } | null } })?.data;
+  return data?.errors?.requires_login === true;
 }
 
 export function useDiscounts() {
@@ -21,7 +31,9 @@ export function useDiscounts() {
     appliedCode: null,
     discountAmount: 0,
     discountPercent: 0,
+    couponValue: 0,
     error: null,
+    loginRequiredCode: null,
     isValidating: false,
   });
 
@@ -38,7 +50,7 @@ export function useDiscounts() {
       return false;
     }
 
-    setDiscountState(prev => ({ ...prev, isValidating: true, error: null }));
+    setDiscountState(prev => ({ ...prev, isValidating: true, error: null, loginRequiredCode: null }));
 
     try {
       const result = await validateCoupon({ code: trimmedCode, subtotal }).unwrap();
@@ -73,15 +85,20 @@ export function useDiscounts() {
         appliedCode: trimmedCode,
         discountAmount,
         discountPercent,
+        couponValue: Number(coupon?.value ?? 0),
         error: null,
+        loginRequiredCode: null,
         isValidating: false,
       });
 
       return true;
-    } catch {
+    } catch (error) {
+      // The server explains a refused code (e.g. a referral code on a salon account).
+      const status = (error as { status?: number })?.status;
       setDiscountState(prev => ({
         ...prev,
-        error: 'Failed to validate discount code. Please try again.',
+        error: status === 404 || status === 422 ? extractErrorMessage(error) : 'Failed to validate discount code. Please try again.',
+        loginRequiredCode: requiresLogin(error) ? trimmedCode : null,
         isValidating: false,
       }));
       return false;
@@ -93,7 +110,9 @@ export function useDiscounts() {
       appliedCode: null,
       discountAmount: 0,
       discountPercent: 0,
+      couponValue: 0,
       error: null,
+      loginRequiredCode: null,
       isValidating: false,
     });
   }, []);
@@ -102,16 +121,19 @@ export function useDiscounts() {
     setDiscountState(prev => ({
       ...prev,
       error: null,
+      loginRequiredCode: null,
     }));
   }, []);
 
   return {
     appliedCode: discountState.appliedCode,
+    getDiscountForSubtotal: (subtotal: number) => discountState.appliedCode ? couponDiscount(subtotal, discountState.couponValue, discountState.discountPercent > 0) : 0,
     applyCode,
     removeCode,
     discountAmount: discountState.discountAmount,
     discountPercent: discountState.discountPercent,
     error: discountState.error,
+    loginRequiredCode: discountState.loginRequiredCode,
     isValidating: discountState.isValidating,
     clearError,
   };

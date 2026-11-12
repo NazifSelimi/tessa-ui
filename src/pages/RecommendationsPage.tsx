@@ -31,7 +31,9 @@ import {
   GiftOutlined,
   StarOutlined,
 } from '@ant-design/icons';
+import { useMemo } from 'react';
 import { useCart } from '@/hooks/useCart';
+import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import type {
   RecommendationResult,
   RecommendedBundle,
@@ -40,6 +42,7 @@ import type {
   BundleProduct,
 } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { loadHairProfile } from '@/shared/utils/hairProfile';
 import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
@@ -129,6 +132,7 @@ function ProductRecommendationCard({ product }: { product: RecommendedProduct })
       >
         {product.inStock ? t('recommendations.addToCart') : t('product.outOfStock')}
       </Button>
+      <AdminProductShortcuts product={{ id: product.id, name: product.name }} />
     </Card>
   );
 }
@@ -258,8 +262,16 @@ export default function RecommendationsPage() {
     | { recommendations: RecommendationResult; survey: RecommendationPayload }
     | undefined;
 
-  /* If no data, redirect back to survey */
-  if (!state?.recommendations) {
+  /* Prefer freshly-navigated state; fall back to the persisted profile so a
+     refresh, back-button, or shared link still shows the last result. */
+  const data = useMemo(() => {
+    if (state?.recommendations) return state;
+    const stored = loadHairProfile();
+    return stored ? { recommendations: stored.recommendations, survey: stored.survey } : undefined;
+  }, [state]);
+
+  /* If no data at all, redirect back to survey */
+  if (!data?.recommendations) {
     return (
       <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
         <Empty description={t('recommendations.noRecommendationsYet')} />
@@ -275,7 +287,7 @@ export default function RecommendationsPage() {
     );
   }
 
-  const { recommendations } = state;
+  const { recommendations } = data;
   const { products, bundles } = recommendations;
   const hasProducts = products.length > 0;
   const hasBundles = bundles.length > 0;

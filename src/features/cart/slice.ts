@@ -14,12 +14,14 @@ import type { CartItem, Product } from '@/types';
 
 interface CartState {
   items: CartItem[];
+  bundleIds: string[];
   isDrawerOpen: boolean;
   isLoading: boolean;
 }
 
 const initialState: CartState = {
   items: [],
+  bundleIds: [],
   isDrawerOpen: false,
   isLoading: false,
 };
@@ -73,6 +75,15 @@ const cartSlice = createSlice({
       );
     },
 
+    /** Fill in the salon price of a cart line (added as a guest, who never receives salon prices). */
+    setRolePrice: (state, action: PayloadAction<{ productId: string | number; rolePrice: number; stylistPrice: number }>) => {
+      for (const item of state.items) {
+        if (String(item.productId) === String(action.payload.productId)) {
+          item.rolePrice = action.payload.rolePrice;
+          item.product = { ...item.product, stylistPrice: action.payload.stylistPrice };
+        }
+      }
+    },
     updateQuantity: (
       state,
       action: PayloadAction<{
@@ -103,6 +114,13 @@ const cartSlice = createSlice({
 
     clearCart: (state) => {
       state.items = [];
+      state.bundleIds = [];
+    },
+
+    applyBundle: (state, action: PayloadAction<{ bundleId: string }>) => {
+      if (!state.bundleIds.includes(action.payload.bundleId)) {
+        state.bundleIds.push(action.payload.bundleId);
+      }
     },
 
     setItems: (state, action: PayloadAction<CartItem[]>) => {
@@ -132,7 +150,9 @@ export const {
   addItem,
   removeItem,
   updateQuantity,
+  setRolePrice,
   clearCart,
+  applyBundle,
   setItems,
   openDrawer,
   closeDrawer,
@@ -142,6 +162,7 @@ export const {
 
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
+export const selectCartBundleIds = (state: { cart: CartState }) => state.cart.bundleIds;
 export const selectCartDrawerOpen = (state: { cart: CartState }) => state.cart.isDrawerOpen;
 export const selectCartLoading = (state: { cart: CartState }) => state.cart.isLoading;
 

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { isProfileComplete } from '@/features/auth/profile';
+import AuthPageHeader from '@/components/AuthPageHeader';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
@@ -119,7 +120,7 @@ export default function CompleteProfilePage() {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -127,6 +128,7 @@ export default function CompleteProfilePage() {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{
           width: '100%',

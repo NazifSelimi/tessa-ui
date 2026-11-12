@@ -10,11 +10,15 @@
  * </ErrorBoundary>
  */
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { isChunkLoadError } from '@/shared/utils/chunkReload';
+import { translate } from '@/shared/utils/translate';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  /** When this changes (e.g. the page address), a shown error is cleared. */
+  resetKey?: string;
 }
 
 interface State {
@@ -44,6 +48,12 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ error, errorInfo });
   }
 
+  componentDidUpdate(prevProps: Props): void {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.handleReset();
+    }
+  }
+
   handleReset = (): void => {
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
@@ -54,26 +64,47 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      // A page file from an older version of the site: only a reload helps.
+      const newVersion = isChunkLoadError(this.state.error);
+
       // Plain-HTML fallback — no antd dependency to keep initial bundle small
       return (
         <div style={{ padding: '50px 20px', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <h1 style={{ fontSize: 22, margin: '0 0 8px', color: '#1a1a2e' }}>Something went wrong</h1>
-          <p style={{ color: '#666', marginBottom: 24 }}>An unexpected error occurred. Please try refreshing the page.</p>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>{newVersion ? '🔄' : '⚠️'}</div>
+          <h1 style={{ fontSize: 22, margin: '0 0 8px', color: '#1a1a2e' }}>
+            {newVersion ? translate('errorScreen.newVersionTitle', 'A new version is available') : translate('errorScreen.title', 'Something went wrong')}
+          </h1>
+          <p style={{ color: '#666', marginBottom: 24 }}>
+            {newVersion
+              ? translate('errorScreen.newVersionText', 'The site was updated while this page was open. Reload to continue.')
+              : translate('errorScreen.text', 'An unexpected error occurred. Please try refreshing the page.')}
+          </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button
               onClick={() => window.location.reload()}
               style={{ padding: '8px 24px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}
             >
-              Reload Page
+              {translate('errorScreen.reload', 'Reload page')}
             </button>
-            <button
+            {!newVersion && <button
               onClick={this.handleReset}
               style={{ padding: '8px 24px', background: '#fff', color: '#1a1a2e', border: '1px solid #d9d9d9', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}
             >
-              Try Again
-            </button>
+              {translate('errorScreen.tryAgain', 'Try again')}
+            </button>}
           </div>
+          {!newVersion && this.state.error && (
+            <p style={{ marginTop: 16, color: '#999', fontSize: 12 }}>
+              Error: {String(this.state.error.message || this.state.error).slice(0, 200)}{' '}
+              <button
+                type="button"
+                onClick={() => { void navigator.clipboard?.writeText(`${this.state.error?.stack ?? this.state.error}\n${this.state.errorInfo?.componentStack ?? ''}`); }}
+                style={{ border: 0, background: 'none', color: '#1a1a2e', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
+              >
+                Copy details
+              </button>
+            </p>
+          )}
           {import.meta.env.DEV && this.state.error && (
             <details style={{ marginTop: 20, textAlign: 'left' }}>
               <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Error Details</summary>

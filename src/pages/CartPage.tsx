@@ -5,14 +5,14 @@
  * Mobile-responsive with card-based layout on small screens.
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Typography,
   Button,
   Card,
   Empty,
-  InputNumber,
+  Input,
   Space,
   Divider,
   Row,
@@ -27,17 +27,40 @@ import {
   ArrowLeftOutlined,
   SafetyCertificateOutlined,
   TruckOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import ShippingProgress from '@/components/ShippingProgress';
+import { shippingForSubtotal } from '@/shared/constants/shipping';
+import { useAuth } from '@/hooks/useAuth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useGetQuickOrderProductsQuery } from '@/features/quickorder/api';
+import { Check, Plus } from 'lucide-react';
+import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import QuantityStepper from '@/components/QuantityStepper';
 
 const { Title, Text, Paragraph } = Typography;
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { items, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
+  const { isStylist } = useAuth();
+  const { items, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
+  const [quickSearch, setQuickSearch] = useState('');
+  const [quickAdded, setQuickAdded] = useState<string | null>(null);
+  const debouncedQuickSearch = useDebounce(quickSearch.trim(), 250);
+  const { data: quickProducts, isFetching: isSearchingQuickProducts } = useGetQuickOrderProductsQuery(
+    { search: debouncedQuickSearch, perPage: 8 },
+    { skip: !isStylist || debouncedQuickSearch.length < 2 },
+  );
+
+  useEffect(() => {
+    if (!quickAdded) return;
+    const timer = window.setTimeout(() => setQuickAdded(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [quickAdded]);
 
   const handleQuantityChange = (productId: string | number, quantity: number | null) => {
     if (quantity && quantity > 0) {
@@ -75,7 +98,7 @@ const CartPage: React.FC = () => {
             </Space>
           }
         >
-          <Link to="/">
+          <Link to="/shop">
             <Button type="primary" size="large" icon={<ShoppingOutlined />}>
               {t('cart.startShopping')}
             </Button>
@@ -89,15 +112,30 @@ const CartPage: React.FC = () => {
     <div className="cart-page">
       {/* Header */}
       <div className="cart-page__header">
-        <Link to="/" className="back-link">
+        <Link to="/shop" className="back-link">
           <ArrowLeftOutlined />
           <span>{t('cart.continueShopping')}</span>
         </Link>
         <div className="cart-page__title-row">
-          <Title level={2} style={{ margin: 0 }}>{t('cart.shoppingCart')}</Title>
-          <Text type="secondary">{items.length} {items.length === 1 ? t('cart.item') : t('cart.items')}</Text>
+          <Title level={1} style={{ margin: 0, fontSize: 30 }}>{t('cart.shoppingCart')}</Title>
+          <Text type="secondary">{t('newLook.productCount', { count: itemCount })}</Text>
         </div>
       </div>
+
+      {isStylist && <Card size="small" title={t('cart.addMoreProducts')} style={{ marginBottom: 20 }} extra={<Link to="/stylist/quick-order">{t('cart.openQuickOrder')}</Link>}>
+        <Input prefix={<SearchOutlined />} allowClear value={quickSearch} onChange={(event) => setQuickSearch(event.target.value)} placeholder="Search products, colours, or brands…" />
+        {debouncedQuickSearch.length >= 2 && <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+          {isSearchingQuickProducts ? <Text type="secondary">{t('cart.searchingCatalogue')}</Text> : !quickProducts?.data.length ? <Text type="secondary">{t('cart.noMatches')}</Text> : quickProducts.data.map((product) => <div key={product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+            <Space><Image src={product.thumbnail || '/placeholder.svg'} preview={false} width={38} height={38} style={{ objectFit: 'contain' }} fallback="/placeholder.svg" /><span><Text strong>{product.name}</Text><br /><Text type="secondary">{formatPrice(product.stylistPrice)} · {product.stock} in stock</Text></span></Space>
+            <button className="nl-quick-add" disabled={product.stock < 1} aria-label={`${t('product.addToCart')}: ${product.name}`} onClick={() => {
+              const existingItem = items.find((item) => String(item.productId) === product.id);
+              if (existingItem) updateQuantity(product.id, existingItem.quantity + 1);
+              else addItem({ id: product.id, name: product.name, brand: null, category: null, description: '', price: product.price, stylistPrice: product.stylistPrice, image: product.thumbnail, inStock: product.stock > 0, quantity: product.stock });
+              setQuickAdded(product.id);
+            }}>{quickAdded === product.id ? <Check size={16} /> : <Plus size={16} />}{quickAdded === product.id ? t('newLook.added') : t('newLook.add')}</button>
+          </div>)}
+        </div>}
+      </Card>}
 
       <Row gutter={[24, 24]}>
         {/* Cart Items - Mobile Card Layout */}
@@ -108,7 +146,7 @@ const CartPage: React.FC = () => {
                 <React.Fragment key={`${item.productId}`}>
                   <div className="cart-item">
                     <Image
-                      src={item.product.images?.[0] || item.product.image || '/placeholder.svg'}
+                      src={storefrontImageUrl(item.product) || '/placeholder.svg'}
                       alt={item.product.name}
                       width={80}
                       height={80}
@@ -126,22 +164,19 @@ const CartPage: React.FC = () => {
                           <Text strong className="cart-item__name">{item.product.name}</Text>
                         </Link>
                         <Text type="secondary" className="cart-item__meta">
-                          {typeof item.product.brand === 'object' ? item.product.brand?.name : item.product.brand}
+                          {storefrontBrandName(item.product)}
                         </Text>
                         <Text className="cart-item__unit-price">
-                          {formatPrice(getItemPrice(item))} each
+                          {formatPrice(getItemPrice(item))} {t('cart.each')}
                         </Text>
                       </div>
                       
                       <div className="cart-item__actions">
-                        <InputNumber
-                          min={1}
-                          max={item.product.quantity || 1}
+                        <QuantityStepper
+                          max={item.product.quantity}
                           value={item.quantity}
                           onChange={(val) => handleQuantityChange(item.productId, val)}
-                          size="middle"
-                          style={{ width: 80 }}
-                          aria-label={`Quantity for ${item.product.name}`}
+                          name={item.product.name}
                         />
                         <Text strong className="cart-item__total">
                           {formatPrice(getItemTotal(item))}
@@ -157,7 +192,7 @@ const CartPage: React.FC = () => {
                             type="text"
                             danger
                             icon={<DeleteOutlined />}
-                            aria-label="Remove item"
+                            aria-label={t('cart.removeFromCart', { name: item.product.name })}
                             size="small"
                           />
                         </Popconfirm>
@@ -173,14 +208,14 @@ const CartPage: React.FC = () => {
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Popconfirm
-                title={t('cart.removeItem')}
-                description={t('cart.removeConfirm')}
+                title={t('cart.clearCart')}
+                description={t('cart.clearCartConfirm')}
                 onConfirm={handleClearCart}
                 okText={t('common.yes')}
                 cancelText={t('common.no')}
               >
                 <Button type="text" danger>
-                  {t('common.delete')}
+                  {t('cart.clearCart')}
                 </Button>
               </Popconfirm>
             </div>
@@ -189,25 +224,30 @@ const CartPage: React.FC = () => {
 
         {/* Order Summary */}
         <Col xs={24} lg={8}>
-          <Card className="order-summary" style={{ position: 'sticky', top: 24 }}>
+          <Card className="order-summary" style={{ position: 'sticky', top: 'calc(var(--header-height) + var(--spacing-lg))' }}>
             <Title level={5} style={{ marginBottom: 'var(--spacing-lg)' }}>{t('checkout.orderSummary')}</Title>
-            
+
+            {/* Free-shipping progress */}
+            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+              <ShippingProgress subtotal={totals.subtotal} />
+            </div>
+
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">
-                <Text type="secondary">{t('cart.subtotal')} ({totals.itemCount} {t('cart.items')})</Text>
+                <Text type="secondary">{t('cart.subtotal')} ({t('newLook.productCount', { count: totals.itemCount })})</Text>
                 <Text>{formatPrice(totals.subtotal)}</Text>
               </div>
 
               {totals.savings > 0 && (
                 <div className="price-row">
-                  <Text type="secondary">Savings</Text>
+                  <Text type="secondary">{t('cart.savings')}</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(totals.savings)}</Text>
                 </div>
               )}
 
               <div className="price-row">
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
-                <Text>{totals.subtotal >= 3000 ? t('checkout.free') : formatPrice(150)}</Text>
+                <Text>{shippingForSubtotal(totals.subtotal) === 0 ? t('checkout.free') : formatPrice(shippingForSubtotal(totals.subtotal))}</Text>
               </div>
 
               <Divider style={{ margin: 'var(--spacing-sm) 0' }} />
@@ -215,17 +255,9 @@ const CartPage: React.FC = () => {
               <div className="price-row">
                 <Text strong style={{ fontSize: 'var(--font-size-lg)' }}>{t('checkout.total')}</Text>
                 <Text strong style={{ fontSize: 'var(--font-size-xl)', color: 'var(--color-text-primary)' }}>
-                  {formatPrice(totals.subtotal + (totals.subtotal >= 3000 ? 0 : 150))}
+                  {formatPrice(totals.subtotal + shippingForSubtotal(totals.subtotal))}
                 </Text>
               </div>
-
-              {totals.subtotal < 3000 && (
-                <div className="shipping-notice">
-                  <Text style={{ color: '#d48806', fontSize: 'var(--font-size-sm)' }}>
-                    Add {formatPrice(3000 - totals.subtotal)} more for FREE shipping!
-                  </Text>
-                </div>
-              )}
 
               <Button
                 type="primary"
@@ -234,7 +266,7 @@ const CartPage: React.FC = () => {
                 onClick={handleCheckout}
                 style={{ marginTop: 'var(--spacing-sm)', height: 48 }}
               >
-                Proceed to Checkout
+                {t('cart.checkout')}
               </Button>
 
               {/* Trust Badges */}

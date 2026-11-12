@@ -20,6 +20,7 @@ import type {
   DashboardStats,
   PaginatedResponse
 } from '@/types';
+import type { StoreBundle } from '@/types';
 import type { ProductsQueryParams } from '@/features/products/api';
 
 // Query params for admin endpoints
@@ -31,6 +32,8 @@ interface AdminOrdersQueryParams {
   date_from?: string;
   date_to?: string;
   search?: string;
+  /** 'only' lists the Trash. */
+  trashed?: 'only';
 }
 
 interface AdminStylistRequestsQueryParams {
@@ -41,6 +44,7 @@ interface AdminStylistRequestsQueryParams {
 }
 
 interface AdminUsersQueryParams {
+  sort?: string;
   page?: number;
   per_page?: number;
   search?: string;
@@ -99,6 +103,93 @@ interface Coupon {
   updatedAt?: string;
 }
 
+export type PricingSettings = {
+  costPercentage: number;
+  minMarginPercentage: number;
+};
+
+export type OfferAudienceResult = {
+  available: boolean;
+  unpricedProducts: string[];
+  regularPrice: number;
+  offerPrice: number;
+  saving: number;
+  savingPercentage: number;
+  cost: number;
+  lowestAllowedPrice: number;
+  appliedSaving: number;
+  limitedByProfitFloor: boolean;
+  profitBefore: number;
+  profitAfter: number;
+  marginAfterPercentage: number | null;
+  salesNeededToMatch: number | null;
+};
+
+export type OfferSimulation = {
+  settings: PricingSettings;
+  retail: OfferAudienceResult;
+  salon: OfferAudienceResult;
+};
+
+type BundlePayload = {
+  name?: string;
+  description?: string;
+  audience?: 'all' | 'stylist';
+  promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items';
+  discount_percentage?: number;
+  bundle_price?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  starts_at?: string;
+  ends_at?: string;
+  products: Array<{ product_id: string | number; quantity: number; bonus_quantity?: number }>;
+};
+
+export type ContentBlockKind = 'hero' | 'grid' | 'rich_text' | 'cta' | 'bundle_rail';
+
+export type ContentBlockItem = {
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  actionLabel?: string;
+  actionUrl?: string;
+  bundleId?: string;
+};
+
+export type ContentBlock = {
+  id: string;
+  key: string;
+  page: string;
+  section: string;
+  kind: ContentBlockKind;
+  eyebrow?: string | null;
+  title?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+  actionLabel?: string | null;
+  actionUrl?: string | null;
+  items: ContentBlockItem[];
+  isPublished: boolean;
+  sortOrder: number;
+  updatedAt?: string | null;
+};
+
+export type ContentBlockPayload = {
+  key: string;
+  page: string;
+  section: string;
+  kind: ContentBlockKind;
+  eyebrow?: string | null;
+  title?: string | null;
+  body?: string | null;
+  image_url?: string | null;
+  action_label?: string | null;
+  action_url?: string | null;
+  items?: ContentBlockItem[];
+  is_published?: boolean;
+  sort_order?: number;
+};
+
 export const adminApi = baseApi.injectEndpoints({
   overrideExisting: false,
   endpoints: (builder) => ({
@@ -113,8 +204,20 @@ export const adminApi = baseApi.injectEndpoints({
           totalOrders: data.totalOrders ?? 0,
           totalUsers: data.totalUsers ?? 0,
           totalProducts: data.totalProducts ?? 0,
-          pendingStylistRequests: 0,
-          lowStockProducts: 0,
+          pendingStylistRequests: data.pendingStylistRequests ?? 0,
+          lowStockProducts: data.todo?.lowStock ?? 0,
+          revenueThisMonth: Number(data.revenueThisMonth ?? 0),
+          pendingOrders: data.pendingOrders ?? 0,
+          todo: {
+            inReview: data.todo?.inReview ?? 0,
+            inReviewInStock: data.todo?.inReviewInStock ?? 0,
+            missingPrice: data.todo?.missingPrice ?? 0,
+            lowStock: data.todo?.lowStock ?? 0,
+            outOfStock: data.todo?.outOfStock ?? 0,
+            pendingOrders: data.todo?.pendingOrders ?? 0,
+            pendingStylistRequests: data.todo?.pendingStylistRequests ?? 0,
+            failedEmails: data.todo?.failedEmails ?? 0,
+          },
           recentOrders: (data.recentOrders || []).map((o: any) => ({
             id: o.id,
             total: o.total,
@@ -288,7 +391,14 @@ export const adminApi = baseApi.injectEndpoints({
         };
       },
       transformResponse: (response: any) => response.data,
-      invalidatesTags: [API_TAGS.Products],
+      // The storefront product page caches by Product id, so refresh it too.
+      invalidatesTags: (_result, _error, { id }) => [API_TAGS.Products, { type: API_TAGS.Product, id }, { type: API_TAGS.Product, id: Number(id) }],
+    }),
+
+    getProductFamilies: builder.query<{ id: string; name: string; shadeCount: number }[], void>({
+      query: () => '/v1/admin/product-families',
+      transformResponse: (response: { data: { id: string; name: string; shadeCount: number }[] }) => response.data,
+      providesTags: [API_TAGS.Products],
     }),
 
     deleteProduct: builder.mutation<void, string>({
@@ -296,7 +406,7 @@ export const adminApi = baseApi.injectEndpoints({
         url: `/v1/admin/products/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [API_TAGS.Products],
+      invalidatesTags: (_result, _error, id) => [API_TAGS.Products, { type: API_TAGS.Product, id }, { type: API_TAGS.Product, id: Number(id) }],
     }),
 
     updateProductStock: builder.mutation<any, { id: string; quantity: number; operation: 'set' | 'add' | 'subtract' }>({
@@ -471,6 +581,78 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: any) => response.data,
       providesTags: [API_TAGS.DistributorCodes],
     }),
+
+    getAdminBundles: builder.query<StoreBundle[], void>({
+      query: () => '/v1/admin/bundles',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.Bundles],
+    }),
+
+    createBundle: builder.mutation<StoreBundle, BundlePayload>({
+      query: (body) => ({ url: '/v1/admin/bundles', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
+    updateBundle: builder.mutation<StoreBundle, { id: string; data: BundlePayload }>({
+      query: ({ id, data }) => ({ url: `/v1/admin/bundles/${id}`, method: 'PUT', body: data }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
+    deleteBundle: builder.mutation<void, string>({
+      query: (id) => ({ url: `/v1/admin/bundles/${id}`, method: 'DELETE' }),
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
+    // Profit of an offer while it is being edited; nothing is saved.
+    simulateBundle: builder.mutation<OfferSimulation, BundlePayload>({
+      query: (body) => ({ url: '/v1/admin/bundles/simulate', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+    }),
+
+    getPricingSettings: builder.query<PricingSettings, void>({
+      query: () => '/v1/admin/pricing-settings',
+      transformResponse: (response: any) => response.data,
+      providesTags: [API_TAGS.PricingSettings],
+    }),
+
+    updatePricingSettings: builder.mutation<PricingSettings, Partial<PricingSettings>>({
+      query: (body) => ({ url: '/v1/admin/pricing-settings', method: 'PUT', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.PricingSettings],
+    }),
+
+    // ==================== EDITABLE STOREFRONT CONTENT ====================
+
+    getContentBlocks: builder.query<ContentBlock[], void>({
+      query: () => '/v1/admin/content-blocks',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    getPublishedContentBlocks: builder.query<ContentBlock[], string | void>({
+      query: (page) => ({ url: '/v1/content-blocks', params: page ? { page } : {} }),
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    createContentBlock: builder.mutation<ContentBlock, ContentBlockPayload>({
+      query: (body) => ({ url: '/v1/admin/content-blocks', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    updateContentBlock: builder.mutation<ContentBlock, { id: string; data: ContentBlockPayload }>({
+      query: ({ id, data }) => ({ url: `/v1/admin/content-blocks/${id}`, method: 'PUT', body: data }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.ContentBlocks],
+    }),
+
+    deleteContentBlock: builder.mutation<void, string>({
+      query: (id) => ({ url: `/v1/admin/content-blocks/${id}`, method: 'DELETE' }),
+      invalidatesTags: [API_TAGS.ContentBlocks],
+    }),
   }),
 });
 
@@ -490,6 +672,7 @@ export const {
   useGetAllProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
+  useGetProductFamiliesQuery,
   useDeleteProductMutation,
   useUpdateProductStockMutation,
   useBulkUpdateProductsMutation,
@@ -507,4 +690,16 @@ export const {
   useDeleteBrandMutation,
   useGetDistributorCodesQuery,
   useGetDistributorCodeStatsQuery,
+  useGetAdminBundlesQuery,
+  useCreateBundleMutation,
+  useUpdateBundleMutation,
+  useDeleteBundleMutation,
+  useSimulateBundleMutation,
+  useGetPricingSettingsQuery,
+  useUpdatePricingSettingsMutation,
+  useGetContentBlocksQuery,
+  useGetPublishedContentBlocksQuery,
+  useCreateContentBlockMutation,
+  useUpdateContentBlockMutation,
+  useDeleteContentBlockMutation,
 } = adminApi;

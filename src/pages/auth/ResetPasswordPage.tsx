@@ -5,19 +5,19 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Typography, Form, Input, Button, Card, Result, message } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '@/features/auth/api';
 import Logo from '@/components/Logo';
+import AuthPageHeader from '@/components/AuthPageHeader';
 
 const { Paragraph } = Typography;
 
 const ResetPasswordPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [resetPassword] = useResetPasswordMutation();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -27,7 +27,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (!token || !email) {
     return (
-      <div style={{
+      <div className="auth-page" style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -35,17 +35,18 @@ const ResetPasswordPage: React.FC = () => {
         background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
         padding: '24px',
       }}>
+        <AuthPageHeader />
         <Card
           style={{ width: '100%', maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 12 }}
           styles={{ body: { padding: 32 } }}
         >
           <Result
             status="error"
-            title="Invalid Reset Link"
-            subTitle="This password reset link is invalid or has expired. Please request a new one."
+            title={t('auth.invalidResetLink')}
+            subTitle={t('auth.invalidResetLinkDescription')}
             extra={
               <Link to="/forgot-password">
-                <Button type="primary" size="large">Request New Link</Button>
+                <Button type="primary" size="large">{t('auth.requestNewLink')}</Button>
               </Link>
             }
           />
@@ -56,7 +57,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (success) {
     return (
-      <div style={{
+      <div className="auth-page" style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -64,14 +65,15 @@ const ResetPasswordPage: React.FC = () => {
         background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
         padding: '24px',
       }}>
+        <AuthPageHeader />
         <Card
           style={{ width: '100%', maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 12 }}
           styles={{ body: { padding: 32 } }}
         >
           <Result
             status="success"
-            title="Password Reset Successfully"
-            subTitle="Your password has been updated. You can now sign in with your new password."
+            title={t('auth.passwordResetSuccess')}
+            subTitle={t('auth.passwordResetSuccessDescription')}
             extra={
               <Link to="/login">
                 <Button type="primary" size="large">{t('auth.backToLogin')}</Button>
@@ -94,15 +96,14 @@ const ResetPasswordPage: React.FC = () => {
       }).unwrap();
       setSuccess(true);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Failed to reset password. The link may have expired.';
-      message.error(msg);
+      message.error(error instanceof Error ? error.message : t('auth.invalidResetLinkDescription'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -110,6 +111,7 @@ const ResetPasswordPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{ width: '100%', maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 12 }}
         styles={{ body: { padding: 32 } }}
@@ -119,7 +121,7 @@ const ResetPasswordPage: React.FC = () => {
             <Logo variant="dark" height={36} />
           </Link>
           <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-            Choose a new password for your account
+            {t('auth.setNewPasswordDescription')}
           </Paragraph>
         </div>
 

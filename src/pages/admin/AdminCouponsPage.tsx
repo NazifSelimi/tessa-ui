@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import { 
   Typography, Table, Tag, Input, Space, Card, Button, Modal, Form, 
   InputNumber, Select, DatePicker, Popconfirm, App
@@ -17,6 +18,7 @@ import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import dayjs from 'dayjs';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -39,9 +41,9 @@ const statusColors: Record<string, string> = {
 
 export default function AdminCouponsPage() {
   const { message } = App.useApp();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired'>('all');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useUrlState('search', '');
+  const [statusFilter, setStatusFilter] = useUrlState<'all' | 'active' | 'expired'>('status', 'all', ['all', 'active', 'expired']);
+  const [page, setPage] = useUrlState('page', 1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [form] = Form.useForm();
@@ -141,7 +143,7 @@ export default function AdminCouponsPage() {
       title: 'Expires',
       dataIndex: 'expirationDate',
       key: 'expirationDate',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'No expiry',
+      render: (date: string) => date ? formatDate(date) : 'No expiry',
     },
     {
       title: 'Status',
@@ -177,12 +179,12 @@ export default function AdminCouponsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Coupons</Title>
           <Text type="secondary">{data?.meta?.total || 0} coupons</Text>
         </div>
-        <Space>
+        <Space wrap>
           <Input
             placeholder="Search codes..."
             prefix={<SearchOutlined />}

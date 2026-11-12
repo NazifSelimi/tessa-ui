@@ -29,6 +29,8 @@ interface CreateOrderRequest {
   payment_method: PaymentMethod;
   custom_message?: string;
   coupon_code?: string;
+  bundle_ids?: string[];
+  use_store_credit?: boolean;
 }
 
 // Query params
@@ -36,6 +38,35 @@ interface OrdersQueryParams {
   page?: number;
   perPage?: number;
   status?: string;
+}
+
+export interface CartQuoteRequest {
+  items: Array<{ product_id: number; qty: number }>;
+  bundle_ids?: string[];
+  coupon_code?: string;
+  use_store_credit?: boolean;
+}
+
+/** The server's price for a cart: the same numbers checkout will charge. */
+export interface CartQuote {
+  subtotal: number;
+  bundleDiscount: number;
+  couponDiscount: number;
+  discount: number;
+  discountLimited: boolean;
+  appliedBundleIds: string[];
+  skippedBundles: Array<{ bundleId: string; reason: string }>;
+  couponCode: string | null;
+  couponError: string | null;
+  isReferralCode: boolean;
+  /** A stylist's code, refused only because the buyer is not signed in. */
+  couponRequiresLogin?: boolean;
+  shipping: number;
+  amountToFreeShipping: number;
+  total: number;
+  storeCreditAvailable: number;
+  storeCreditUsed: number;
+  totalToPay: number;
 }
 
 export const ordersApi = baseApi.injectEndpoints({
@@ -71,6 +102,15 @@ export const ordersApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: API_TAGS.Orders, id: 'LIST' }],
     }),
 
+    getCartQuote: builder.query<CartQuote, CartQuoteRequest>({
+      query: (body) => ({
+        url: '/v1/cart/quote',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: any) => response.data,
+    }),
+
     cancelOrder: builder.mutation<Order, string>({
       query: (id) => ({
         url: `/v1/orders/${id}/cancel`,
@@ -92,4 +132,5 @@ export const {
   useGetOrderQuery,
   useCreateOrderMutation,
   useCancelOrderMutation,
+  useGetCartQuoteQuery,
 } = ordersApi;

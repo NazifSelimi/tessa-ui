@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Form,
   Input,
@@ -27,20 +27,21 @@ import {
   HomeOutlined,
   PushpinOutlined,
   GoogleOutlined,
-  FacebookOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
+import AuthPageHeader from '@/components/AuthPageHeader';
 import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
   getCityForPostcode,
   getPostcodeForCity,
+  filterLocationOption,
 } from '@/shared/data/macedoniaLocations';
 
-const { Text, Paragraph } = Typography;
+const { Text, Title } = Typography;
 const { Option } = Select;
 
 interface RegisterFormValues {
@@ -63,6 +64,10 @@ const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Where a client goes after signing up, e.g. back to checkout to use a stylist's code.
+  const requested = new URLSearchParams(location.search).get('continue') || '/';
+  const clientTarget = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
   const handleSubmit = async (values: RegisterFormValues) => {
     if (!values.agreeToTerms) {
@@ -83,7 +88,7 @@ const RegisterPage: React.FC = () => {
         postcode: values.postcode,
       });
       message.success(t('auth.accountCreated'));
-      navigate(values.accountType === 'stylist' ? '/stylist/request' : '/login');
+      navigate(values.accountType === 'stylist' ? '/stylist/request' : clientTarget);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t('auth.registrationFailed');
       message.error(errorMessage);
@@ -94,7 +99,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSocialRegister = (provider: SocialProvider) => {
     const accountType = form.getFieldValue('accountType') as RegisterFormValues['accountType'] | undefined;
-    const target = accountType === 'stylist' ? '/stylist/request' : '/';
+    const target = accountType === 'stylist' ? '/stylist/request' : clientTarget;
 
     startSocialAuth(provider, {
       intent: 'register',
@@ -103,12 +108,8 @@ const RegisterPage: React.FC = () => {
     });
   };
 
-  const handleFacebookComingSoon = () => {
-    message.info(t('auth.facebookSoon'));
-  };
-
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -116,6 +117,7 @@ const RegisterPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{
           width: '100%',
@@ -130,9 +132,9 @@ const RegisterPage: React.FC = () => {
           <Link to="/" style={{ display: 'inline-block' }}>
             <Logo variant="dark" height={36} />
           </Link>
-          <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
+          <Title level={1} type="secondary" style={{ marginTop: 8, marginBottom: 0, fontSize: 14, fontWeight: 400, lineHeight: 1.5715 }}>
             {t('auth.createYourAccount')}
-          </Paragraph>
+          </Title>
         </div>
 
         {/* Registration Form */}
@@ -144,7 +146,7 @@ const RegisterPage: React.FC = () => {
           initialValues={{ accountType: 'customer' }}
         >
           {/* Name Fields */}
-          <Space style={{ width: '100%', display: 'flex' }} size={12}>
+          <Space className="register-form__row" style={{ width: '100%', display: 'flex' }} size={12}>
             <Form.Item
               name="firstName"
               label={t('auth.firstName')}
@@ -196,7 +198,7 @@ const RegisterPage: React.FC = () => {
           >
             <Input
               prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="+1 (555) 000-0000"
+              placeholder="+389 7X XXX XXX"
               size="large"
               autoComplete="tel"
             />
@@ -209,13 +211,13 @@ const RegisterPage: React.FC = () => {
           >
             <Input
               prefix={<HomeOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="Street and number"
+              placeholder={t('auth.streetPlaceholder')}
               size="large"
               autoComplete="street-address"
             />
           </Form.Item>
 
-          <Space style={{ width: '100%', display: 'flex' }} size={12}>
+          <Space className="register-form__row" style={{ width: '100%', display: 'flex' }} size={12}>
             <Form.Item
               name="city"
               label={t('checkout.municipality')}
@@ -227,7 +229,7 @@ const RegisterPage: React.FC = () => {
                 showSearch
                 options={MACEDONIA_CITY_OPTIONS}
                 placeholder={t('account.selectMunicipality')}
-                optionFilterProp="label"
+                filterOption={filterLocationOption}
                 suffixIcon={<PushpinOutlined />}
                 onChange={(city) => {
                   const postcode = getPostcodeForCity(city);
@@ -249,7 +251,7 @@ const RegisterPage: React.FC = () => {
                 showSearch
                 options={MACEDONIA_POSTCODE_OPTIONS}
                 placeholder={t('account.selectPostcode')}
-                optionFilterProp="label"
+                filterOption={filterLocationOption}
                 onChange={(postcode) => {
                   const city = getCityForPostcode(postcode);
                   if (city) {
@@ -364,22 +366,14 @@ const RegisterPage: React.FC = () => {
           >
             {t('auth.continueWithGoogle')}
           </Button>
-          <Button
-            size="large"
-            block
-            icon={<FacebookOutlined />}
-            onClick={handleFacebookComingSoon}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {t('auth.continueWithFacebook')}
-          </Button>
+          {/* Facebook sign-in returns once a Facebook app is set up (the API already supports it). */}
         </Space>
 
         {/* Login Link */}
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <Text type="secondary">
             {t('auth.haveAccount')}{' '}
-            <Link to="/login" style={{ fontWeight: 500 }}>
+            <Link to={clientTarget === '/' ? '/login' : `/login?continue=${encodeURIComponent(clientTarget)}`} style={{ fontWeight: 500 }}>
               {t('auth.signIn')}
             </Link>
           </Text>

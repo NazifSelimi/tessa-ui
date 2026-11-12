@@ -10,24 +10,34 @@
  * - Related products
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  Row, Col, Typography, Button, InputNumber, Space, 
+  Row, Col, Typography, Button, Space, 
   Tag, Spin, message, Breadcrumb, Divider, Collapse,
   Alert,
 } from 'antd';
 import { 
-  ShoppingCartOutlined, HeartOutlined, ArrowLeftOutlined,
+  ShoppingCartOutlined, ArrowLeftOutlined,
   CheckCircleOutlined, TruckOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import PriceDisplay from '@/components/PriceDisplay';
 import ProductCard from '@/components/ProductCard';
+import ShadePicker from '@/components/ShadePicker';
+import CatalogueBook from '@/components/CatalogueBook';
+import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
+import VisibilityBadge from '@/components/storefront/VisibilityBadge';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
 import { useTranslation } from 'react-i18next';
 import { useGetProductByIdQuery, useGetRelatedProductsQuery } from '@/features/products/api';
+import Seo from '@/shared/components/Seo';
+import { site } from '@/shared/config/site';
+import { localizedPath, urlLocaleFromApp } from '@/i18n/routing';
+import type { ProductMediaAsset } from '@/types';
+import { isPendingPlaceholderUrl, storefrontBrandName, storefrontCategoryName, storefrontPhotos } from '@/shared/utils/storefrontCatalog';
+import QuantityStepper from '@/components/QuantityStepper';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -35,13 +45,24 @@ export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
-  const { data: product, isLoading: loading } = useGetProductByIdQuery(id!, { skip: !id });
+  const { data, currentData, isLoading: loading, isFetching } = useGetProductByIdQuery(id!, { skip: !id });
+  // While switching shade, `data` is still the previous product: keep the page in place but dim it until the new one arrives.
+  const product = currentData ?? data;
+  const switching = !currentData && isFetching && Boolean(data);
   const { data: relatedProducts = [] } = useGetRelatedProductsQuery(product?.id as number | string, { skip: !product?.id });
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
   const localizedDescription = useLocalizedDescription(product ?? null);
+
+  // Switching shade keeps this page mounted; start the new product fresh.
+  useEffect(() => {
+    setSelectedImage(0);
+    setQuantity(1);
+    setIsZoomed(false);
+  }, [id]);
 
   // Handle add to cart
   const handleAddToCart = () => {
@@ -50,7 +71,7 @@ export default function ProductPage() {
     message.success({
       content: (
         <span>
-          Added <strong>{product.name}</strong> to cart
+          <strong>{product.name}</strong> {t('product.addedToCart')}
         </span>
       ),
       icon: <CheckCircleOutlined style={{ color: 'var(--color-success)' }} />,
@@ -70,11 +91,17 @@ export default function ProductPage() {
   if (!product) {
     return (
       <div className="empty-state">
+        <Seo
+          title={t('product.notFound')}
+          description={t('product.notFoundDescription')}
+          path={`/product/${id ?? ''}`}
+          noIndex
+        />
         <Title level={4}>{t('product.notFound')}</Title>
         <Text type="secondary" className="empty-state__description">
           {t('product.notFoundDescription')}
         </Text>
-        <Button type="primary" onClick={() => navigate('/')}>
+        <Button type="primary" onClick={() => navigate('/shop')}>
           {t('product.backToShop')}
         </Button>
       </div>
@@ -86,11 +113,67 @@ export default function ProductPage() {
 
   // Resolve the product image URL
   const NO_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="100%" height="100%" fill="%23f5f5f5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="sans-serif" font-size="18">No image</text></svg>';
-  const productImages = product.images?.length ? product.images : (product.image ? [product.image] : []);
-  const mainImage = productImages[selectedImage] ?? productImages[0] ?? NO_IMAGE;
+  const photos = storefrontPhotos(product.media);
+  const legacyMedia = (product.images?.length ? product.images : (product.image ? [product.image] : []))
+    .filter((url) => Boolean(url) && !isPendingPlaceholderUrl(url))
+    .map((url) => ({ url, alt: product.name, variant: 'legacy' } as Pick<ProductMediaAsset, 'url' | 'alt' | 'variant'>));
+  const productImages = photos.length ? photos : legacyMedia;
+  const selectedAsset = productImages[selectedImage] ?? productImages[0];
+  const mainImage = selectedAsset?.url ?? NO_IMAGE;
+  const brandName = storefrontBrandName(product);
+  const categoryName = storefrontCategoryName(product);
+  const description = (localizedDescription || `${product.name}${categoryName ? ` ${categoryName}` : ''}${brandName ? ` from ${brandName}` : ''}`)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 180);
+  const productPrice = Number(product.sale?.price ?? product.price ?? 0);
+  const canonicalPath = `/product/${product.id}`;
+  const productUrl = new URL(
+    localizedPath(canonicalPath, urlLocaleFromApp(i18n.resolvedLanguage ?? i18n.language)),
+    `${site.url}/`,
+  ).toString();
 
   return (
     <div>
+      <Seo
+        title={`${product.name}${brandName ? ` – ${brandName}` : ''}`}
+        description={description}
+        path={canonicalPath}
+        image={productImages[0]?.url}
+        type="product"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            description,
+            ...(productImages.length > 0 ? { image: productImages.map((asset) => asset.url).filter(Boolean) } : {}),
+            ...(brandName ? { brand: { '@type': 'Brand', name: brandName } } : {}),
+            ...(categoryName ? { category: categoryName } : {}),
+            sku: String(product.id),
+            offers: {
+              '@type': 'Offer',
+              url: productUrl,
+              priceCurrency: 'MKD',
+              price: productPrice.toFixed(2),
+              availability: inStock
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+              itemCondition: 'https://schema.org/NewCondition',
+              seller: { '@type': 'Organization', name: site.legalName ?? site.name },
+            },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: t('nav.shop'), item: `${site.url}/shop` },
+              ...(brandName ? [{ '@type': 'ListItem', position: 2, name: brandName }] : []),
+              { '@type': 'ListItem', position: brandName ? 3 : 2, name: product.name, item: productUrl },
+            ],
+          },
+        ]}
+      />
       {/* Back Button */}
       <Button
         type="text"
@@ -105,27 +188,35 @@ export default function ProductPage() {
       <Breadcrumb 
         style={{ marginBottom: 'var(--spacing-xl)' }}
         items={[
-          { title: <Link to="/">{t('nav.shop')}</Link> },
-          { title: typeof product.brand === 'object' ? product.brand?.name : product.brand },
+          { title: <Link to="/shop">{t('nav.shop')}</Link> },
+          ...(brandName ? [{ title: brandName }] : []),
           { title: product.name },
         ]}
       />
+      <AdminProductShortcuts product={product} variant="page" onDeleted={() => navigate('/shop')} />
 
-      <div className="product-detail">
+      <div className={`product-detail${switching ? ' product-detail--switching' : ''}`} aria-busy={switching || undefined}>
+        {product.inReview && (
+          <p className="product-detail__review-note" role="status">{t('product.inReview')}</p>
+        )}
+        <VisibilityBadge product={product} className="product-detail__visibility-note" />
         {/* Product Images */}
         <div className="product-detail__gallery">
           {/* Main Image */}
-          <div className="product-detail__main-image">
+          <button className="product-detail__main-image" type="button" onClick={() => setIsZoomed(Boolean(selectedAsset))} aria-label={`Zoom ${product.name} image`}>
             <img
+              // A new element per photo: when switching shade the browser would otherwise keep showing the previous product's photo until the new one loads.
+              key={mainImage}
               src={mainImage}
-              alt={product.name}
+              alt={selectedAsset?.alt || product.name}
+              fetchPriority="high"
             />
-          </div>
+          </button>
           
           {/* Thumbnail Gallery */}
           {productImages.length > 1 && (
             <div className="product-detail__thumbnails">
-              {productImages.map((img, idx) => (
+              {productImages.map((asset, idx) => (
                 <div
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
@@ -136,8 +227,8 @@ export default function ProductPage() {
                   aria-label={`View image ${idx + 1}`}
                 >
                   <img
-                    src={img || NO_IMAGE}
-                    alt={`${product.name} ${idx + 1}`}
+                    src={asset.url || NO_IMAGE}
+                    alt={asset.alt || `${product.name} ${idx + 1}`}
                     loading="lazy"
                   />
                 </div>
@@ -149,22 +240,26 @@ export default function ProductPage() {
         {/* Product Info */}
         <div className="product-detail__info">
           {/* Brand */}
-          <Text className="product-detail__brand">
-            {typeof product.brand === 'object' ? product.brand?.name : product.brand}
-          </Text>
+          {brandName && <Text className="product-detail__brand">
+            {brandName}
+          </Text>}
           
           {/* Title */}
-          <Title level={2} className="product-detail__title">
+          <Title level={1} className="product-detail__title">
             {product.name}
           </Title>
           
           {/* Tags */}
           <Space style={{ marginBottom: 'var(--spacing-lg)' }}>
             {product.featured && <Tag color="gold">Featured</Tag>}
-            <Tag>{(typeof product.category === 'object' ? (product.category?.name ?? '') : (product.category ?? '')).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Tag>
+            {categoryName && <Tag>{categoryName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Tag>}
           </Space>
 
           <Divider style={{ margin: 'var(--spacing-lg) 0' }} />
+
+          {product.shades && product.shades.length > 1 && (
+            <ShadePicker currentId={product.id} shades={product.shades} />
+          )}
 
           {/* Price Display */}
           <div style={{ marginBottom: 'var(--spacing-xl)' }}>
@@ -186,14 +281,12 @@ export default function ProductPage() {
               <Text type="secondary" style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
                 {t('product.quantity')}
               </Text>
-              <InputNumber
-                min={1}
-                max={product.quantity || 1}
-                value={quantity}
-                onChange={(val) => setQuantity(val || 1)}
-                style={{ width: 100 }}
+              <QuantityStepper
                 size="large"
-                aria-label="Product quantity"
+                max={product.quantity}
+                value={quantity}
+                onChange={setQuantity}
+                name={product.name}
               />
             </div>
             <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flex: 1, minWidth: 0 }}>
@@ -207,19 +300,13 @@ export default function ProductPage() {
               >
                 {inStock ? t('product.addToCart') : t('product.outOfStock')}
               </Button>
-              <Button 
-                size="large" 
-                icon={<HeartOutlined />}
-                style={{ height: 48, flexShrink: 0 }}
-                aria-label="Add to wishlist"
-              />
             </div>
           </div>
 
           {/* Stock Warning */}
           {lowStock && (
             <Alert
-              message={`Only ${product.quantity} left in stock`}
+              message={t('product.lowStock', { count: product.quantity })}
               type="warning"
               showIcon
               style={{ marginBottom: 'var(--spacing-lg)' }}
@@ -239,6 +326,18 @@ export default function ProductPage() {
           </div>
 
           <Divider />
+
+          {product.catalogGuidance?.professionalOnly && (
+            <Alert
+              className="product-guidance"
+              type="info"
+              showIcon
+              message={t('product.professionalUse')}
+              description={product.catalogGuidance.compatibleWith.length > 0
+                ? `${t('product.compatibleWith')}: ${product.catalogGuidance.compatibleWith.join(', ')}`
+                : undefined}
+            />
+          )}
 
           {/* Description & Details */}
           <Collapse 
@@ -260,11 +359,11 @@ export default function ProductPage() {
                 children: (
                   <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 24px' }}>
                     <Text type="secondary">{t('product.brand')}</Text>
-                    <Text strong>{typeof product.brand === 'object' ? product.brand?.name : product.brand}</Text>
+                    <Text strong>{brandName || '—'}</Text>
                     <Text type="secondary">{t('product.category')}</Text>
-                    <Text strong>{typeof product.category === 'object' ? product.category?.name : product.category}</Text>
+                    <Text strong>{categoryName || '—'}</Text>
                     <Text type="secondary">{t('product.availability')}</Text>
-                    <Text strong style={{ color: inStock ? '#52c41a' : '#ff4d4f' }}>
+                    <Text strong style={{ color: inStock ? 'var(--color-success)' : 'var(--color-error)' }}>
                       {inStock ? t('product.inStock') : t('product.outOfStock')}
                     </Text>
                   </div>
@@ -275,9 +374,9 @@ export default function ProductPage() {
                 label: <Text strong style={{ fontSize: 16 }}>{t('product.shippingReturns')}</Text>,
                 children: (
                   <Space direction="vertical" size={8}>
-                    <Text><TruckOutlined style={{ marginRight: 8, color: '#1677ff' }} />{t('product.freeStandardShipping')}</Text>
-                    <Text><SafetyCertificateOutlined style={{ marginRight: 8, color: '#1677ff' }} />{t('product.expressShipping')}</Text>
-                    <Text><CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />{t('product.returnPolicy')}</Text>
+                    <Text><TruckOutlined style={{ marginRight: 8, color: 'var(--color-info)' }} />{t('product.freeStandardShipping')}</Text>
+                    <Text><SafetyCertificateOutlined style={{ marginRight: 8, color: 'var(--color-info)' }} />{t('product.expressShipping')}</Text>
+                    <Text><CheckCircleOutlined style={{ marginRight: 8, color: 'var(--color-success)' }} />{t('product.returnPolicy')}</Text>
                   </Space>
                 ),
               },
@@ -285,6 +384,16 @@ export default function ProductPage() {
           />
         </div>
       </div>
+      {product.shadeFamily?.catalogue && (
+        <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
+      )}
+
+      {isZoomed && selectedAsset && (
+        <div className="product-image-lightbox" role="dialog" aria-modal="true" aria-label={`${product.name} enlarged image`} onClick={() => setIsZoomed(false)}>
+          <button type="button" className="product-image-lightbox__close" onClick={() => setIsZoomed(false)} aria-label={t('product.closeImage')}>×</button>
+          <img src={selectedAsset.url || NO_IMAGE} alt={selectedAsset.alt || product.name} onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (

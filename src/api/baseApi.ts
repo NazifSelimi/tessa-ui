@@ -7,20 +7,24 @@
  *
  * Provides a configured base query with:
  * - Authentication token injection (Bearer token — NO cookies)
- * - 401 handling with logout + redirect
+ * - 401 handling: clear the session and tell the user (route guards redirect)
  * - 500-level error logging
  */
 
+import { createAction } from '@reduxjs/toolkit';
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '@/store/index';
-import { logout } from '@/features/auth/slice';
 import { logWarn, logError } from '@/shared/utils/logger';
 import i18n from '@/i18n';
+import { notification } from 'antd';
+
+// The auth slice's logout action, by type: importing the slice here would form an
+// import cycle (slice -> auth api -> baseApi) that breaks whichever module loads first.
+const logout = createAction('auth/logout');
 
 /**
- * Module-level flag to prevent multiple concurrent 401 responses from each
- * dispatching logout() and triggering window.location.replace('/login').
- * Resets after 3 s so a genuinely new session-expiry is still handled.
+ * Module-level flag so concurrent 401 responses produce one logout and one
+ * notice. Resets after 3 s so a genuinely new session-expiry is still handled.
  */
 let _isHandling401 = false;
 
@@ -82,9 +86,9 @@ export const baseQueryWithReauth: BaseQueryFn<
         });
         api.dispatch(logout());
 
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-          window.location.replace('/login');
-        }
+        // No hard redirect: public pages stay put as a guest, and ProtectedRoute
+        // sends protected pages to the locale-aware /login?continue=... route.
+        notification.info({ key: 'session-expired', message: i18n.t('auth.sessionExpired'), placement: 'topRight' });
 
         // Allow the flag to reset so a future (genuinely new) 401 is handled
         setTimeout(() => { _isHandling401 = false; }, 3000);
@@ -134,6 +138,15 @@ export const API_TAGS = {
   StylistDashboard: 'StylistDashboard',
   DistributorCodes: 'DistributorCodes',
   StylistOrders: 'StylistOrders',
+  Bundles: 'Bundles',
+  PricingSettings: 'PricingSettings',
+  ContentBlocks: 'ContentBlocks',
+  Referrals: 'Referrals',
+  Features: 'Features',
+  Business: 'Business',
+  Emails: 'Emails',
+  EmailSettings: 'EmailSettings',
+  AiTokens: 'AiTokens',
 } as const;
 
 export type ApiTag = typeof API_TAGS[keyof typeof API_TAGS];

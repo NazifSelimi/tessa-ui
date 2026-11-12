@@ -10,9 +10,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Typography, Form, Input, Button, Card, Result, message } from 'antd';
-import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { MailOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import AuthPageHeader from '@/components/AuthPageHeader';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -37,7 +38,7 @@ const ForgotPasswordPage: React.FC = () => {
 
   if (submitted) {
     return (
-      <div style={{
+      <div className="auth-page" style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -45,6 +46,7 @@ const ForgotPasswordPage: React.FC = () => {
         background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
         padding: '24px',
       }}>
+        <AuthPageHeader />
         <Card
           style={{
             width: '100%',
@@ -70,7 +72,7 @@ const ForgotPasswordPage: React.FC = () => {
   }
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -78,6 +80,7 @@ const ForgotPasswordPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{
           width: '100%',
@@ -87,11 +90,6 @@ const ForgotPasswordPage: React.FC = () => {
         }}
         styles={{ body: { padding: 32 } }}
       >
-        <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-          <ArrowLeftOutlined />
-          <Text>{t('auth.backToLogin')}</Text>
-        </Link>
-
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Title level={3} style={{ margin: 0, color: '#1a1a2e' }}>{t('auth.resetPassword')}</Title>
           <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>

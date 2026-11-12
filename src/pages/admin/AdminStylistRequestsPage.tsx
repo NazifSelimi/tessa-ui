@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useUrlState } from '@/shared/hooks/useUrlState';
 import {
   Typography, Table, Tag, Select, Input, Space, Card, Button, Modal,
   Descriptions, App,
@@ -14,8 +15,11 @@ import {
   useGetStylistRequestsQuery,
   useApproveStylistRequestMutation,
   useRejectStylistRequestMutation,
+  useGetDashboardStatsQuery,
 } from '@/features/admin/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import SendMessageButtons from '@/features/admin/SendMessageButtons';
+import { formatDate, formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -28,10 +32,10 @@ const statusOptions = [
 
 export default function AdminStylistRequestsPage() {
   const { message, modal } = App.useApp();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useUrlState('search', '');
+  const [statusFilter, setStatusFilter] = useUrlState('status', 'all');
   const [selectedRequest, setSelectedRequest] = useState<StylistRequest | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useUrlState('page', 1);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -98,7 +102,9 @@ export default function AdminStylistRequestsPage() {
     }
   };
 
-  const pendingCount = requests.filter((r) => getStatus(r) === 'pending').length;
+  // Count across every page, not only the requests shown on this one.
+  const { data: stats } = useGetDashboardStatsQuery();
+  const pendingCount = stats?.pendingStylistRequests ?? requests.filter((r) => getStatus(r) === 'pending').length;
 
   const columns = [
     {
@@ -148,7 +154,7 @@ export default function AdminStylistRequestsPage() {
       title: 'Submitted',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : '-',
+      render: (date: string) => date ? formatDate(date) : '-',
     },
     {
       title: 'Actions',
@@ -182,6 +188,14 @@ export default function AdminStylistRequestsPage() {
                 </Button>
               </>
             )}
+            {status !== 'pending' && (
+              <SendMessageButtons
+                phone={record.saloonPhone}
+                template={status === 'approved'
+                  ? { kind: 'stylistApproved', name: record.userName }
+                  : { kind: 'stylistRejected', name: record.userName, reason: record.rejectionReason }}
+              />
+            )}
           </Space>
         );
       },
@@ -190,7 +204,7 @@ export default function AdminStylistRequestsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0 }}>Stylist Requests</Title>
           <Text type="secondary">
@@ -198,7 +212,7 @@ export default function AdminStylistRequestsPage() {
             {pendingCount > 0 && <Tag color="orange" style={{ marginLeft: 8 }}>{pendingCount} pending</Tag>}
           </Text>
         </div>
-        <Space>
+        <Space wrap>
           <Input
             placeholder="Search (min 2 chars)..."
             prefix={<SearchOutlined />}
@@ -318,7 +332,7 @@ export default function AdminStylistRequestsPage() {
               <Descriptions.Item label="Rejection Reason">{selectedRequest.rejectionReason}</Descriptions.Item>
             )}
             <Descriptions.Item label="Submitted">
-              {selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString() : '-'}
+              {selectedRequest.createdAt ? formatDateTime(selectedRequest.createdAt) : '-'}
             </Descriptions.Item>
           </Descriptions>
         )}

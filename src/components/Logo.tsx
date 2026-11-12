@@ -1,3 +1,4 @@
+import { site } from '@/shared/config/site';
 interface LogoProps {
   variant?: 'dark' | 'light' | 'underline';
   height?: number;
@@ -6,7 +7,7 @@ interface LogoProps {
 
 export default function Logo({ variant = 'dark', height = 40, className = '' }: LogoProps) {
   // SVG logo for dark backgrounds (white)
-  const WhiteLogo = () => (
+  const whiteLogo = (
     <svg width="268" height="102" viewBox="0 0 268 102" fill="none" style={{ height: `${height}px`, width: 'auto' }}>
       <g transform="translate(0,102) scale(0.1,-0.1)" fill="#FFFFFF" stroke="none">
         <path d="M1139 963 c-88 -45 -119 -116 -86 -196 8 -18 53 -81 102 -142 157 -197 211 -298 201 -373 -8 -58 -49 -128 -89 -152 -42 -26 -105 -34 -163 -22 -27 6 -51 9 -53 6 -2 -2 18 -14 45 -26 72 -33 172 -31 240 4 96 50 144 128 144 233 0 51 -6 75 -35 131 -34 69 -53 94 -197 263 -88 104 -111 156 -87 200 8 14 27 32 43 39 40 20 111 -8 138 -54 11 -19 26 -34 34 -34 8 0 14 -8 14 -17 0 -10 3 -28 6 -40 5 -18 1 -25 -20 -33 -17 -6 -26 -17 -26 -32 0 -13 -3 -33 -6 -45 -10 -36 13 -27 45 18 55 76 60 182 9 236 -61 67 -168 81 -259 36z"/>
@@ -21,7 +22,7 @@ export default function Logo({ variant = 'dark', height = 40, className = '' }: 
   );
 
   // SVG logo for light backgrounds (black)
-  const DarkLogo = () => (
+  const darkLogo = (
     <svg width="268" height="102" viewBox="0 0 268 102" fill="none" style={{ height: `${height}px`, width: 'auto' }}>
       <g transform="translate(0,102) scale(0.1,-0.1)" fill="#000000" stroke="none">
         <path d="M1139 963 c-88 -45 -119 -116 -86 -196 8 -18 53 -81 102 -142 157 -197 211 -298 201 -373 -8 -58 -49 -128 -89 -152 -42 -26 -105 -34 -163 -22 -27 6 -51 9 -53 6 -2 -2 18 -14 45 -26 72 -33 172 -31 240 4 96 50 144 128 144 233 0 51 -6 75 -35 131 -34 69 -53 94 -197 263 -88 104 -111 156 -87 200 8 14 27 32 43 39 40 20 111 -8 138 -54 11 -19 26 -34 34 -34 8 0 14 -8 14 -17 0 -10 3 -28 6 -40 5 -18 1 -25 -20 -33 -17 -6 -26 -17 -26 -32 0 -13 -3 -33 -6 -45 -10 -36 13 -27 45 18 55 76 60 182 9 236 -61 67 -168 81 -259 36z"/>
@@ -36,7 +37,7 @@ export default function Logo({ variant = 'dark', height = 40, className = '' }: 
   );
 
   // SVG logo with underline (black)
-  const UnderlineLogo = () => (
+  const underlineLogo = (
     <svg width="268" height="102" viewBox="0 0 268 102" fill="none" style={{ height: `${height}px`, width: 'auto' }}>
       <g transform="translate(0,102) scale(0.1,-0.1)" fill="#000000" stroke="none">
         <path d="M1139 963 c-88 -45 -119 -116 -86 -196 8 -18 53 -81 102 -142 157 -197 211 -298 201 -373 -8 -58 -49 -128 -89 -152 -42 -26 -105 -34 -163 -22 -27 6 -51 9 -53 6 -2 -2 18 -14 45 -26 72 -33 172 -31 240 4 96 50 144 128 144 233 0 51 -6 75 -35 131 -34 69 -53 94 -197 263 -88 104 -111 156 -87 200 8 14 27 32 43 39 40 20 111 -8 138 -54 11 -19 26 -34 34 -34 8 0 14 -8 14 -17 0 -10 3 -28 6 -40 5 -18 1 -25 -20 -33 -17 -6 -26 -17 -26 -32 0 -13 -3 -33 -6 -45 -10 -36 13 -27 45 18 55 76 60 182 9 236 -61 67 -168 81 -259 36z"/>
@@ -52,13 +53,13 @@ export default function Logo({ variant = 'dark', height = 40, className = '' }: 
   );
 
   const logos = {
-    dark: <DarkLogo />,
-    light: <WhiteLogo />,
-    underline: <UnderlineLogo />
+    dark: darkLogo,
+    light: whiteLogo,
+    underline: underlineLogo
   };
 
   return (
-    <div className={`logo-container ${className}`} style={{ display: 'flex', alignItems: 'center' }}>
+    <div className={`logo-container ${className}`} style={{ display: 'flex', alignItems: 'center' }} role="img" aria-label={site.name}>
       {logos[variant]}
     </div>
   );

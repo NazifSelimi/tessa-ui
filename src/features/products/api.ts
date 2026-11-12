@@ -11,20 +11,31 @@
  */
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
-import type { Product, Category, Brand, PaginatedResponse } from '@/types';
+import type { Product, Category, Brand, HairProfileOption, PaginatedResponse, ProductCollection, StoreBundle } from '@/types';
 
 // Query params for products list
+export type VisibilityFilter = 'hidden' | 'limited' | 'everyone' | 'guests' | 'customers' | 'stylists';
+
 export interface ProductsQueryParams {
   page?: number;
   perPage?: number;
   category?: string;
   brand?: string;
+  collection?: string;
+  /** Comma-separated category ids. */
+  category_ids?: string;
   search?: string;
   featured?: boolean;
   sort?: string;
   min_price?: number;
   max_price?: number;
   in_stock?: number;
+  review?: 'in_review' | 'ready';
+  /** Admin work queues. */
+  price_status?: 'missing';
+  stock?: 'low' | 'out';
+  /** Admin: who the product is shown to. */
+  visibility?: VisibilityFilter;
   sortBy?: 'name' | 'price' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
@@ -67,6 +78,18 @@ export const productsApi = baseApi.injectEndpoints({
       providesTags: [{ type: API_TAGS.Products, id: 'FEATURED' }],
     }),
 
+    getProductCollections: builder.query<ProductCollection[], void>({
+      query: () => '/v1/product-collections',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [{ type: API_TAGS.Products, id: 'COLLECTIONS' }],
+    }),
+
+    getBundles: builder.query<StoreBundle[], void>({
+      query: () => '/v1/bundles',
+      transformResponse: (response: any) => response.data || [],
+      providesTags: [API_TAGS.Bundles],
+    }),
+
     getCategories: builder.query<Category[], void>({
       query: () => '/v1/categories',
       transformResponse: (response: any) => response.data || [],
@@ -77,6 +100,11 @@ export const productsApi = baseApi.injectEndpoints({
       query: () => '/v1/brands',
       transformResponse: (response: any) => response.data || [],
       providesTags: [API_TAGS.Brands],
+    }),
+
+    getHairProfileOptions: builder.query<{ hairTypes: HairProfileOption[]; hairConcerns: HairProfileOption[] }, void>({
+      query: () => '/v1/hair-profile-options',
+      transformResponse: (response: any) => response.data || { hairTypes: [], hairConcerns: [] },
     }),
 
     getProductById: builder.query<Product, string>({
@@ -107,8 +135,11 @@ export const {
   useGetProductByIdQuery,
   useLazyGetProductByIdQuery,
   useGetFeaturedProductsQuery,
+  useGetProductCollectionsQuery,
+  useGetBundlesQuery,
   useGetCategoriesQuery,
   useGetBrandsQuery,
+  useGetHairProfileOptionsQuery,
   useSearchProductsQuery,
   useLazySearchProductsQuery,
   useGetRelatedProductsQuery,

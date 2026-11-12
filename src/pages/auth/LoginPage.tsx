@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   Form,
   Input,
@@ -17,21 +17,21 @@ import {
   Checkbox,
 } from 'antd';
 import {
-  MailOutlined,
+  PhoneOutlined,
   LockOutlined,
   GoogleOutlined,
-  FacebookOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
 import Logo from '@/components/Logo';
+import AuthPageHeader from '@/components/AuthPageHeader';
 import { startSocialAuth, type SocialProvider } from '@/features/auth/social';
 
-const { Text, Paragraph } = Typography;
+const { Text, Title } = Typography;
 
 interface LoginFormValues {
-  email: string;
+  identifier: string;
   password: string;
   remember: boolean;
 }
@@ -40,17 +40,21 @@ const LoginPage: React.FC = () => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, token, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get redirect path from location state or default to home
-  const from = (location.state as { from?: string })?.from || '/';
+  const stateFrom = (location.state as { from?: string })?.from;
+  const queryFrom = new URLSearchParams(location.search).get('continue');
+  const requested = stateFrom || queryFrom || '/';
+  // In-app paths only: '//host' would be read by the browser as another site.
+  const from = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);
     try {
-      await login(values.email, values.password);
+      await login(values.identifier, values.password);
       message.success(t('auth.welcomeBack'));
       navigate(from, { replace: true });
     } catch (error: unknown) {
@@ -67,12 +71,13 @@ const LoginPage: React.FC = () => {
     });
   };
 
-  const handleFacebookComingSoon = () => {
-    message.info(t('auth.facebookSoon'));
-  };
+  // Already signed in (e.g. back button or an old bookmark): don't offer a second login.
+  if (token && user) {
+    return <Navigate to={from} replace />;
+  }
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -80,6 +85,7 @@ const LoginPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
       padding: '24px',
     }}>
+      <AuthPageHeader />
       <Card
         style={{
           width: '100%',
@@ -94,9 +100,9 @@ const LoginPage: React.FC = () => {
           <Link to="/" style={{ display: 'inline-block' }}>
             <Logo variant="dark" height={36} />
           </Link>
-          <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
+          <Title level={1} type="secondary" style={{ marginTop: 8, marginBottom: 0, fontSize: 14, fontWeight: 400, lineHeight: 1.5715 }}>
             {t('auth.signInToAccount')}
-          </Paragraph>
+          </Title>
         </div>
 
         {/* Login Form */}
@@ -108,18 +114,17 @@ const LoginPage: React.FC = () => {
           initialValues={{ remember: true }}
         >
           <Form.Item
-            name="email"
-            label={t('auth.email')}
+            name="identifier"
+            label={t('auth.identifier')}
             rules={[
-              { required: true, message: t('auth.enterEmail') },
-              { type: 'email', message: t('auth.invalidEmail') },
+              { required: true, message: t('auth.enterIdentifier') },
             ]}
           >
             <Input
-              prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="you@example.com"
+              prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
+              placeholder={t('auth.identifierPlaceholder')}
               size="large"
-              autoComplete="email"
+              autoComplete="username"
             />
           </Form.Item>
 
@@ -178,22 +183,14 @@ const LoginPage: React.FC = () => {
           >
             {t('auth.continueWithGoogle')}
           </Button>
-          <Button
-            size="large"
-            block
-            icon={<FacebookOutlined />}
-            onClick={handleFacebookComingSoon}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {t('auth.continueWithFacebook')}
-          </Button>
+          {/* Facebook sign-in returns once a Facebook app is set up (the API already supports it). */}
         </Space>
 
         {/* Register Link */}
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <Text type="secondary">
             {t('auth.noAccount')}{' '}
-            <Link to="/register" style={{ fontWeight: 500 }}>
+            <Link to={from === '/' ? '/register' : `/register?continue=${encodeURIComponent(from)}`} style={{ fontWeight: 500 }}>
               {t('auth.createAccount')}
             </Link>
           </Text>

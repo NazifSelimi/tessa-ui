@@ -9,32 +9,37 @@
  * Includes discount code application with role-based validation.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { clearCheckoutDraft, loadCheckoutDraft, saveCheckoutDraft } from '@/features/checkout/checkoutDraft';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import {
   Row, Col, Typography, Steps, Form, Input, Button, Card, Select,
-  Divider, Space, Image, message, Alert, Tag, Result,
+  Divider, Space, Image, message, Alert, Tag, Result, Checkbox,
 } from 'antd';
 import {
-  ShoppingOutlined, CreditCardOutlined, CheckCircleOutlined,
+  ShoppingOutlined, CheckCircleOutlined,
   TagOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiscounts } from '@/hooks/useDiscounts';
 import { useTranslation } from 'react-i18next';
-import { useCreateOrderMutation } from '@/features/orders/api';
+import { useCreateOrderMutation, useGetCartQuoteQuery } from '@/features/orders/api';
+import { useGetBundlesQuery } from '@/features/products/api';
 import { isProfileComplete } from '@/features/auth/profile';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
   getCityForPostcode,
   getPostcodeForCity,
+  filterLocationOption,
 } from '@/shared/data/macedoniaLocations';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import { storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import { forgetReferralCode, rememberReferralCode, storedReferralCode } from '@/shared/utils/referral';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -51,23 +56,30 @@ interface ShippingFormData {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clearCart, getItemTotal } = useCart();
+  const { items, bundleIds, subtotal, clearCart, getItemTotal } = useCart();
   const { user, token, isAuthenticated, isProfessional } = useAuth();
-  const { appliedCode, applyCode, removeCode, discountAmount, discountPercent, error: discountError, isValidating, clearError } = useDiscounts();
+  const { appliedCode, applyCode, removeCode, getDiscountForSubtotal, discountPercent, error: discountError, loginRequiredCode, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
+  const { data: activeBundles = [] } = useGetBundlesQuery();
   const { t } = useTranslation();
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
+  // A refresh mid-checkout keeps what was typed and the step (this tab only).
+  const [draft] = useState(() => loadCheckoutDraft<ShippingFormData>());
+  const [shippingData, setShippingData] = useState<ShippingFormData | null>(
+    () => (draft?.step === 1 ? draft.values as ShippingFormData : null),
+  );
+  const [currentStep, setCurrentStep] = useState(() => (draft?.step === 1 ? 1 : 0));
   const [discountInput, setDiscountInput] = useState('');
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [useStoreCredit, setUseStoreCredit] = useState(true);
+  const [referralTried, setReferralTried] = useState(false);
 
   const [shippingForm] = Form.useForm();
 
   // Auto-fill shipping form for authenticated users
   useEffect(() => {
-    if (user && !shippingData) {
+    if (user && !shippingData && !draft) {
       shippingForm.setFieldsValue({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -79,7 +91,7 @@ export default function CheckoutPage() {
         state: 'North Macedonia',
       });
     }
-  }, [user, shippingForm, shippingData]);
+  }, [user, shippingForm, shippingData, draft]);
 
   useEffect(() => {
     if (token && user && !isProfileComplete(user)) {
@@ -89,7 +101,71 @@ export default function CheckoutPage() {
 
   // Shipping cost calculation
   const shippingCost = subtotal >= 3000 ? 0 : 150;
-  const total = subtotal - discountAmount + shippingCost;
+  const bundleDiscount = useMemo(() => {
+    const quantities = new Map(items.map((item) => [String(item.productId), item.quantity]));
+
+    return bundleIds.reduce((discount, bundleId) => {
+      const bundle = activeBundles.find((candidate) => candidate.id === bundleId);
+      if (!bundle) return discount;
+
+      const qualifies = bundle.products.every((product) => (quantities.get(product.id) ?? 0) >= product.quantity);
+      if (!qualifies) return discount;
+
+      bundle.products.forEach((product) => quantities.set(product.id, (quantities.get(product.id) ?? 0) - product.quantity));
+      const productPrice = (id: string) => getItemTotal(items.find((item) => String(item.productId) === id)! ) / (items.find((item) => String(item.productId) === id)?.quantity ?? 1);
+      const regular = bundle.products.reduce((sum, product) => sum + productPrice(product.id) * product.quantity, 0);
+      const saving = bundle.promotionType === 'fixed_price'
+        ? Math.max(0, regular - Number(bundle.bundlePrice ?? regular))
+        : bundle.promotionType === 'bonus_items'
+          ? bundle.products.reduce((sum, product) => sum + productPrice(product.id) * (product.bonusQuantity ?? (product.isBonus ? product.quantity : 0)), 0)
+          : regular * (Number(bundle.discountPercentage ?? 0) / 100);
+      return discount + Math.min(regular, saving);
+    }, 0);
+  }, [activeBundles, bundleIds, getItemTotal, items]);
+  const localCouponDiscount = getDiscountForSubtotal(Math.max(0, subtotal - bundleDiscount));
+
+  // The server prices the cart exactly as checkout will (offers, coupon, profit
+  // limit, shipping); the local figures above only fill in while it loads.
+  const { currentData: quote } = useGetCartQuoteQuery(
+    {
+      items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })),
+      bundle_ids: bundleIds,
+      coupon_code: appliedCode ?? undefined,
+      use_store_credit: isAuthenticated && useStoreCredit,
+    },
+    { skip: items.length === 0 || orderComplete },
+  );
+  const discountAmount = quote ? quote.couponDiscount : localCouponDiscount;
+  const offerDiscount = quote ? quote.bundleDiscount : bundleDiscount;
+  const shippingTotal = quote ? quote.shipping : shippingCost;
+  const storeCreditUsed = quote?.storeCreditUsed ?? 0;
+  const total = quote ? (quote.totalToPay ?? quote.total) : subtotal - localCouponDiscount - bundleDiscount + shippingCost;
+
+  // A client who came through a stylist's link (?ref=CODE) gets that code applied
+  // once. Salon accounts never use referral codes, so it is not tried for them.
+  // Stylist codes need an account: a guest keeps the code and is asked to sign
+  // in or register, and it applies when they come back here signed in.
+  useEffect(() => {
+    const referral = storedReferralCode();
+    if (referralTried || appliedCode || isProfessional || !referral || items.length === 0) return;
+    setReferralTried(true);
+    void applyCode(referral, Math.max(0, subtotal - bundleDiscount)).then((applied) => {
+      if (!applied && isAuthenticated) {
+        forgetReferralCode();
+        clearError();
+      }
+    });
+  }, [appliedCode, applyCode, bundleDiscount, clearError, isAuthenticated, isProfessional, items.length, referralTried, subtotal]);
+
+  // Remember a stylist code a guest typed, so it is waiting after sign in.
+  useEffect(() => {
+    if (loginRequiredCode && !isAuthenticated) rememberReferralCode(loginRequiredCode);
+  }, [isAuthenticated, loginRequiredCode]);
+
+  const accountPrompt = !isAuthenticated && (loginRequiredCode || (appliedCode && quote?.couponRequiresLogin))
+    ? (loginRequiredCode ?? appliedCode)
+    : null;
+  const continueToCheckout = `?continue=${encodeURIComponent('/checkout')}`;
 
   // Empty cart check
   if (items.length === 0 && !orderComplete) {
@@ -136,6 +212,7 @@ export default function CheckoutPage() {
   const handleShippingSubmit = (values: ShippingFormData) => {
     setShippingData(values);
     setCurrentStep(1);
+    saveCheckoutDraft({ values, step: 1 });
   };
 
   // Handle discount code application
@@ -144,10 +221,10 @@ export default function CheckoutPage() {
     
     clearError();
     
-    const success = await applyCode(discountInput.trim(), subtotal);
+    const success = await applyCode(discountInput.trim(), Math.max(0, subtotal - bundleDiscount));
     
     if (success) {
-      message.success('Discount code applied!');
+      message.success(t('checkout.discountApplied'));
       setDiscountInput('');
     }
   };
@@ -157,7 +234,7 @@ export default function CheckoutPage() {
     setPlacingOrder(true);
     try {
       if (!shippingData) {
-        message.error('Shipping information is required.');
+        message.error(t('checkout.shippingRequired'));
         return;
       }
 
@@ -179,9 +256,13 @@ export default function CheckoutPage() {
         payment_method: 'cod' as const,
         custom_message: undefined,
         coupon_code: appliedCode || undefined,
+        bundle_ids: bundleIds,
+        use_store_credit: isAuthenticated && useStoreCredit && (quote?.storeCreditAvailable ?? 0) > 0,
       };
 
       await createOrder(payload).unwrap();
+      if (appliedCode && appliedCode === storedReferralCode()) forgetReferralCode();
+      clearCheckoutDraft();
       clearCart();
       setOrderComplete(true);
     } catch (error: unknown) {
@@ -194,7 +275,6 @@ export default function CheckoutPage() {
   // Step items
   const steps = [
     { title: t('checkout.shipping'), icon: <ShoppingOutlined /> },
-    { title: t('checkout.payment'), icon: <CreditCardOutlined /> },
     { title: t('checkout.review'), icon: <CheckCircleOutlined /> },
   ];
 
@@ -208,7 +288,7 @@ export default function CheckoutPage() {
       >
         {t('common.back')}
       </Button>
-      <Title level={2} style={{ marginBottom: 'var(--spacing-xl)' }}>{t('checkout.title')}</Title>
+      <Title level={1} style={{ marginBottom: 'var(--spacing-xl)', fontSize: 30 }}>{t('checkout.title')}</Title>
 
       <Steps 
         current={currentStep} 
@@ -217,7 +297,7 @@ export default function CheckoutPage() {
         size="small"
       />
 
-      <Row gutter={[32, 24]}>
+      <Row gutter={[{ xs: 16, lg: 32 }, 24]}>
         {/* Form Section */}
         <Col xs={24} lg={14}>
           {/* Step 1: Shipping */}
@@ -227,7 +307,8 @@ export default function CheckoutPage() {
                 form={shippingForm}
                 layout="vertical"
                 onFinish={handleShippingSubmit}
-                initialValues={shippingData || undefined}
+                onValuesChange={(_, all: ShippingFormData) => saveCheckoutDraft({ values: all, step: 0 })}
+                initialValues={shippingData || draft?.values || undefined}
               >
                 <Row gutter={16}>
                   <Col xs={24} sm={12}>
@@ -236,7 +317,7 @@ export default function CheckoutPage() {
                       label={t('checkout.firstName')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" />
+                      <Input size="large" autoComplete="given-name" />
                     </Form.Item>
                   </Col>
                   <Col xs={24} sm={12}>
@@ -245,7 +326,7 @@ export default function CheckoutPage() {
                       label={t('checkout.lastName')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" />
+                      <Input size="large" autoComplete="family-name" />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -260,7 +341,7 @@ export default function CheckoutPage() {
                         { type: 'email', message: t('auth.invalidEmail') },
                       ]}
                     >
-                      <Input size="large" type="email" />
+                      <Input size="large" type="email" autoComplete="email" inputMode="email" />
                     </Form.Item>
                   </Col>
                   <Col xs={24} sm={12}>
@@ -269,7 +350,7 @@ export default function CheckoutPage() {
                       label={t('checkout.phone')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" type="tel" />
+                      <Input size="large" type="tel" autoComplete="tel" inputMode="tel" />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -279,7 +360,7 @@ export default function CheckoutPage() {
                   label={t('checkout.address')}
                   rules={[{ required: true, message: t('common.required') }]}
                 >
-                  <Input size="large" />
+                  <Input size="large" autoComplete="street-address" />
                 </Form.Item>
 
                 <Row gutter={16}>
@@ -294,7 +375,7 @@ export default function CheckoutPage() {
                         showSearch
                         options={MACEDONIA_CITY_OPTIONS}
                         placeholder={t('account.selectMunicipality')}
-                        optionFilterProp="label"
+                        filterOption={filterLocationOption}
                         onChange={(city) => {
                           const postcode = getPostcodeForCity(city);
                           if (postcode) {
@@ -304,7 +385,7 @@ export default function CheckoutPage() {
                       />
                     </Form.Item>
                   </Col>
-                  <Col xs={12} sm={8}>
+                  <Col xs={24} sm={8}>
                     <Form.Item
                       name="state"
                       label={t('checkout.state')}
@@ -314,7 +395,7 @@ export default function CheckoutPage() {
                       <Input size="large" disabled />
                     </Form.Item>
                   </Col>
-                  <Col xs={12} sm={8}>
+                  <Col xs={24} sm={8}>
                     <Form.Item
                       name="zip"
                       label={t('checkout.zip')}
@@ -325,7 +406,7 @@ export default function CheckoutPage() {
                         showSearch
                         options={MACEDONIA_POSTCODE_OPTIONS}
                         placeholder={t('account.selectPostcode')}
-                        optionFilterProp="label"
+                        filterOption={filterLocationOption}
                         onChange={(postcode) => {
                           const city = getCityForPostcode(postcode);
                           if (city) {
@@ -339,36 +420,15 @@ export default function CheckoutPage() {
 
                 <Form.Item style={{ marginBottom: 0, marginTop: 'var(--spacing-lg)' }}>
                   <Button type="primary" htmlType="submit" size="large" block>
-                    {t('checkout.continueToPayment')}
+                    {t('checkout.continueToReview')}
                   </Button>
                 </Form.Item>
               </Form>
             </Card>
           )}
 
-          {/* Step 2: Payment */}
+          {/* Step 2: Review */}
           {currentStep === 1 && (
-            <Card title={t('checkout.paymentMethod')} className="checkout-card">
-              <Alert
-                message={t('checkout.cod')}
-                description={t('checkout.codDescription')}
-                type="info"
-                showIcon
-                style={{ marginBottom: 'var(--spacing-xl)' }}
-              />
-              <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
-                <Button onClick={() => setCurrentStep(0)} size="large">
-                  {t('common.back')}
-                </Button>
-                <Button type="primary" size="large" style={{ flex: 1 }} onClick={() => setCurrentStep(2)}>
-                  {t('checkout.reviewOrder')}
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Step 3: Review */}
-          {currentStep === 2 && (
             <Card title={t('checkout.orderReview')} className="checkout-card">
               {/* Shipping Address */}
               <div style={{ marginBottom: 'var(--spacing-xl)' }}>
@@ -409,7 +469,7 @@ export default function CheckoutPage() {
                       className="checkout-item"
                     >
                       <Image
-                        src={item.product.images?.[0] || item.product.image || '/placeholder.svg'}
+                        src={storefrontImageUrl(item.product) || '/placeholder.svg'}
                         alt={item.product.name}
                         width={60}
                         height={60}
@@ -435,7 +495,7 @@ export default function CheckoutPage() {
               <Divider />
 
               <div style={{ display: 'flex', gap: 12, marginTop: 'var(--spacing-lg)' }}>
-                <Button onClick={() => setCurrentStep(1)} size="large">
+                <Button onClick={() => { setCurrentStep(0); if (shippingData) saveCheckoutDraft({ values: shippingData, step: 0 }); }} size="large">
                   {t('common.back')}
                 </Button>
                 <Button 
@@ -465,7 +525,7 @@ export default function CheckoutPage() {
                   className="order-summary__item"
                 >
                   <Image
-                    src={item.product.images?.[0] || item.product.image || '/placeholder.svg'}
+                    src={storefrontImageUrl(item.product) || '/placeholder.svg'}
                     alt={item.product.name}
                     width={48}
                     height={48}
@@ -522,6 +582,8 @@ export default function CheckoutPage() {
                 <Space.Compact style={{ width: '100%' }}>
                   <Input
                     placeholder={t('checkout.enterCode')}
+                    aria-label={t('checkout.enterCode')}
+                    autoComplete="off"
                     value={discountInput}
                     onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
                     onPressEnter={handleApplyDiscount}
@@ -536,7 +598,43 @@ export default function CheckoutPage() {
                 </Space.Compact>
               )}
 
-              {discountError && (
+              {quote?.couponError && appliedCode && !discountError && !accountPrompt && (
+                <Text type="danger" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
+                  {quote.couponError}
+                </Text>
+              )}
+
+              {appliedCode && quote?.isReferralCode && !quote.couponError && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
+                  {t('referral.checkoutThanks')}
+                </Text>
+              )}
+
+              {accountPrompt && (
+                <Alert
+                  type="info"
+                  showIcon
+                  style={{ marginTop: 'var(--spacing-sm)' }}
+                  message={t('referral.signInTitle', { code: accountPrompt })}
+                  description={
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
+                        {t('referral.signInCopy')}
+                      </Text>
+                      <Space wrap>
+                        <Button type="primary" size="small" onClick={() => navigate(`/login${continueToCheckout}`)}>
+                          {t('referral.signIn')}
+                        </Button>
+                        <Button size="small" onClick={() => navigate(`/register${continueToCheckout}`)}>
+                          {t('referral.createAccount')}
+                        </Button>
+                      </Space>
+                    </Space>
+                  }
+                />
+              )}
+
+              {discountError && !accountPrompt && (
                 <Text type="danger" style={{ fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
                   {discountError}
                 </Text>
@@ -565,11 +663,35 @@ export default function CheckoutPage() {
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(discountAmount)}</Text>
                 </div>
               )}
+
+              {offerDiscount > 0 && (
+                <div className="price-row">
+                  <Text type="secondary">{t('checkout.offerSavings')}</Text>
+                  <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(offerDiscount)}</Text>
+                </div>
+              )}
+
+              {quote?.discountLimited && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('checkout.discountLimited')}</Text>
+              )}
               
               <div className="price-row">
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
-                <Text>{shippingCost === 0 ? t('checkout.free') : formatPrice(shippingCost)}</Text>
+                <Text>{shippingTotal === 0 ? t('checkout.free') : formatPrice(shippingTotal)}</Text>
               </div>
+
+              {(quote?.storeCreditAvailable ?? 0) > 0 && (
+                <Checkbox checked={useStoreCredit} onChange={(e) => setUseStoreCredit(e.target.checked)}>
+                  {t('referral.useCredit', { amount: formatPrice(quote!.storeCreditAvailable) })}
+                </Checkbox>
+              )}
+
+              {storeCreditUsed > 0 && (
+                <div className="price-row">
+                  <Text type="secondary">{t('referral.storeCredit')}</Text>
+                  <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(storeCreditUsed)}</Text>
+                </div>
+              )}
             </Space>
 
             <Divider />
@@ -580,9 +702,9 @@ export default function CheckoutPage() {
             </div>
 
             {/* Free Shipping Progress */}
-            {shippingCost > 0 && (
+            {shippingTotal > 0 && (
               <Alert
-                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(3000 - subtotal + discountAmount) })}`}
+                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(quote ? quote.amountToFreeShipping : 3000 - subtotal) })}`}
                 type="info"
                 showIcon
                 style={{ marginTop: 'var(--spacing-lg)' }}

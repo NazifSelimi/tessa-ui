@@ -1,0 +1,123 @@
+/* Post Studio: background remover controls (kept here so Post Studio styles ship with its files). */
+.post-studio__cutout {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #faf7f5;
+}
+.post-studio__cutout .post-studio__adjust { width: 100%; }
+.post-studio__preview canvas.is-erasing,
+.post-studio__preview canvas.is-erasing.is-over-photo { cursor: crosshair; }
+
+/* Text, stickers & shapes */
+.post-studio__canvas-wrap { position: relative; }
+.post-studio__selection {
+  position: absolute;
+  border: 2px dashed #1677ff;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .8);
+}
+.post-studio__emojis { display: flex; flex-wrap: wrap; gap: 4px; }
+.post-studio__emojis button {
+  width: 34px; height: 34px; border: 1px solid #ece4e0; border-radius: 8px; background: #fff;
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.post-studio__emojis button:hover { border-color: #9b5364; }
+.post-studio__layers { display: flex; flex-direction: column; gap: 2px; border: 1px solid #f0e9e5; border-radius: 8px; padding: 4px; }
+.post-studio__layer { display: flex; align-items: center; gap: 2px; border-radius: 6px; padding: 0 2px; }
+.post-studio__layer.is-active { background: #f6eef0; }
+.post-studio__layer-name {
+  flex: 1; min-width: 0; padding: 4px 6px; border: 0; background: none; text-align: left; font: inherit; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.post-studio__element-editor { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px; border-radius: 8px; background: #faf7f5; }
+.post-studio__colour { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.post-studio__colour input { width: 28px; height: 28px; padding: 0; border: 1px solid #e3dcd8; border-radius: 6px; background: none; cursor: pointer; }
+
+/* Carousel strip */
+.post-studio__slides { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
+.post-studio__slide {
+  display: grid; place-items: center; width: 48px; height: 60px; padding: 0; overflow: hidden;
+  border: 2px solid #e6dedb; border-radius: 8px; background: #fff; font-weight: 700; color: #8a7f7b; cursor: pointer;
+}
+.post-studio__slide.is-active { border-color: #9b5364; color: #9b5364; }
+.post-studio__slide img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Template gallery */
+.post-studio__gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.post-studio__gallery-item {
+  display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid #ece4e0; border-radius: 10px;
+  background: #fff; font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, transform .15s;
+}
+.post-studio__gallery-item:hover { border-color: #9b5364; transform: translateY(-2px); }
+.post-studio__gallery-item strong { font-size: 12.5px; line-height: 1.25; }
+.post-studio__gallery-thumb { display: grid; place-items: center; width: 100%; overflow: hidden; border-radius: 6px; background: #f4efec; }
+.post-studio__gallery-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.post-studio__gallery-wait { color: #b9aaa5; font-size: 20px; }
+
+/* Tabs & help */
+.post-studio__tabs > .ant-tabs-nav { margin-bottom: 18px; }
+.post-studio__tabs .ant-tabs-tab { font-weight: 600; }
+.post-studio-help__list { margin: 0; padding-left: 18px; }
+.post-studio-help__list li { margin-bottom: 6px; line-height: 1.5; }
+.post-studio-help__shortcut { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+/* Image panel */
+.post-studio__image-panel { border-color: #1677ff; }
+.post-studio__photo-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.post-studio__photo-pick button { width: 64px; height: 64px; padding: 2px; border: 2px solid #ece4e0; border-radius: 8px; background: #fff; cursor: pointer; }
+.post-studio__photo-pick button.is-active { border-color: #9b5364; }
+.post-studio__photo-pick img { width: 100%; height: 100%; object-fit: contain; }
+
+/* Wide screens: settings and photo tools are side panels that scroll on their own,
+   so the post stays in front in the middle (like Figma). */
+@media (min-width: 1200px) {
+  .post-studio__side {
+    position: sticky;
+    top: 72px;
+    align-self: flex-start;
+    max-height: calc(100vh - 88px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
+
+/* Figma-style resize dots on the selected photo / item. */
+.post-studio__selection { border-style: solid; border-width: 1.5px; }
+.post-studio__dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: #fff;
+  border: 1.5px solid #1677ff;
+  border-radius: 2px;
+  pointer-events: auto;
+  touch-action: none;
+}
+@media (pointer: coarse) { .post-studio__dot { width: 18px; height: 18px; margin: -9px 0 0 -9px; } }
+.post-studio__dot--nw { left: 0; top: 0; cursor: nwse-resize; }
+.post-studio__dot--n { left: 50%; top: 0; cursor: ns-resize; }
+.post-studio__dot--ne { left: 100%; top: 0; cursor: nesw-resize; }
+.post-studio__dot--e { left: 100%; top: 50%; cursor: ew-resize; }
+.post-studio__dot--se { left: 100%; top: 100%; cursor: nwse-resize; }
+.post-studio__dot--s { left: 50%; top: 100%; cursor: ns-resize; }
+.post-studio__dot--sw { left: 0; top: 100%; cursor: nesw-resize; }
+.post-studio__dot--w { left: 0; top: 50%; cursor: ew-resize; }
+
+/* Centre lines while dragging (like Instagram stories). */
+.post-studio__guide { position: absolute; pointer-events: none; z-index: 2; }
+.post-studio__guide--v { left: 50%; top: 0; bottom: 0; border-left: 1.5px dashed #ff4d1f; }
+.post-studio__guide--h { top: 50%; left: 0; right: 0; border-top: 1.5px dashed #ff4d1f; }
+
+/* Story safe area: Instagram and Facebook cover the top and bottom of a story. */
+.post-studio__safe { position: absolute; left: 0; right: 0; pointer-events: none; z-index: 2; display: flex; justify-content: center; background: repeating-linear-gradient(45deg, rgba(255, 77, 31, .16) 0 8px, rgba(255, 77, 31, .06) 8px 16px); }
+.post-studio__safe i { font-style: normal; font-size: 10px; line-height: 1.2; color: #b93a17; background: rgba(255, 255, 255, .85); padding: 2px 6px; border-radius: 4px; align-self: center; text-align: center; }
+.post-studio__safe--top { top: 0; height: 13%; border-bottom: 1.5px dashed #ff4d1f; }
+.post-studio__safe--bottom { bottom: 0; height: 18%; border-top: 1.5px dashed #ff4d1f; }

@@ -12,7 +12,6 @@ import { ArrowLeftOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetProductsQuery } from '@/features/products/api';
 import { formatPrice } from '@/shared/utils/formatPrice';
-import type { Product } from '@/types';
 
 const { Title, Text } = Typography;
 

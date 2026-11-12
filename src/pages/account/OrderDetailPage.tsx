@@ -11,11 +11,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Typography, Card, Row, Col, Tag, Button, Steps, Spin, Descriptions, Table, Divider 
 } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetOrderQuery } from '@/features/orders/api';
+import { useReorder } from '@/hooks/useReorder';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import type { Order } from '@/types';
+import { formatDate } from '@/shared/utils/formatDate';
 
 const { Title, Text } = Typography;
 
@@ -36,6 +38,7 @@ export default function OrderDetailPage() {
   const { data: order, isLoading: loading } = useGetOrderQuery(id ?? '', {
     skip: !id,
   });
+  const { reorder, isReordering } = useReorder();
 
   if (loading) {
     return (
@@ -102,12 +105,22 @@ export default function OrderDetailPage() {
         <div>
           <Title level={2} style={{ margin: 0 }}>{t('orders.order')} {order.id}</Title>
           <Text type="secondary">
-            {t('orders.placedOn')} {new Date(order.createdAt).toLocaleDateString()}
+            {t('orders.placedOn')} {formatDate(order.createdAt)}
           </Text>
         </div>
-        <Tag color={statusColors[typeof order.status === 'string' ? order.status : String(order.status ?? '')]} style={{ fontSize: 14, padding: '4px 12px' }}>
-          {(typeof order.status === 'string' ? order.status : String(order.status ?? '')).toUpperCase()}
-        </Tag>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <Tag color={statusColors[typeof order.status === 'string' ? order.status : String(order.status ?? '')]} style={{ fontSize: 14, padding: '4px 12px', margin: 0 }}>
+            {(typeof order.status === 'string' ? order.status : String(order.status ?? '')).toUpperCase()}
+          </Tag>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            loading={isReordering}
+            onClick={() => reorder(order)}
+          >
+            {t('reorder.orderAgain')}
+          </Button>
+        </div>
       </div>
 
       {order.status !== 'cancelled' && (
@@ -184,6 +197,12 @@ export default function OrderDetailPage() {
               <Text>{t('orders.shipping')}</Text>
               <Text>{(order.shipping ?? 0) === 0 ? t('orders.free') : formatPrice(order.shipping ?? 0)}</Text>
             </div>
+            {(order.storeCreditUsed ?? 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text type="success">{t('referral.storeCredit')}</Text>
+                <Text type="success">-{formatPrice(order.storeCreditUsed ?? 0)}</Text>
+              </div>
+            )}
             <Divider style={{ margin: '12px 0' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <Text strong style={{ fontSize: 16 }}>{t('orders.total')}</Text>

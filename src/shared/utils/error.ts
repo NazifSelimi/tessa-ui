@@ -11,6 +11,7 @@
  */
 
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { translate } from '@/shared/utils/translate';
 
 /** Shape returned by the Laravel backend on error responses. */
 interface ApiErrorBody {
@@ -47,6 +48,10 @@ export function extractErrorMessage(error: unknown): string {
 
     // Numeric HTTP status → data is the response body from the server
     if (typeof rtkError.status === 'number') {
+      // Rate limit (sign-in, codes, checkout): the server text is English-only.
+      if (rtkError.status === 429) {
+        return translate('errors.tooManyAttempts', 'Too many attempts. Please wait a minute and try again.');
+      }
       const body = (rtkError as { status: number; data: unknown }).data;
 
       if (isApiErrorBody(body)) {
@@ -60,7 +65,7 @@ export function extractErrorMessage(error: unknown): string {
 
       if (typeof body === 'string' && body.length > 0) return body;
 
-      return `Request failed (${rtkError.status})`;
+      return translate('errors.requestFailed', 'Something went wrong. Please try again.');
     }
 
     // String status (FETCH_ERROR, PARSING_ERROR, etc.)

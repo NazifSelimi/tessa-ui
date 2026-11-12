@@ -1,0 +1,37 @@
+import { formatAmount } from '@/shared/utils/formatPrice';
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from '@/shared/constants/shipping';
+
+function readEnv(name: string): string | null {
+  const value = import.meta.env[name];
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function ensureHref(value: string | null, fallback: string): string {
+  return value ?? fallback;
+}
+
+const primaryPhoneLabel = readEnv('VITE_SITE_PHONE_PRIMARY') ?? '078 286 003';
+const primaryPhoneHref = ensureHref(readEnv('VITE_SITE_PHONE_PRIMARY_HREF'), 'tel:+38978286003');
+const secondaryPhoneLabel = readEnv('VITE_SITE_PHONE_SECONDARY') ?? '042 333 003';
+const secondaryPhoneHref = ensureHref(readEnv('VITE_SITE_PHONE_SECONDARY_HREF'), 'tel:+38942333003');
+
+export const site = {
+  name: 'Tessa Hair Care',
+  url: readEnv('VITE_SITE_URL') ?? 'https://tessa.mk',
+  legalName: readEnv('VITE_SITE_LEGAL_NAME'),
+  address: readEnv('VITE_SITE_ADDRESS'),
+  contactEmail: readEnv('VITE_SITE_CONTACT_EMAIL') ?? 'tessa@tessa.mk',
+  // Business number on Viber and WhatsApp (international, digits only).
+  chatPhone: (readEnv('VITE_SITE_CHAT_PHONE') ?? '38978286332').replace(/\D/g, ''),
+  contactPhones: [
+    { label: primaryPhoneLabel, href: primaryPhoneHref },
+    { label: secondaryPhoneLabel, href: secondaryPhoneHref },
+  ],
+  deliverySummary: readEnv('VITE_SITE_DELIVERY_SUMMARY')
+    ?? `Cash on delivery. ${SHIPPING_FEE} MKD delivery below ${formatAmount(FREE_SHIPPING_THRESHOLD)} MKD; free delivery from ${formatAmount(FREE_SHIPPING_THRESHOLD)} MKD.`,
+  // Add only verified official URLs here. Empty values intentionally hide links.
+  social: {
+    facebook: readEnv('VITE_SITE_SOCIAL_FACEBOOK') ?? '',
+    instagram: readEnv('VITE_SITE_SOCIAL_INSTAGRAM') ?? '',
+  },
+} as const;

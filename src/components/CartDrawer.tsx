@@ -9,11 +9,14 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { Drawer, Button, Typography, Space, InputNumber, Empty, Divider, Badge } from 'antd';
+import { Drawer, Button, Typography, Space, Empty, Divider, Badge } from 'antd';
 import { DeleteOutlined, ShoppingOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
+import ShippingProgress from './ShippingProgress';
+import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
+import QuantityStepper from '@/components/QuantityStepper';
 
 const { Text } = Typography;
 
@@ -66,8 +69,13 @@ export default function CartDrawer() {
       footer={
         items.length > 0 ? (
           <div style={{ padding: 'var(--spacing-lg) 0' }}>
+            {/* Free-shipping progress */}
+            <div style={{ padding: '0 var(--spacing-xl)', marginBottom: 'var(--spacing-md)' }}>
+              <ShippingProgress subtotal={subtotal} />
+            </div>
+
             {/* Subtotal */}
-            <div style={{ 
+            <div style={{
               display: 'flex', 
               justifyContent: 'space-between', 
               marginBottom: 'var(--spacing-lg)',
@@ -118,7 +126,7 @@ export default function CartDrawer() {
             description={
               <Space direction="vertical" size={12}>
                 <Text type="secondary">{t('cart.yourCartIsEmpty')}</Text>
-                <Button type="primary" onClick={() => { closeDrawer(); navigate('/'); }}>
+                <Button type="primary" onClick={() => { closeDrawer(); navigate('/shop'); }}>
                   {t('cart.startShopping')}
                 </Button>
               </Space>
@@ -130,7 +138,7 @@ export default function CartDrawer() {
           {items.map((item, index) => {
             const price = getItemPrice(item);
             const total = getItemTotal(item);
-            const imageUrl = (item.product.images && item.product.images[0]) || item.product.image || '/placeholder.svg';
+            const imageUrl = storefrontImageUrl(item.product) || '/placeholder.svg';
             
             return (
               <div key={`${item.productId}`}>
@@ -157,7 +165,7 @@ export default function CartDrawer() {
                       {item.product.name}
                     </Text>
                     <Text type="secondary" style={{ fontSize: 'var(--font-size-xs)' }}>
-                      {typeof item.product.brand === 'object' ? item.product.brand?.name : item.product.brand}
+                      {storefrontBrandName(item.product)}
                     </Text>
                     
                     {/* Price & Quantity Row */}
@@ -167,14 +175,12 @@ export default function CartDrawer() {
                       alignItems: 'center', 
                       marginTop: 'var(--spacing-md)',
                     }}>
-                      <InputNumber
-                        min={1}
-                        max={item.product.quantity || 1}
-                        value={item.quantity}
-                        onChange={(val) => updateQuantity(item.productId, val || 1)}
+                      <QuantityStepper
                         size="small"
-                        style={{ width: 70 }}
-                        aria-label={`Quantity for ${item.product.name}`}
+                        max={item.product.quantity}
+                        value={item.quantity}
+                        onChange={(val) => updateQuantity(item.productId, val)}
+                        name={item.product.name}
                       />
                       <Space size="middle">
                         <Text strong>{formatPrice(total)}</Text>
@@ -184,7 +190,7 @@ export default function CartDrawer() {
                           size="small"
                           icon={<DeleteOutlined />}
                           onClick={() => removeItem(item.productId)}
-                          aria-label={`Remove ${item.product.name} from cart`}
+                          aria-label={t('cart.removeFromCart', { name: item.product.name })}
                           style={{ padding: 4 }}
                         />
                       </Space>

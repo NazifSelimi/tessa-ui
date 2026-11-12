@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Typography, Card, Form, Input, Button, Result, Steps, Alert, App, Spin, Select } from 'antd';
 import { ScissorOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +14,8 @@ import { store } from '@/store/index';
 import type { StylistRequestStatus } from '@/types';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { notifyError } from '@/shared/utils/notify';
-import { MACEDONIA_CITY_OPTIONS } from '@/shared/data/macedoniaLocations';
+import { MACEDONIA_CITY_OPTIONS, filterLocationOption } from '@/shared/data/macedoniaLocations';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -22,6 +24,7 @@ const { TextArea } = Input;
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
 
 export default function StylistRequestPage() {
+  const { t } = useTranslation();
   const { message } = App.useApp();
   const { user, currentRole, isStylist } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -92,14 +95,14 @@ export default function StylistRequestPage() {
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ message: 'Failed to submit application' }));
-        throw new Error(err.message || 'Failed to submit application');
+        const err = await response.json().catch(() => ({ message: t('pages.stylistRequest.submitFailed') }));
+        throw new Error(err.message || t('pages.stylistRequest.submitFailed'));
       }
 
       setRequestStatus('pending');
       setRejectionReason(null);
       setAllowResubmit(false);
-      message.success('Application submitted successfully!');
+      message.success(t('pages.stylistRequest.submitted'));
     } catch (error: unknown) {
       notifyError(extractErrorMessage(error));
     } finally {
@@ -123,12 +126,12 @@ export default function StylistRequestPage() {
           <Result
             status="success"
             icon={<ScissorOutlined style={{ color: '#52c41a' }} />}
-            title="You're a Verified Stylist!"
-            subTitle="Enjoy exclusive stylist pricing on all products."
+            title={t('pages.stylistRequest.approvedTitle')}
+            subTitle={t('pages.stylistRequest.approvedText')}
             extra={
-              <Button type="primary" href="/">
-                Shop with Stylist Pricing
-              </Button>
+              <Link to="/shop">
+                <Button type="primary">{t('pages.stylistRequest.shopNow')}</Button>
+              </Link>
             }
           />
         </Card>
@@ -143,14 +146,14 @@ export default function StylistRequestPage() {
         <Card>
           <Result
             icon={<ClockCircleOutlined style={{ color: '#faad14' }} />}
-            title="Application Under Review"
-            subTitle="We're reviewing your stylist application. This usually takes 1-2 business days."
+            title={t('pages.stylistRequest.reviewTitle')}
+            subTitle={t('pages.stylistRequest.reviewText')}
           />
           <Steps
             current={1}
             items={[
-              { title: 'Submitted', status: 'finish' },
-              { title: 'Under Review', status: 'process' },
+              { title: t('pages.stylistRequest.stepSubmitted'), status: 'finish' },
+              { title: t('pages.stylistRequest.stepReview'), status: 'process' },
               { title: 'Approved', status: 'wait' },
             ]}
           />
@@ -165,8 +168,8 @@ export default function StylistRequestPage() {
         <Card>
           <Result
             status="error"
-            title="Application Not Approved"
-            subTitle="Your previous stylist application was not approved."
+            title={t('pages.stylistRequest.rejectedTitle')}
+            subTitle={t('pages.stylistRequest.rejectedText')}
             extra={
               <Button type="primary" onClick={() => setAllowResubmit(true)}>
                 Submit a New Application
@@ -175,7 +178,7 @@ export default function StylistRequestPage() {
           />
           {rejectionReason && (
             <Alert
-              message="Reason Provided"
+              message={t('pages.stylistRequest.reason')}
               description={rejectionReason}
               type="warning"
               showIcon
@@ -191,7 +194,7 @@ export default function StylistRequestPage() {
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <ScissorOutlined style={{ fontSize: 48, color: '#1a1a1a', marginBottom: 16 }} />
-        <Title level={2}>Become a Tessa Stylist</Title>
+        <Title level={2}>{t('pages.stylistRequest.title')}</Title>
         <Text type="secondary">
           Join our professional network and enjoy exclusive pricing, early access to new products, 
           and special promotions.
@@ -200,13 +203,13 @@ export default function StylistRequestPage() {
 
       <Card>
         <Alert
-          message="Stylist Benefits"
+          message={t('pages.stylistRequest.benefits')}
           description={
             <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
-              <li>Up to 25% off retail prices</li>
-              <li>Access to professional-only products</li>
-              <li>Early access to new releases</li>
-              <li>Priority customer support</li>
+              <li>{t('pages.stylistRequest.benefitPrice')}</li>
+              <li>{t('pages.stylistRequest.benefitPro')}</li>
+              <li>{t('pages.stylistRequest.benefitEarly')}</li>
+              <li>{t('pages.stylistRequest.benefitSupport')}</li>
             </ul>
           }
           type="info"
@@ -216,19 +219,19 @@ export default function StylistRequestPage() {
         <Form layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
-            label="Full Name"
-            rules={[{ required: true, message: 'Please enter your name' }]}
+            label={t('pages.stylistRequest.fullName')}
+            rules={[{ required: true, message: t('pages.stylistRequest.enterName') }]}
             initialValue={[user?.firstName, user?.lastName].filter(Boolean).join(' ')}
           >
-            <Input placeholder="Your full name" />
+            <Input placeholder={t('pages.stylistRequest.fullNamePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="email"
-            label="Email"
+            label={t('auth.email')}
             rules={[
-              { required: true, message: 'Please enter your email' },
-              { type: 'email', message: 'Please enter a valid email' },
+              { required: true, message: t('pages.stylistRequest.enterEmail') },
+              { type: 'email', message: t('pages.stylistRequest.validEmail') },
             ]}
             initialValue={user?.email}
           >
@@ -237,45 +240,45 @@ export default function StylistRequestPage() {
 
           <Form.Item
             name="salonName"
-            label="Salon/Business Name"
-            rules={[{ required: true, message: 'Please enter your salon name' }]}
+            label={t('pages.stylistRequest.salonName')}
+            rules={[{ required: true, message: t('pages.stylistRequest.enterSalonName') }]}
           >
-            <Input placeholder="Where do you work?" />
+            <Input placeholder={t('pages.stylistRequest.salonPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="salonAddress"
-            label="Salon Address"
-            rules={[{ required: true, message: 'Please enter the salon address' }]}
+            label={t('pages.stylistRequest.salonAddress')}
+            rules={[{ required: true, message: t('pages.stylistRequest.enterSalonAddress') }]}
           >
-            <Input placeholder="Business address" />
+            <Input placeholder={t('pages.stylistRequest.salonAddressPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="salonCity"
-            label="Salon Municipality"
-            rules={[{ required: true, message: 'Please select the salon municipality' }]}
+            label={t('pages.stylistRequest.salonMunicipality')}
+            rules={[{ required: true, message: t('pages.stylistRequest.selectMunicipality') }]}
           >
             <Select
               showSearch
               options={MACEDONIA_CITY_OPTIONS}
-              placeholder="Select municipality"
-              optionFilterProp="label"
+              placeholder={t('pages.stylistRequest.municipalityPlaceholder')}
+              filterOption={filterLocationOption}
             />
           </Form.Item>
 
           <Form.Item
             name="salonPhone"
-            label="Salon Phone"
-            rules={[{ required: true, message: 'Please enter the salon phone number' }]}
+            label={t('pages.stylistRequest.salonPhone')}
+            rules={[{ required: true, message: t('pages.stylistRequest.enterSalonPhone') }]}
           >
-            <Input placeholder="+1 234 567 8900" />
+            <Input placeholder="070 123 456" />
           </Form.Item>
 
-          <Form.Item name="about" label="Tell Us About Yourself">
+          <Form.Item name="about" label={t('pages.stylistRequest.about')}>
             <TextArea 
               rows={4} 
-              placeholder="Share your experience, specialties, or why you want to join..."
+              placeholder={t('pages.stylistRequest.aboutPlaceholder')}
             />
           </Form.Item>
 
