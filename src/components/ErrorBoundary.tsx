@@ -12,6 +12,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { isChunkLoadError } from '@/shared/utils/chunkReload';
+import { translate } from '@/shared/utils/translate';
 
 interface Props {
   children: ReactNode;
@@ -71,25 +72,25 @@ export class ErrorBoundary extends Component<Props, State> {
         <div style={{ padding: '50px 20px', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>{newVersion ? '🔄' : '⚠️'}</div>
           <h1 style={{ fontSize: 22, margin: '0 0 8px', color: '#1a1a2e' }}>
-            {newVersion ? 'A new version is available' : 'Something went wrong'}
+            {newVersion ? translate('errorScreen.newVersionTitle', 'A new version is available') : translate('errorScreen.title', 'Something went wrong')}
           </h1>
           <p style={{ color: '#666', marginBottom: 24 }}>
             {newVersion
-              ? 'The site was updated while this page was open. Reload to continue.'
-              : 'An unexpected error occurred. Please try refreshing the page.'}
+              ? translate('errorScreen.newVersionText', 'The site was updated while this page was open. Reload to continue.')
+              : translate('errorScreen.text', 'An unexpected error occurred. Please try refreshing the page.')}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button
               onClick={() => window.location.reload()}
               style={{ padding: '8px 24px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}
             >
-              Reload Page
+              {translate('errorScreen.reload', 'Reload page')}
             </button>
             {!newVersion && <button
               onClick={this.handleReset}
               style={{ padding: '8px 24px', background: '#fff', color: '#1a1a2e', border: '1px solid #d9d9d9', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}
             >
-              Try Again
+              {translate('errorScreen.tryAgain', 'Try again')}
             </button>}
           </div>
           {!newVersion && this.state.error && (

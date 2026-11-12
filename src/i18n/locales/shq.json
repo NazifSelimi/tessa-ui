@@ -773,7 +773,9 @@
     "products": "Produkte",
     "safePairing": "Kombinim i sigurt",
     "verifiedPairings": "Kombinime teknike të verifikuara",
-    "pairOnlyWith": "Kombinoni vetëm me"
+    "pairOnlyWith": "Kombinoni vetëm me",
+    "findRoutine": "Gjej rutinën time",
+    "technicalProduct": "Produkt teknik"
   },
   "pages": {
     "stylistRequest": {
@@ -846,5 +848,31 @@
       "oneTime": "Lidhja mund të përdoret një herë dhe skadon automatikisht.",
       "activate": "Aktivizo llogarinë e biznesit"
     }
+  },
+  "errorScreen": {
+    "newVersionTitle": "Ka një version të ri",
+    "title": "Diçka shkoi keq",
+    "newVersionText": "Faqja u përditësua ndërsa ishte e hapur. Rifreskoni për të vazhduar.",
+    "text": "Ndodhi një gabim i papritur. Provoni ta rifreskoni faqen.",
+    "reload": "Rifresko faqen",
+    "tryAgain": "Provo përsëri"
+  },
+  "categoryNames": {
+    "Hair Color": "Ngjyrë flokësh",
+    "Shampoo": "Shampo",
+    "Mask": "Maskë",
+    "Activator": "Aktivizues",
+    "Spray": "Sprej",
+    "Fluid": "Fluid",
+    "Lotion": "Locion",
+    "Bleach and De Color": "Zbardhues dhe heqës ngjyre",
+    "Tester": "Tester",
+    "Filler": "Filler",
+    "Color Mask": "Maskë me ngjyrë",
+    "Styling": "Stilim",
+    "Hydrogen Peroxide": "Oksidant",
+    "Conditioner": "Balsam",
+    "Sets": "Sete",
+    "Other": "Të tjera"
   }
 }

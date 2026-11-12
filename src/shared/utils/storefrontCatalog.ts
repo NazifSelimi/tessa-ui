@@ -7,6 +7,7 @@
  * these helpers to hide them instead.
  */
 
+import { translate } from '@/shared/utils/translate';
 import type { Brand, Category, Product, ProductMediaAsset } from '@/types';
 
 const INTERNAL_BRAND_NAMES = ['supplier catalogue'];
@@ -25,10 +26,15 @@ export function storefrontBrandName(product: Pick<Product, 'brand'>): string {
   return name && !isInternalBrandName(name) ? name : '';
 }
 
-/** Category name to show customers, or '' when it is missing or internal. */
+/** Category name in the shopper's language (i18n `categoryNames`); unknown names stay as they are. */
+export function categoryLabel(name: string): string {
+  return name ? translate(`categoryNames.${name}`, name) : '';
+}
+
+/** Category name to show customers (translated), or '' when it is missing or internal. */
 export function storefrontCategoryName(product: Pick<Product, 'category'>): string {
   const name = typeof product.category === 'object' ? product.category?.name : product.category;
-  return name && !isInternalCategoryName(name) ? name : '';
+  return name && !isInternalCategoryName(name) ? categoryLabel(name) : '';
 }
 
 /**

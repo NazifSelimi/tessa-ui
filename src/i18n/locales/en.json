@@ -773,7 +773,9 @@
     "products": "Products",
     "safePairing": "Safe pairing",
     "verifiedPairings": "Verified technical pairings",
-    "pairOnlyWith": "Pair only with"
+    "pairOnlyWith": "Pair only with",
+    "findRoutine": "Find my routine",
+    "technicalProduct": "Technical product"
   },
   "pages": {
     "stylistRequest": {
@@ -846,5 +848,31 @@
       "oneTime": "This link can be used once and will expire automatically.",
       "activate": "Activate stylist account"
     }
+  },
+  "errorScreen": {
+    "newVersionTitle": "A new version is available",
+    "title": "Something went wrong",
+    "newVersionText": "The site was updated while this page was open. Reload to continue.",
+    "text": "An unexpected error occurred. Please try refreshing the page.",
+    "reload": "Reload page",
+    "tryAgain": "Try again"
+  },
+  "categoryNames": {
+    "Hair Color": "Hair Color",
+    "Shampoo": "Shampoo",
+    "Mask": "Mask",
+    "Activator": "Activator",
+    "Spray": "Spray",
+    "Fluid": "Fluid",
+    "Lotion": "Lotion",
+    "Bleach and De Color": "Bleach and De Color",
+    "Tester": "Tester",
+    "Filler": "Filler",
+    "Color Mask": "Color Mask",
+    "Styling": "Styling",
+    "Hydrogen Peroxide": "Hydrogen Peroxide",
+    "Conditioner": "Conditioner",
+    "Sets": "Sets",
+    "Other": "Other"
   }
 }

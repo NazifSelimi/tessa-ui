@@ -235,12 +235,12 @@ export default function CollectionPage() {
             <div className="collection-hero__actions">
               <Link to="/hair-survey">
                 <Button type="primary" size="large">
-                  Find my routine
+                  {t('collectionPage.findRoutine')}
                 </Button>
               </Link>
               <Link to="/shop">
                 <Button size="large">
-                  Browse full shop <ArrowRightOutlined />
+                  {t('collectionPage.browseShop')} <ArrowRightOutlined />
                 </Button>
               </Link>
             </div>
@@ -358,7 +358,7 @@ export default function CollectionPage() {
                       </div>
                     ) : (
                       <div className="pairing-card__thumb pairing-card__thumb--placeholder">
-                        Technical product
+                        {t('collectionPage.technicalProduct')}
                       </div>
                     )}
 
