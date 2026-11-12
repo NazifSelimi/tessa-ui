@@ -10,6 +10,7 @@ vi.mock('@/features/products/api', () => ({
   useGetCategoriesQuery: () => ({ data: [{ id: '2', name: 'Shampoo' }] }),
 }));
 vi.mock('@/features/admin/api', () => ({
+  useDeleteProductMutation: () => [() => ({ unwrap: async () => undefined }), { isLoading: false }],
   useUpdateProductMutation: () => [(arg: unknown) => { update(arg); return { unwrap: async () => ({}) }; }, { isLoading: false }],
 }));
 
@@ -21,7 +22,7 @@ describe('Fix products inline editor', () => {
   it('fills a template draft without saving, then saves only what changed and moves on', async () => {
     const onSaved = vi.fn();
     const request = vi.fn(async () => ({ drafts: { en: null, mk: null, shq: null } }));
-    render(<App><ProductFixEditor product={product} request={request} onSaved={onSaved} /></App>);
+    render(<App><ProductFixEditor product={product} request={request} onSaved={onSaved} onDeleted={vi.fn()} /></App>);
     fireEvent.click(screen.getAllByRole('button', { name: 'Suggest description' })[0]);
     await waitFor(() => expect((screen.getByLabelText('Description (Macedonian)') as HTMLTextAreaElement).value).toContain('шампон'));
     expect(update).not.toHaveBeenCalled();
@@ -30,6 +31,16 @@ describe('Fix products inline editor', () => {
     const data = update.mock.calls[0][0].data as FormData;
     expect(data.get('translations[mk]')).toContain('Botugen Shampoo 300ml');
     expect(data.get('price')).toBeNull();
+  });
+
+  it('asks before deleting the product and names it', async () => {
+    const onDeleted = vi.fn();
+    render(<App><ProductFixEditor product={product} request={vi.fn()} onSaved={vi.fn()} onDeleted={onDeleted} /></App>);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete product' }));
+    expect(await screen.findByText('Delete “Botugen Shampoo 300ml”?')).toBeTruthy();
+    expect(onDeleted).not.toHaveBeenCalled();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete product' }).at(-1)!);
+    await waitFor(() => expect(onDeleted).toHaveBeenCalled());
   });
 
   it('builds drafts in all three languages', () => {

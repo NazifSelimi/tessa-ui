@@ -5,9 +5,9 @@
  * changed, through the normal admin product update.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { App, Button, Col, Form, Input, Row, Select, Space, Tooltip } from 'antd';
+import { App, Button, Col, Form, Input, Popconfirm, Row, Select, Space, Tooltip } from 'antd';
 import { useGetBrandsQuery, useGetCategoriesQuery } from '@/features/products/api';
-import { useUpdateProductMutation } from '@/features/admin/api';
+import { useDeleteProductMutation, useUpdateProductMutation } from '@/features/admin/api';
 import type { ProductAudience } from '@/types';
 import { BrandCategoryFields, DescriptionFields, PriceStockFields, VisibilityField, visibleToParam, type DescriptionLocale } from './ProductFields';
 import { templateDescription } from './descriptionDraft';
@@ -51,15 +51,18 @@ interface Props {
   /** GET helper for the admin API (adds the token). */
   request: (path: string) => Promise<{ drafts: Record<DescriptionLocale, Draft> }>;
   onSaved: (next: boolean) => void;
+  /** Called after the product was deleted. */
+  onDeleted: () => void;
 }
 
-export default function ProductFixEditor({ product, request, onSaved }: Props) {
+export default function ProductFixEditor({ product, request, onSaved, onDeleted }: Props) {
   const { message } = App.useApp();
   const [form] = Form.useForm<Values>();
   const visible = Form.useWatch('visible_to', form);
   const { data: brands = [] } = useGetBrandsQuery(undefined);
   const { data: categories = [] } = useGetCategoriesQuery(undefined);
   const [updateProduct, { isLoading }] = useUpdateProductMutation();
+  const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
   const [drafts, setDrafts] = useState<Record<DescriptionLocale, Draft>>();
   const initial = useMemo(() => valuesOf(product), [product.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -141,6 +144,17 @@ export default function ProductFixEditor({ product, request, onSaved }: Props) {
         <Button type="primary" loading={isLoading} onClick={() => void save(true)}>Save &amp; next ›</Button>
         <Button loading={isLoading} htmlType="submit">Save</Button>
         <Button onClick={() => form.setFieldsValue(initial)}>Undo changes</Button>
+        <Popconfirm
+          title={`Delete “${product.name}”?`}
+          description="The product and its texts are removed from the shop. Products that were ever ordered cannot be deleted (order history is kept); hide them instead."
+          okText="Delete product" okButtonProps={{ danger: true }} cancelText="Keep"
+          onConfirm={async () => {
+            try { await deleteProduct(String(product.id)).unwrap(); message.success('Product deleted.'); onDeleted(); }
+            catch (error) { message.error((error as { data?: { message?: string } })?.data?.message || 'Could not delete. Please try again.'); }
+          }}
+        >
+          <Button danger loading={deleting}>Delete product</Button>
+        </Popconfirm>
       </Space>
     </Form>
   );

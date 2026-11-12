@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Badge, Button, Empty, Image, Input, Select, Space, Spin, Switch, Tag, Tooltip, Typography, message } from 'antd';
+import { Alert, Badge, Button, Empty, Image, Input, Popconfirm, Select, Space, Spin, Switch, Tag, Tooltip, Typography, message } from 'antd';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
@@ -203,6 +203,24 @@ export default function AdminProductFixesPage() {
     } catch (e) { message.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  const deleteImage = async (asset: Asset) => {
+    if (!selectedId) return;
+    setBusy(true);
+    try {
+      const result = await request(`products/${selectedId}/images/${asset.id}`, { method: 'DELETE' });
+      setImages(result.images || []); message.success('Photo deleted.'); setRefresh(x => x + 1);
+    } catch (e) { message.error((e as Error).message); } finally { setBusy(false); }
+  };
+
+  const onDeleted = () => {
+    const following = rows[index + 1] ?? rows[index - 1];
+    setKnown(prev => { const next = new Map(prev); if (selectedId) next.delete(selectedId); return next; });
+    select(following && following.id !== selectedId ? following.id : undefined);
+    setRefresh(x => x + 1);
+  };
+
+  const photoCount = (images || []).filter(a => !/catalog-placeholders\//.test(a.url || '')).length;
+
   const onSaved = (next: boolean) => {
     const following = rows[index + 1];
     setRefresh(x => x + 1);
@@ -374,6 +392,11 @@ export default function AdminProductFixesPage() {
                           {asset.review_status === 'hidden'
                             ? <Button size="small" disabled={busy} onClick={() => void patchImage(asset, { review_status: 'needs_review' }, 'Photo is back in the shop.')}>Show in shop</Button>
                             : <Tooltip title="Hides it from the shop. The file is kept and you can show it again."><Button size="small" danger disabled={busy} onClick={() => void patchImage(asset, { review_status: 'hidden' }, 'Photo removed from the shop (file kept).')}>Remove from shop</Button></Tooltip>}
+                          {photoCount > 1
+                            ? <Popconfirm title="Delete this photo?" description="It is removed from the product. If it was the main photo, the next one becomes main." okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => deleteImage(asset)}>
+                                <Button size="small" danger disabled={busy} aria-label="Delete photo">🗑 Delete</Button>
+                              </Popconfirm>
+                            : <Tooltip title="This is the only photo. Add another photo first, then you can delete this one."><Button size="small" danger disabled aria-label="Delete photo">🗑 Delete</Button></Tooltip>}
                           <Tooltip title="Remove background, crop or center. Saves a new photo; this one stays."><Button size="small" disabled={busy} onClick={() => setEditor({ source: asset.url })}>Edit → new photo</Button></Tooltip>
                         </Space>
                       </div>
@@ -384,7 +407,7 @@ export default function AdminProductFixesPage() {
 
               <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
                 <Typography.Title level={4} style={{ marginTop: 0 }}>Product details</Typography.Title>
-                <ProductFixEditor product={selected} request={request} onSaved={onSaved} />
+                <ProductFixEditor product={selected} request={request} onSaved={onSaved} onDeleted={onDeleted} />
                 <Link to={`/admin/products?search=${selected.id}`}>More fields (hair quiz, shades) in Products ›</Link>
               </div>
             </Space>
