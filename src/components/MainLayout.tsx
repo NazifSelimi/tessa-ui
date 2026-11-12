@@ -89,7 +89,8 @@ export default function MainLayout() {
           {professionalShell ? <>
             <button className="nl-menu-toggle nl-icon-button" onClick={() => setMenuOpen(true)} aria-label={t('nav.openMenu')} aria-expanded={menuOpen}><Menu size={22} /></button>
             <Link className="nl-mobile-logo" to={home} aria-label="Tessa"><Logo height={26} /></Link>
-            <SearchSuggest className="nl-top-search" />
+            {/* Quick Order has its own search box; two stacked boxes confused people. */}
+            {location.pathname !== '/stylist/quick-order' && <SearchSuggest className="nl-top-search" />}
           </> : <>
             <Link className="nl-header-logo" to="/" aria-label="Tessa"><Logo height={32} /></Link>
             <nav className="nl-desktop-nav" aria-label={t('newLook.navigation')}>{navigation.slice(0, 3).map(({ to, label }) => <NavLink key={to} to={to} end={to === '/'}>{label}</NavLink>)}</nav>
