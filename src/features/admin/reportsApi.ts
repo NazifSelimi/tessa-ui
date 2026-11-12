@@ -6,6 +6,7 @@
  */
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
+import { toCsvText } from '@/shared/utils/csv';
 
 export type ReportPreset = 'this_week' | 'this_month' | 'last_month' | 'this_year' | 'custom';
 export type CostSource = 'real' | 'estimated' | 'unknown';
@@ -158,11 +159,7 @@ export const { useGetReportOverviewQuery, useGetSlowMoversQuery } = reportsApi;
 
 /** Turns rows into a CSV download (Excel opens it; the BOM keeps Cyrillic readable). */
 export function downloadCsv(filename: string, header: string[], rows: (string | number | null | undefined)[][]) {
-  const cell = (value: string | number | null | undefined) => {
-    const text = value === null || value === undefined ? '' : String(value);
-    return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-  };
-  const csv = [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
+  const csv = toCsvText([header, ...rows]);
   const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;

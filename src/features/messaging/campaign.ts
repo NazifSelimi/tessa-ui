@@ -5,6 +5,7 @@
  */
 
 import type { Lang } from './templates';
+import { csvCell } from '@/shared/utils/csv';
 
 export interface Recipient {
   phone: string;
@@ -82,10 +83,6 @@ export function saveCampaign(campaign: Campaign | null): void {
   }
 }
 
-const csvCell = (value: unknown) => {
-  const text = value === null || value === undefined ? '' : String(value);
-  return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
 
 /** CSV for Excel / Google Sheets; `message` gives each person's filled-in text. */
 export function toCsv(campaign: Campaign, message: (row: Recipient) => string): string {
