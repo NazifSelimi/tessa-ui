@@ -317,7 +317,7 @@ export default function CheckoutPage() {
                       label={t('checkout.firstName')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" />
+                      <Input size="large" autoComplete="given-name" />
                     </Form.Item>
                   </Col>
                   <Col xs={24} sm={12}>
@@ -326,7 +326,7 @@ export default function CheckoutPage() {
                       label={t('checkout.lastName')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" />
+                      <Input size="large" autoComplete="family-name" />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -341,7 +341,7 @@ export default function CheckoutPage() {
                         { type: 'email', message: t('auth.invalidEmail') },
                       ]}
                     >
-                      <Input size="large" type="email" />
+                      <Input size="large" type="email" autoComplete="email" inputMode="email" />
                     </Form.Item>
                   </Col>
                   <Col xs={24} sm={12}>
@@ -350,7 +350,7 @@ export default function CheckoutPage() {
                       label={t('checkout.phone')}
                       rules={[{ required: true, message: t('common.required') }]}
                     >
-                      <Input size="large" type="tel" />
+                      <Input size="large" type="tel" autoComplete="tel" inputMode="tel" />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -360,7 +360,7 @@ export default function CheckoutPage() {
                   label={t('checkout.address')}
                   rules={[{ required: true, message: t('common.required') }]}
                 >
-                  <Input size="large" />
+                  <Input size="large" autoComplete="street-address" />
                 </Form.Item>
 
                 <Row gutter={16}>
@@ -582,6 +582,8 @@ export default function CheckoutPage() {
                 <Space.Compact style={{ width: '100%' }}>
                   <Input
                     placeholder={t('checkout.enterCode')}
+                    aria-label={t('checkout.enterCode')}
+                    autoComplete="off"
                     value={discountInput}
                     onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
                     onPressEnter={handleApplyDiscount}
