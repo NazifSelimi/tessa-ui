@@ -96,7 +96,8 @@
     "setNewPassword": "Vendos fjalëkalim të ri",
     "setNewPasswordDescription": "Shkruani fjalëkalimin tuaj të ri më poshtë.",
     "passwordResetSuccess": "Fjalëkalimi u rivendos!",
-    "passwordResetSuccessDescription": "Fjalëkalimi juaj u rivendos me sukses. Tani mund të kyçeni me fjalëkalimin e ri."
+    "passwordResetSuccessDescription": "Fjalëkalimi juaj u rivendos me sukses. Tani mund të kyçeni me fjalëkalimin e ri.",
+    "streetPlaceholder": "Rruga dhe numri"
   },
   "product": {
     "addToCart": "Shto në shportë",
@@ -166,7 +167,8 @@
     "lowStock": "Kanë mbetur vetëm {{count}} në stok",
     "noImage": "Nuk ka imazh",
     "professionalUse": "Vetëm për përdorim profesional",
-    "compatibleWith": "Sistemi i përputhshëm"
+    "compatibleWith": "Sistemi i përputhshëm",
+    "closeImage": "Mbyll foton"
   },
   "cart": {
     "shoppingCart": "Shporta e blerjeve",
@@ -191,7 +193,11 @@
     "quantityFor": "Sasia për {{name}}",
     "removeFromCart": "Hiq {{name}} nga shporta",
     "clearCart": "Zbraz shportën",
-    "clearCartConfirm": "A jeni i sigurt që dëshironi të hiqni të gjitha produktet nga shporta?"
+    "clearCartConfirm": "A jeni i sigurt që dëshironi të hiqni të gjitha produktet nga shporta?",
+    "addMoreProducts": "Shtoni më shumë produkte",
+    "openQuickOrder": "Hap Porosinë e shpejtë",
+    "searchingCatalogue": "Duke kërkuar…",
+    "noMatches": "Nuk ka produkte që përputhen."
   },
   "checkout": {
     "title": "Pagesa",
@@ -663,5 +669,182 @@
     "title": "Faqja nuk u gjet",
     "text": "Faqja që kërkuat nuk ekziston ose është zhvendosur.",
     "back": "Kthehu te dyqani"
+  },
+  "collections": {
+    "blonde-and-tone": {
+      "title": "Bjonde dhe tonifikim",
+      "description": "Neutralizoni tonet e verdha, mbajeni bjonden të ndritshme dhe kujdesuni për flokët e zbardhura.",
+      "heroEyebrow": "Kujdes për flokë bjonde",
+      "heroTitle": "Bjonde e ftohtë dhe e ndritshme — pa tone të verdha.",
+      "heroBody": "Shampo, maska dhe tonerë që i mbajnë flokët bjonde dhe me fije të freskëta mes vizitave në sallon."
+    },
+    "repair": {
+      "title": "Riparim i flokëve të dëmtuara",
+      "description": "Rindërtoni dhe zbutni flokët e dëmtuara, të thata ose të lodhura.",
+      "heroEyebrow": "Riparim",
+      "heroTitle": "Ktheni në jetë flokët e thata dhe të dëmtuara.",
+      "heroBody": "Shampo, maska dhe trajtime që rikthejnë forcën, zbutin dhe japin shkëlqim."
+    },
+    "curls": {
+      "title": "Kujdes për flokë kaçurrela",
+      "description": "Kaçurrela të hidratuara, të përcaktuara dhe të lehta për t’u freskuar mes larjeve.",
+      "heroEyebrow": "Kaçurrela dhe valë",
+      "heroTitle": "Kaçurrela të buta dhe të përcaktuara çdo ditë.",
+      "heroBody": "Kujdes hidratues dhe stilim që i mban kaçurrelat elastike dhe të lehta për t’u freskuar."
+    },
+    "smooth-and-anti-frizz": {
+      "title": "Flokë të lëmuara pa frizz",
+      "description": "Më pak frizz, mbrojtje nga nxehtësia dhe pamje e rregullt.",
+      "heroEyebrow": "E lëmuar dhe me shkëlqim",
+      "heroTitle": "Më pak frizz, më shumë shkëlqim.",
+      "heroBody": "Kujdes për lëmim, mbrojtje nga nxehtësia dhe produkte përfundimtare për një pamje të rregullt."
+    },
+    "colour": {
+      "title": "Ngjyrë dhe kujdes për ngjyrën",
+      "description": "Ngjyrë profesionale për flokë dhe kujdesi që e mban të gjallë.",
+      "heroEyebrow": "Kujdes për ngjyrën",
+      "heroTitle": "Ngjyrë që qëndron e gjallë më gjatë.",
+      "heroBody": "Ngjyrë profesionale dhe kujdesi që e mbron pas çdo vizite në sallon."
+    },
+    "extensions-and-tools": {
+      "title": "Zgjatime dhe vegla",
+      "description": "Zgjatime, furça dhe vegla për stilim të përditshëm.",
+      "heroEyebrow": "Zgjatime dhe vegla",
+      "heroTitle": "Veglat e duhura për flokë të bukura.",
+      "heroBody": "Zgjatime, furça dhe vegla stilimi të zgjedhura nga profesionistët."
+    },
+    "roles": {
+      "cleanse": {
+        "label": "Larje",
+        "intro": "Filloni me larjen — baza e gjithë rutinës."
+      },
+      "tone": {
+        "label": "Tonifikim",
+        "intro": "Neutralizoni tonet e padëshiruara dhe freskoni ngjyrën."
+      },
+      "nourish": {
+        "label": "Ushqyerje",
+        "intro": "Vazhdoni me butësi, krehje të lehtë dhe mirëmbajtje."
+      },
+      "protect": {
+        "label": "Mbrojtje",
+        "intro": "Përfundoni me kujdes që e zgjat rezultatin mes takimeve."
+      },
+      "repair": {
+        "label": "Riparim",
+        "intro": "Riktheni forcën te flokët e dobëta dhe të dëmtuara."
+      },
+      "define": {
+        "label": "Përcaktim",
+        "intro": "Formë dhe mbajtje për stile të përcaktuara."
+      },
+      "smooth": {
+        "label": "Lëmim",
+        "intro": "Zbutni frizz-in për një pamje të lëmuar dhe me shkëlqim."
+      }
+    },
+    "rolesBlonde": {
+      "cleanse": {
+        "intro": "Larje e butë për flokë bjonde dhe të zbardhura."
+      },
+      "tone": {
+        "intro": "Ftohni tonet e verdha dhe bakri."
+      },
+      "nourish": {
+        "intro": "Butësi dhe shkëlqim pas tonifikimit."
+      },
+      "protect": {
+        "intro": "Mbroni gjatësitë e brishta pas zbardhjes."
+      }
+    }
+  },
+  "collectionPage": {
+    "notFound": "Koleksioni nuk u gjet",
+    "notFoundText": "Ky koleksion nuk ekziston ose është zhvendosur.",
+    "backToShop": "Kthehu te dyqani",
+    "loadError": "Tani për tani nuk mund t’i ngarkojmë produktet.",
+    "loadErrorText": "Provoni përsëri pas pak ose shfletoni gjithë dyqanin.",
+    "shopTheCollection": "Bli nga koleksioni",
+    "salonOnly": "Këto janë produkte profesionale sallonesh.",
+    "comingSoon": "Së shpejti produkte të reja për këtë koleksion.",
+    "openBusiness": "Hapni një llogari biznesi",
+    "browseShop": "Shfletoni gjithë dyqanin",
+    "moreInCollection": "Më shumë nga ky koleksion",
+    "products": "Produkte",
+    "safePairing": "Kombinim i sigurt",
+    "verifiedPairings": "Kombinime teknike të verifikuara",
+    "pairOnlyWith": "Kombinoni vetëm me"
+  },
+  "pages": {
+    "stylistRequest": {
+      "submitFailed": "Kërkesa nuk u dërgua",
+      "submitted": "Kërkesa u dërgua!",
+      "approvedTitle": "Keni llogari biznesi!",
+      "approvedText": "Përfitoni çmime profesionale për të gjitha produktet.",
+      "shopNow": "Blini me çmime profesionale",
+      "reviewTitle": "Kërkesa po shqyrtohet",
+      "reviewText": "Po e shqyrtojmë kërkesën tuaj. Zakonisht zgjat 1–2 ditë pune.",
+      "stepSubmitted": "Dërguar",
+      "stepReview": "Në shqyrtim",
+      "rejectedTitle": "Kërkesa nuk u miratua",
+      "rejectedText": "Kërkesa juaj e mëparshme nuk u miratua.",
+      "reason": "Arsyeja",
+      "title": "Hapni një llogari biznesi",
+      "benefits": "Përfitimet",
+      "benefitPrice": "Deri në 25% zbritje nga çmimet me pakicë",
+      "benefitPro": "Qasje te produktet vetëm për profesionistë",
+      "benefitEarly": "Qasje e hershme te të rejat",
+      "benefitSupport": "Mbështetje me përparësi",
+      "fullName": "Emri dhe mbiemri",
+      "enterName": "Shkruani emrin",
+      "fullNamePlaceholder": "Emri juaj i plotë",
+      "enterEmail": "Shkruani email-in",
+      "validEmail": "Shkruani një email të vlefshëm",
+      "salonName": "Emri i sallonit/biznesit",
+      "enterSalonName": "Shkruani emrin e sallonit",
+      "salonPlaceholder": "Ku punoni?",
+      "salonAddress": "Adresa e sallonit",
+      "enterSalonAddress": "Shkruani adresën e sallonit",
+      "salonAddressPlaceholder": "Adresa e biznesit",
+      "salonMunicipality": "Komuna e sallonit",
+      "selectMunicipality": "Zgjidhni komunën",
+      "municipalityPlaceholder": "Zgjidhni komunën",
+      "salonPhone": "Telefoni i sallonit",
+      "enterSalonPhone": "Shkruani telefonin e sallonit",
+      "about": "Na tregoni për veten",
+      "aboutPlaceholder": "Përvoja juaj, specialitetet ose pse doni të bashkoheni..."
+    },
+    "invite": {
+      "unavailableText": "Kjo lidhje aktivizimi nuk është e disponueshme.",
+      "failed": "Nuk mundëm ta aktivizojmë llogarinë.",
+      "ready": "Llogaria juaj e biznesit është gati.",
+      "unavailable": "Ftesa nuk është e disponueshme",
+      "title": "Konfiguroni llogarinë tuaj të biznesit",
+      "proAccount": "Llogari profesionale",
+      "proText": "Çmimet profesionale dhe porosia e shpejtë do të jenë gati sapo të përfundoni.",
+      "enterFirstName": "Shkruani emrin.",
+      "enterLastName": "Shkruani mbiemrin.",
+      "emailOptional": "Email (opsional)",
+      "validEmail": "Shkruani një email të vlefshëm.",
+      "enterPhone": "Shkruani numrin e telefonit.",
+      "address": "Adresa",
+      "enterAddress": "Shkruani adresën.",
+      "city": "Qyteti",
+      "enterCity": "Shkruani qytetin.",
+      "postcode": "Kodi postar",
+      "enterPostcode": "Shkruani kodin postar.",
+      "salonName": "Emri i sallonit ose biznesit",
+      "enterSalonName": "Shkruani emrin e sallonit ose biznesit.",
+      "salonAddress": "Adresa e sallonit ose biznesit",
+      "enterSalonAddress": "Shkruani adresën e sallonit ose biznesit.",
+      "salonCity": "Qyteti i sallonit ose biznesit",
+      "enterSalonCity": "Shkruani qytetin e sallonit ose biznesit.",
+      "salonPhone": "Telefoni i sallonit ose biznesit",
+      "enterSalonPhone": "Shkruani telefonin e sallonit ose biznesit.",
+      "createPassword": "Krijoni një fjalëkalim",
+      "confirmPassword": "Konfirmoni fjalëkalimin.",
+      "oneTime": "Lidhja mund të përdoret një herë dhe skadon automatikisht.",
+      "activate": "Aktivizo llogarinë e biznesit"
+    }
   }
 }

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CollectionPage from '@/pages/CollectionPage';
+import i18n from '@/i18n';
 
 const mockUseGetProductCollectionsQuery = vi.fn();
 const mockUseGetProductsQuery = vi.fn();
@@ -111,7 +112,7 @@ describe('CollectionPage', () => {
     expect(screen.getByText('Wonder No Yellow Shampoo')).toBeInTheDocument();
     expect(screen.queryByText(/Temporary slot/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/wired up/i)).not.toBeInTheDocument();
-    expect(screen.queryByText('Safe pairing')).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('collectionPage.safePairing'))).not.toBeInTheDocument();
   });
 
   it('shows verified compatible systems to stylists', () => {
@@ -124,7 +125,7 @@ describe('CollectionPage', () => {
     renderCollection();
 
     expect(screen.getAllByText('No Yellow 9 Tone Bleaching Powder').length).toBeGreaterThan(0);
-    expect(screen.getByText('Pair only with')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('collectionPage.pairOnlyWith'))).toBeInTheDocument();
     expect(screen.getByText('Fanola Oxy')).toBeInTheDocument();
     expect(screen.getByText('Developer ratios, timing, and substitutions are intentionally omitted until manufacturer validation.')).toBeInTheDocument();
   });

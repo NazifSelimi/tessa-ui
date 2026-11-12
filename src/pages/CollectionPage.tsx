@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Empty, Skeleton, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
@@ -9,7 +10,8 @@ import { useGetCategoriesQuery, useGetProductCollectionsQuery, useGetProductsQue
 import { formatPrice } from '@/shared/utils/formatPrice';
 import {
   buildStorefrontCollectionDirectory,
-  getRoutineRoleCopy,
+  localizeCollection,
+  localizeRoutineRoleCopy,
   isStorefrontCollectionSlug,
   type StorefrontCollectionDirectoryItem,
 } from '@/shared/config/storefrontCollections';
@@ -47,11 +49,11 @@ function groupProductsByRole(products: Product[], roles: string[]): { grouped: R
 }
 
 function productBrand(product: Product): string {
-  return typeof product.brand === 'object' ? product.brand?.name ?? 'Brand pending' : product.brand ?? 'Brand pending';
+  return typeof product.brand === 'object' ? product.brand?.name ?? '' : product.brand ?? '';
 }
 
 function productCategory(product: Product): string {
-  return typeof product.category === 'object' ? product.category?.name ?? 'Category pending' : product.category ?? 'Category pending';
+  return typeof product.category === 'object' ? product.category?.name ?? '' : product.category ?? '';
 }
 
 function productCompatibleSystems(product: Product): string[] {
@@ -95,7 +97,9 @@ export default function CollectionPage() {
     () => buildStorefrontCollectionDirectory(collectionsData),
     [collectionsData],
   );
-  const collection = resolveCollection(slug, directory);
+  const { t } = useTranslation();
+  const baseCollection = resolveCollection(slug, directory);
+  const collection = useMemo(() => (baseCollection ? localizeCollection(baseCollection, t) : baseCollection), [baseCollection, t]);
   const { data: productsData, isLoading, error } = useGetProductsQuery(
     collection
       ? {
@@ -158,18 +162,18 @@ export default function CollectionPage() {
     return (
       <div className="collection-page">
         <Seo
-          title="Collection not found"
-          description="The requested Tessa Hair Care collection could not be found."
+          title={t('collectionPage.notFound')}
+          description={t('collectionPage.notFoundText')}
           path={`/collections/${slug ?? ''}`}
           noIndex
         />
         <div className="collection-shell">
           <Empty
-            description="This collection route is not part of the approved storefront set."
+            description={t('collectionPage.notFoundText')}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             <Link to="/shop">
-              <Button type="primary">Back to shop</Button>
+              <Button type="primary">{t('collectionPage.backToShop')}</Button>
             </Link>
           </Empty>
         </div>
@@ -215,7 +219,7 @@ export default function CollectionPage() {
         >
           <div className="collection-hero__copy">
             <Link to="/shop" className="collection-backlink">
-              <ArrowLeftOutlined /> Back to shop
+              <ArrowLeftOutlined /> {t('collectionPage.backToShop')}
             </Link>
             <span className="collection-badge collection-badge--live">
               {collection.heroEyebrow}
@@ -259,14 +263,14 @@ export default function CollectionPage() {
             className="collection-callout"
             type="warning"
             showIcon
-            message="We couldn't load these products right now."
-            description="Please try again in a moment, or browse the full shop."
+            message={t('collectionPage.loadError')}
+            description={t('collectionPage.loadErrorText')}
           />
         )}
 
         <section className="collection-section">
           <div className="collection-section__head">
-            <span className="collection-section__eyebrow">Shop the collection</span>
+            <span className="collection-section__eyebrow">{t('collectionPage.shopTheCollection')}</span>
             <Title level={2}>{collection.title}</Title>
           </div>
 
@@ -278,7 +282,7 @@ export default function CollectionPage() {
             </div>
           ) : groupedProducts.grouped.length > 0 ? (
             groupedProducts.grouped.map((group, index) => {
-              const roleCopy = getRoutineRoleCopy(group.role, collection.slug);
+              const roleCopy = localizeRoutineRoleCopy(group.role, collection.slug, t);
 
               return (
                 <div key={group.role} className="routine-group">
@@ -302,17 +306,17 @@ export default function CollectionPage() {
             <div className="collection-empty-state">
               <h3>
                 {products.length > 0
-                  ? 'These are professional salon products.'
-                  : 'New products for this collection are coming soon.'}
+                  ? t('collectionPage.salonOnly')
+                  : t('collectionPage.comingSoon')}
               </h3>
               <p>
                 {products.length > 0 && (
                   <>
-                    <Link to="/for-professionals">Open a business account <ArrowRightOutlined /></Link>
+                    <Link to="/for-professionals">{t('collectionPage.openBusiness')} <ArrowRightOutlined /></Link>
                     {' · '}
                   </>
                 )}
-                <Link to="/shop">Browse the full shop <ArrowRightOutlined /></Link>
+                <Link to="/shop">{t('collectionPage.browseShop')} <ArrowRightOutlined /></Link>
               </p>
             </div>
           ) : null}
@@ -322,7 +326,7 @@ export default function CollectionPage() {
               <div className="routine-group__summary">
                 <span className="routine-group__count">{groupedProducts.grouped.length > 0 ? '+' : '01'}</span>
                 <div>
-                  <h3>{groupedProducts.grouped.length > 0 ? 'More in this collection' : 'Products'}</h3>
+                  <h3>{groupedProducts.grouped.length > 0 ? t('collectionPage.moreInCollection') : t('collectionPage.products')}</h3>
                 </div>
               </div>
               <div className="routine-group__products">
@@ -337,8 +341,8 @@ export default function CollectionPage() {
         {showPairings && (
         <section className="collection-section">
           <div className="collection-section__head">
-            <span className="collection-section__eyebrow">Safe pairing</span>
-            <Title level={2}>Verified technical pairings</Title>
+            <span className="collection-section__eyebrow">{t('collectionPage.safePairing')}</span>
+            <Title level={2}>{t('collectionPage.verifiedPairings')}</Title>
             <Paragraph>
               Pairings the catalogue marks as compatible. Check the manufacturer sheet for ratios and timing.
             </Paragraph>
@@ -369,7 +373,7 @@ export default function CollectionPage() {
                   </div>
 
                   <div className="pairing-card__group">
-                    <Text strong>Pair only with</Text>
+                    <Text strong>{t('collectionPage.pairOnlyWith')}</Text>
                     <div className="pairing-card__tags">
                       {productCompatibleSystems(product).map((system) => (
                         <Tag key={system}>{system}</Tag>

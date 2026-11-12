@@ -390,7 +390,7 @@ export default function ProductPage() {
 
       {isZoomed && selectedAsset && (
         <div className="product-image-lightbox" role="dialog" aria-modal="true" aria-label={`${product.name} enlarged image`} onClick={() => setIsZoomed(false)}>
-          <button type="button" className="product-image-lightbox__close" onClick={() => setIsZoomed(false)} aria-label="Close image">×</button>
+          <button type="button" className="product-image-lightbox__close" onClick={() => setIsZoomed(false)} aria-label={t('product.closeImage')}>×</button>
           <img src={selectedAsset.url || NO_IMAGE} alt={selectedAsset.alt || product.name} onClick={(event) => event.stopPropagation()} />
         </div>
       )}

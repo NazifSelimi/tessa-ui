@@ -122,10 +122,10 @@ const CartPage: React.FC = () => {
         </div>
       </div>
 
-      {isStylist && <Card size="small" title="Add more products" style={{ marginBottom: 20 }} extra={<Link to="/stylist/quick-order">Open full Quick Order</Link>}>
+      {isStylist && <Card size="small" title={t('cart.addMoreProducts')} style={{ marginBottom: 20 }} extra={<Link to="/stylist/quick-order">{t('cart.openQuickOrder')}</Link>}>
         <Input prefix={<SearchOutlined />} allowClear value={quickSearch} onChange={(event) => setQuickSearch(event.target.value)} placeholder="Search products, colours, or brands…" />
         {debouncedQuickSearch.length >= 2 && <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-          {isSearchingQuickProducts ? <Text type="secondary">Searching catalogue…</Text> : !quickProducts?.data.length ? <Text type="secondary">No matching products.</Text> : quickProducts.data.map((product) => <div key={product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+          {isSearchingQuickProducts ? <Text type="secondary">{t('cart.searchingCatalogue')}</Text> : !quickProducts?.data.length ? <Text type="secondary">{t('cart.noMatches')}</Text> : quickProducts.data.map((product) => <div key={product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
             <Space><Image src={product.thumbnail || '/placeholder.svg'} preview={false} width={38} height={38} style={{ objectFit: 'contain' }} fallback="/placeholder.svg" /><span><Text strong>{product.name}</Text><br /><Text type="secondary">{formatPrice(product.stylistPrice)} · {product.stock} in stock</Text></span></Space>
             <button className="nl-quick-add" disabled={product.stock < 1} aria-label={`${t('product.addToCart')}: ${product.name}`} onClick={() => {
               const existingItem = items.find((item) => String(item.productId) === product.id);

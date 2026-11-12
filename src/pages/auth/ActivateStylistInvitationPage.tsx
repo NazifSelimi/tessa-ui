@@ -7,6 +7,7 @@ import { setCredentials } from '@/features/auth/slice';
 import type { User } from '@/types';
 import AuthPageHeader from '@/components/AuthPageHeader';
 import { resolveActivationField } from '@/shared/utils/activationFields';
+import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
 const { Paragraph, Title, Text } = Typography;
@@ -47,6 +48,7 @@ function splitSuggestedName(displayName: string): Pick<ActivationValues, 'first_
 }
 
 export default function ActivateStylistInvitationPage() {
+  const { t } = useTranslation();
   const { token = '' } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -63,7 +65,7 @@ export default function ActivateStylistInvitationPage() {
           headers: { Accept: 'application/json' },
         });
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.message || 'This activation link is unavailable.');
+        if (!response.ok) throw new Error(payload.message || t('pages.invite.unavailableText'));
 
         const details = payload.data as InvitationDetails;
         setInvitation(details);
@@ -80,7 +82,7 @@ export default function ActivateStylistInvitationPage() {
           business_phone: details.business_phone ?? details.phone ?? undefined,
         });
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'This activation link is unavailable.');
+        setError(loadError instanceof Error ? loadError.message : t('pages.invite.unavailableText'));
       } finally {
         setLoading(false);
       }
@@ -114,13 +116,13 @@ export default function ActivateStylistInvitationPage() {
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || 'We could not activate your account.');
+      if (!response.ok) throw new Error(result.message || t('pages.invite.failed'));
 
       dispatch(setCredentials({ token: result.data.token, user: result.data.user as User }));
-      message.success('Your stylist account is ready.');
+      message.success(t('pages.invite.ready'));
       navigate('/stylist/workspace', { replace: true });
     } catch (submitError) {
-      message.error(submitError instanceof Error ? submitError.message : 'We could not activate your account.');
+      message.error(submitError instanceof Error ? submitError.message : t('pages.invite.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -131,36 +133,36 @@ export default function ActivateStylistInvitationPage() {
       <AuthPageHeader />
       <Card style={{ width: '100%', maxWidth: 560, borderRadius: 16 }} styles={{ body: { padding: 32 } }}>
         {loading && <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>}
-        {!loading && error && <Alert type="error" showIcon message="Invitation unavailable" description={error} />}
+        {!loading && error && <Alert type="error" showIcon message={t('pages.invite.unavailable')} description={error} />}
         {!loading && invitation && (
           <>
-            <Title level={2} style={{ marginBottom: 8 }}>Set up your stylist account</Title>
+            <Title level={2} style={{ marginBottom: 8 }}>{t('pages.invite.title')}</Title>
             <Paragraph type="secondary">Welcome, {invitation.display_name}. We have prefilled the details we already know. Add only the missing information below, then choose your password.</Paragraph>
-            <Alert type="info" showIcon icon={<ShopOutlined />} message="Professional account" description="Your stylist pricing and quick ordering will be available as soon as you finish setup." style={{ marginBottom: 20 }} />
+            <Alert type="info" showIcon icon={<ShopOutlined />} message={t('pages.invite.proAccount')} description={t('pages.invite.proText')} style={{ marginBottom: 20 }} />
             <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
-              <Form.Item name="first_name" label="First name" rules={[{ required: true, message: 'Enter your first name.' }]}>
+              <Form.Item name="first_name" label={t('auth.firstName')} rules={[{ required: true, message: t('pages.invite.enterFirstName') }]}>
                 <Input prefix={<UserOutlined />} autoComplete="given-name" />
               </Form.Item>
-              <Form.Item name="last_name" label="Last name" rules={[{ required: true, message: 'Enter your last name.' }]}>
+              <Form.Item name="last_name" label={t('auth.lastName')} rules={[{ required: true, message: t('pages.invite.enterLastName') }]}>
                 <Input prefix={<UserOutlined />} autoComplete="family-name" />
               </Form.Item>
-              {needs('email') && <Form.Item name="email" label="Email (optional)" rules={[{ type: 'email', message: 'Enter a valid email address.' }]}><Input autoComplete="email" /></Form.Item>}
-              {needs('phone') && <Form.Item name="phone" label="Phone" rules={[{ required: true, message: 'Enter your phone number.' }]}><Input autoComplete="tel" /></Form.Item>}
-              {needs('address') && <Form.Item name="address" label="Address" rules={[{ required: true, message: 'Enter your address.' }]}><Input autoComplete="street-address" /></Form.Item>}
-              {needs('city') && <Form.Item name="city" label="City" rules={[{ required: true, message: 'Enter your city.' }]}><Input autoComplete="address-level2" /></Form.Item>}
-              {needs('postal_code') && <Form.Item name="postal_code" label="Postal code" rules={[{ required: true, message: 'Enter your postal code.' }]}><Input autoComplete="postal-code" /></Form.Item>}
-              {needs('business_name') && <Form.Item name="business_name" label="Salon or business name" rules={[{ required: true, message: 'Enter your salon or business name.' }]}><Input autoComplete="organization" /></Form.Item>}
-              {needs('business_address') && <Form.Item name="business_address" label="Salon or business address" rules={[{ required: true, message: 'Enter your salon or business address.' }]}><Input /></Form.Item>}
-              {needs('business_city') && <Form.Item name="business_city" label="Salon or business city" rules={[{ required: true, message: 'Enter your salon or business city.' }]}><Input /></Form.Item>}
-              {needs('business_phone') && <Form.Item name="business_phone" label="Salon or business phone" rules={[{ required: true, message: 'Enter your salon or business phone.' }]}><Input autoComplete="tel" /></Form.Item>}
-              <Form.Item name="password" label="Create a password" rules={[{ required: true, min: 8, message: 'Use at least 8 characters.' }]}>
+              {needs('email') && <Form.Item name="email" label={t('pages.invite.emailOptional')} rules={[{ type: 'email', message: t('pages.invite.validEmail') }]}><Input autoComplete="email" /></Form.Item>}
+              {needs('phone') && <Form.Item name="phone" label={t('auth.phone')} rules={[{ required: true, message: t('pages.invite.enterPhone') }]}><Input autoComplete="tel" /></Form.Item>}
+              {needs('address') && <Form.Item name="address" label={t('pages.invite.address')} rules={[{ required: true, message: t('pages.invite.enterAddress') }]}><Input autoComplete="street-address" /></Form.Item>}
+              {needs('city') && <Form.Item name="city" label={t('pages.invite.city')} rules={[{ required: true, message: t('pages.invite.enterCity') }]}><Input autoComplete="address-level2" /></Form.Item>}
+              {needs('postal_code') && <Form.Item name="postal_code" label={t('pages.invite.postcode')} rules={[{ required: true, message: t('pages.invite.enterPostcode') }]}><Input autoComplete="postal-code" /></Form.Item>}
+              {needs('business_name') && <Form.Item name="business_name" label={t('pages.invite.salonName')} rules={[{ required: true, message: t('pages.invite.enterSalonName') }]}><Input autoComplete="organization" /></Form.Item>}
+              {needs('business_address') && <Form.Item name="business_address" label={t('pages.invite.salonAddress')} rules={[{ required: true, message: t('pages.invite.enterSalonAddress') }]}><Input /></Form.Item>}
+              {needs('business_city') && <Form.Item name="business_city" label={t('pages.invite.salonCity')} rules={[{ required: true, message: t('pages.invite.enterSalonCity') }]}><Input /></Form.Item>}
+              {needs('business_phone') && <Form.Item name="business_phone" label={t('pages.invite.salonPhone')} rules={[{ required: true, message: t('pages.invite.enterSalonPhone') }]}><Input autoComplete="tel" /></Form.Item>}
+              <Form.Item name="password" label={t('pages.invite.createPassword')} rules={[{ required: true, min: 8, message: t('auth.passwordMin') }]}>
                 <Input.Password prefix={<LockOutlined />} autoComplete="new-password" />
               </Form.Item>
-              <Form.Item name="password_confirmation" label="Confirm password" dependencies={['password']} rules={[{ required: true, message: 'Confirm your password.' }, ({ getFieldValue }) => ({ validator: (_, value) => !value || getFieldValue('password') === value ? Promise.resolve() : Promise.reject(new Error('Passwords do not match.')) })]}>
+              <Form.Item name="password_confirmation" label={t('auth.confirmPassword')} dependencies={['password']} rules={[{ required: true, message: t('pages.invite.confirmPassword') }, ({ getFieldValue }) => ({ validator: (_, value) => !value || getFieldValue('password') === value ? Promise.resolve() : Promise.reject(new Error(t('auth.passwordsNoMatch'))) })]}>
                 <Input.Password prefix={<LockOutlined />} autoComplete="new-password" />
               </Form.Item>
-              <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>This link can be used once and will expire automatically.</Text>
-              <Button type="primary" htmlType="submit" size="large" loading={submitting} block>Activate stylist account</Button>
+              <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>{t('pages.invite.oneTime')}</Text>
+              <Button type="primary" htmlType="submit" size="large" loading={submitting} block>{t('pages.invite.activate')}</Button>
             </Form>
           </>
         )}

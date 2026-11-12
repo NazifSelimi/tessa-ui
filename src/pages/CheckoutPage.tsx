@@ -297,7 +297,7 @@ export default function CheckoutPage() {
         size="small"
       />
 
-      <Row gutter={[32, 24]}>
+      <Row gutter={[{ xs: 16, lg: 32 }, 24]}>
         {/* Form Section */}
         <Col xs={24} lg={14}>
           {/* Step 1: Shipping */}

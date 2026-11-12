@@ -121,11 +121,11 @@ export default function AccountPage() {
               onFinish={handleUpdateProfile}
             >
               <Form.Item name="first_name" label={t('auth.firstName')} rules={[{ required: true }]}>
-                <Input prefix={<UserOutlined />} placeholder="First name" />
+                <Input prefix={<UserOutlined />} placeholder={t('auth.firstName')} />
               </Form.Item>
 
               <Form.Item name="last_name" label={t('auth.lastName')} rules={[{ required: true }]}>
-                <Input prefix={<UserOutlined />} placeholder="Last name" />
+                <Input prefix={<UserOutlined />} placeholder={t('auth.lastName')} />
               </Form.Item>
 
               <Form.Item
@@ -141,7 +141,7 @@ export default function AccountPage() {
               </Form.Item>
 
               <Form.Item name="address" label={t('checkout.address')} rules={[{ required: true, message: t('account.enterAddress') }]}>
-                <Input prefix={<HomeOutlined />} placeholder="Street and number" />
+                <Input prefix={<HomeOutlined />} placeholder={t('auth.streetPlaceholder')} />
               </Form.Item>
 
               <Form.Item name="city" label={t('checkout.municipality')} rules={[{ required: true, message: t('account.enterMunicipality') }]}>
@@ -188,7 +188,7 @@ export default function AccountPage() {
                 label={t('account.currentPassword')}
                 rules={[{ required: true, message: t('account.enterCurrentPassword') }]}
               >
-                <Input.Password placeholder="Current password" />
+                <Input.Password placeholder={t('account.currentPassword')} />
               </Form.Item>
               <Form.Item 
                 name="newPassword" 
@@ -198,7 +198,7 @@ export default function AccountPage() {
                   { min: 8, message: t('auth.passwordMin') },
                 ]}
               >
-                <Input.Password placeholder="New password" />
+                <Input.Password placeholder={t('account.newPassword')} />
               </Form.Item>
               <Form.Item 
                 name="confirmPassword" 
@@ -216,7 +216,7 @@ export default function AccountPage() {
                   }),
                 ]}
               >
-                <Input.Password placeholder="Confirm new password" />
+                <Input.Password placeholder={t('account.confirmNewPassword')} />
               </Form.Item>
               <Button type="primary" htmlType="submit" loading={isLoading}>{t('account.updatePassword')}</Button>
             </Form>

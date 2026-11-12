@@ -216,7 +216,7 @@ const RegisterPage: React.FC = () => {
           >
             <Input
               prefix={<HomeOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="Street and number"
+              placeholder={t('auth.streetPlaceholder')}
               size="large"
               autoComplete="street-address"
             />

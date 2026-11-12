@@ -96,7 +96,8 @@
     "setNewPassword": "Set New Password",
     "setNewPasswordDescription": "Enter your new password below.",
     "passwordResetSuccess": "Password Reset!",
-    "passwordResetSuccessDescription": "Your password has been reset successfully. You can now sign in with your new password."
+    "passwordResetSuccessDescription": "Your password has been reset successfully. You can now sign in with your new password.",
+    "streetPlaceholder": "Street and number"
   },
   "product": {
     "addToCart": "Add to Cart",
@@ -166,7 +167,8 @@
     "lowStock": "Only {{count}} left in stock",
     "noImage": "No image",
     "professionalUse": "Professional use only",
-    "compatibleWith": "Compatible system"
+    "compatibleWith": "Compatible system",
+    "closeImage": "Close image"
   },
   "cart": {
     "shoppingCart": "Shopping Cart",
@@ -191,7 +193,11 @@
     "quantityFor": "Quantity for {{name}}",
     "removeFromCart": "Remove {{name}} from cart",
     "clearCart": "Clear cart",
-    "clearCartConfirm": "Are you sure you want to remove all items from your cart?"
+    "clearCartConfirm": "Are you sure you want to remove all items from your cart?",
+    "addMoreProducts": "Add more products",
+    "openQuickOrder": "Open full Quick Order",
+    "searchingCatalogue": "Searching catalogue…",
+    "noMatches": "No matching products."
   },
   "checkout": {
     "title": "Checkout",
@@ -663,5 +669,182 @@
     "title": "Page not found",
     "text": "The page you requested does not exist or has moved.",
     "back": "Back to shop"
+  },
+  "collections": {
+    "blonde-and-tone": {
+      "title": "Blonde and Tone",
+      "description": "Tone brassiness, keep blonde bright and care for lightened hair.",
+      "heroEyebrow": "Blonde care",
+      "heroTitle": "Cool, bright blonde without the brass.",
+      "heroBody": "Shampoos, masks and toners that keep blonde and highlighted hair fresh between salon visits."
+    },
+    "repair": {
+      "title": "Repair damaged hair",
+      "description": "Rebuild and soften damaged, dry or stressed hair.",
+      "heroEyebrow": "Repair",
+      "heroTitle": "Bring dry, damaged hair back to life.",
+      "heroBody": "Shampoos, masks and treatments that rebuild strength, soften and add shine."
+    },
+    "curls": {
+      "title": "Care for curls",
+      "description": "Keep curls hydrated, defined, and easy to refresh between washes.",
+      "heroEyebrow": "Curls & waves",
+      "heroTitle": "Soft, defined curls every day.",
+      "heroBody": "Hydrating care and styling that keeps curls bouncy and easy to refresh between washes."
+    },
+    "smooth-and-anti-frizz": {
+      "title": "Smooth and Anti-frizz",
+      "description": "Reduce frizz, protect against heat, and keep the finish polished.",
+      "heroEyebrow": "Smooth & shiny",
+      "heroTitle": "Less frizz, more shine.",
+      "heroBody": "Smoothing care, heat protection and finishing products for a polished look."
+    },
+    "colour": {
+      "title": "Colour services and care",
+      "description": "Professional hair colour and the care that keeps it vibrant.",
+      "heroEyebrow": "Colour care",
+      "heroTitle": "Colour that stays vibrant for longer.",
+      "heroBody": "Professional colour and the care that protects it after every salon visit."
+    },
+    "extensions-and-tools": {
+      "title": "Extensions and Tools",
+      "description": "Extensions, brushes and tools for everyday styling.",
+      "heroEyebrow": "Extensions & tools",
+      "heroTitle": "The right tools for great hair.",
+      "heroBody": "Extensions, brushes and styling tools picked by professionals."
+    },
+    "roles": {
+      "cleanse": {
+        "label": "Cleanse",
+        "intro": "Start with the wash step that sets up the rest of the routine."
+      },
+      "tone": {
+        "label": "Tone",
+        "intro": "Neutralise unwanted tones and refresh colour."
+      },
+      "nourish": {
+        "label": "Nourish",
+        "intro": "Follow with softness, slip, and maintenance support."
+      },
+      "protect": {
+        "label": "Protect",
+        "intro": "Finish with care that helps the result last longer between appointments."
+      },
+      "repair": {
+        "label": "Repair",
+        "intro": "Rebuild strength in weak, damaged hair."
+      },
+      "define": {
+        "label": "Define",
+        "intro": "Shape and hold for defined styles."
+      },
+      "smooth": {
+        "label": "Smooth",
+        "intro": "Tame frizz and add a smooth, glossy finish."
+      }
+    },
+    "rolesBlonde": {
+      "cleanse": {
+        "intro": "A gentle wash made for blonde and lightened hair."
+      },
+      "tone": {
+        "intro": "Cool down brassy and yellow tones."
+      },
+      "nourish": {
+        "intro": "Softness and shine after toning."
+      },
+      "protect": {
+        "intro": "Protect fragile lengths after lightening."
+      }
+    }
+  },
+  "collectionPage": {
+    "notFound": "Collection not found",
+    "notFoundText": "This collection does not exist or has moved.",
+    "backToShop": "Back to shop",
+    "loadError": "We couldn't load these products right now.",
+    "loadErrorText": "Please try again in a moment, or browse the full shop.",
+    "shopTheCollection": "Shop the collection",
+    "salonOnly": "These are professional salon products.",
+    "comingSoon": "New products for this collection are coming soon.",
+    "openBusiness": "Open a business account",
+    "browseShop": "Browse the full shop",
+    "moreInCollection": "More in this collection",
+    "products": "Products",
+    "safePairing": "Safe pairing",
+    "verifiedPairings": "Verified technical pairings",
+    "pairOnlyWith": "Pair only with"
+  },
+  "pages": {
+    "stylistRequest": {
+      "submitFailed": "Failed to submit application",
+      "submitted": "Application submitted successfully!",
+      "approvedTitle": "You're a Verified Stylist!",
+      "approvedText": "Enjoy exclusive stylist pricing on all products.",
+      "shopNow": "Shop with Stylist Pricing",
+      "reviewTitle": "Application Under Review",
+      "reviewText": "We're reviewing your stylist application. This usually takes 1-2 business days.",
+      "stepSubmitted": "Submitted",
+      "stepReview": "Under Review",
+      "rejectedTitle": "Application Not Approved",
+      "rejectedText": "Your previous stylist application was not approved.",
+      "reason": "Reason Provided",
+      "title": "Become a Tessa Stylist",
+      "benefits": "Stylist Benefits",
+      "benefitPrice": "Up to 25% off retail prices",
+      "benefitPro": "Access to professional-only products",
+      "benefitEarly": "Early access to new releases",
+      "benefitSupport": "Priority customer support",
+      "fullName": "Full Name",
+      "enterName": "Please enter your name",
+      "fullNamePlaceholder": "Your full name",
+      "enterEmail": "Please enter your email",
+      "validEmail": "Please enter a valid email",
+      "salonName": "Salon/Business Name",
+      "enterSalonName": "Please enter your salon name",
+      "salonPlaceholder": "Where do you work?",
+      "salonAddress": "Salon Address",
+      "enterSalonAddress": "Please enter the salon address",
+      "salonAddressPlaceholder": "Business address",
+      "salonMunicipality": "Salon Municipality",
+      "selectMunicipality": "Please select the salon municipality",
+      "municipalityPlaceholder": "Select municipality",
+      "salonPhone": "Salon Phone",
+      "enterSalonPhone": "Please enter the salon phone number",
+      "about": "Tell Us About Yourself",
+      "aboutPlaceholder": "Share your experience, specialties, or why you want to join..."
+    },
+    "invite": {
+      "unavailableText": "This activation link is unavailable.",
+      "failed": "We could not activate your account.",
+      "ready": "Your stylist account is ready.",
+      "unavailable": "Invitation unavailable",
+      "title": "Set up your stylist account",
+      "proAccount": "Professional account",
+      "proText": "Your stylist pricing and quick ordering will be available as soon as you finish setup.",
+      "enterFirstName": "Enter your first name.",
+      "enterLastName": "Enter your last name.",
+      "emailOptional": "Email (optional)",
+      "validEmail": "Enter a valid email address.",
+      "enterPhone": "Enter your phone number.",
+      "address": "Address",
+      "enterAddress": "Enter your address.",
+      "city": "City",
+      "enterCity": "Enter your city.",
+      "postcode": "Postal code",
+      "enterPostcode": "Enter your postal code.",
+      "salonName": "Salon or business name",
+      "enterSalonName": "Enter your salon or business name.",
+      "salonAddress": "Salon or business address",
+      "enterSalonAddress": "Enter your salon or business address.",
+      "salonCity": "Salon or business city",
+      "enterSalonCity": "Enter your salon or business city.",
+      "salonPhone": "Salon or business phone",
+      "enterSalonPhone": "Enter your salon or business phone.",
+      "createPassword": "Create a password",
+      "confirmPassword": "Confirm your password.",
+      "oneTime": "This link can be used once and will expire automatically.",
+      "activate": "Activate stylist account"
+    }
   }
 }

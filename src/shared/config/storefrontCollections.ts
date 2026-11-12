@@ -297,3 +297,28 @@ export function getRoutineRoleCopy(role: string, slug?: StorefrontCollectionSlug
     microcopy: 'Roles stay visible even while deeper product mapping continues behind the scenes.',
   };
 }
+
+type Translate = (key: string, options: { defaultValue: string }) => string;
+const LOCALIZED_FIELDS = ['title', 'description', 'heroEyebrow', 'heroTitle', 'heroBody'] as const;
+
+/** Collection copy in the shopper's language (i18n `collections.<slug>.*`), English text as fallback. */
+export function localizeCollection<C extends StorefrontCollectionDefinition>(collection: C, t: Translate): C {
+  const copy = { ...collection };
+  for (const field of LOCALIZED_FIELDS) {
+    copy[field] = t(`collections.${collection.slug}.${field}`, { defaultValue: collection[field] });
+  }
+  return copy;
+}
+
+/** Routine step label + intro in the shopper's language (i18n `collections.roles.*`). */
+export function localizeRoutineRoleCopy(role: string, slug: StorefrontCollectionSlug | undefined, t: Translate): RoutineRoleCopy {
+  const copy = getRoutineRoleCopy(role, slug);
+  const blonde = slug === 'blonde-and-tone' && BLONDE_ROLE_COPY[role];
+  return {
+    ...copy,
+    label: t(`collections.roles.${role}.label`, { defaultValue: copy.label }),
+    intro: blonde
+      ? t(`collections.rolesBlonde.${role}.intro`, { defaultValue: copy.intro })
+      : t(`collections.roles.${role}.intro`, { defaultValue: copy.intro }),
+  };
+}
