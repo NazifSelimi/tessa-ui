@@ -20,7 +20,6 @@ import {
   PhoneOutlined,
   LockOutlined,
   GoogleOutlined,
-  FacebookOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,10 +69,6 @@ const LoginPage: React.FC = () => {
       intent: 'login',
       redirect: from,
     });
-  };
-
-  const handleFacebookComingSoon = () => {
-    message.info(t('auth.facebookSoon'));
   };
 
   // Already signed in (e.g. back button or an old bookmark): don't offer a second login.
@@ -188,15 +183,7 @@ const LoginPage: React.FC = () => {
           >
             {t('auth.continueWithGoogle')}
           </Button>
-          <Button
-            size="large"
-            block
-            icon={<FacebookOutlined />}
-            onClick={handleFacebookComingSoon}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {t('auth.continueWithFacebook')}
-          </Button>
+          {/* Facebook sign-in returns once a Facebook app is set up (the API already supports it). */}
         </Space>
 
         {/* Register Link */}

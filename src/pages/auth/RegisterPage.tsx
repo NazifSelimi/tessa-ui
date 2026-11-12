@@ -27,7 +27,6 @@ import {
   HomeOutlined,
   PushpinOutlined,
   GoogleOutlined,
-  FacebookOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
@@ -107,10 +106,6 @@ const RegisterPage: React.FC = () => {
       redirect: target,
       accountType,
     });
-  };
-
-  const handleFacebookComingSoon = () => {
-    message.info(t('auth.facebookSoon'));
   };
 
   return (
@@ -371,15 +366,7 @@ const RegisterPage: React.FC = () => {
           >
             {t('auth.continueWithGoogle')}
           </Button>
-          <Button
-            size="large"
-            block
-            icon={<FacebookOutlined />}
-            onClick={handleFacebookComingSoon}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {t('auth.continueWithFacebook')}
-          </Button>
+          {/* Facebook sign-in returns once a Facebook app is set up (the API already supports it). */}
         </Space>
 
         {/* Login Link */}
