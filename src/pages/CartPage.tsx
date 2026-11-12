@@ -118,7 +118,7 @@ const CartPage: React.FC = () => {
         </Link>
         <div className="cart-page__title-row">
           <Title level={1} style={{ margin: 0, fontSize: 30 }}>{t('cart.shoppingCart')}</Title>
-          <Text type="secondary">{itemCount} {itemCount === 1 ? t('cart.item') : t('cart.items')}</Text>
+          <Text type="secondary">{t('newLook.productCount', { count: itemCount })}</Text>
         </div>
       </div>
 
@@ -234,7 +234,7 @@ const CartPage: React.FC = () => {
 
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">
-                <Text type="secondary">{t('cart.subtotal')} ({totals.itemCount} {t('cart.items')})</Text>
+                <Text type="secondary">{t('cart.subtotal')} ({t('newLook.productCount', { count: totals.itemCount })})</Text>
                 <Text>{formatPrice(totals.subtotal)}</Text>
               </div>
 
