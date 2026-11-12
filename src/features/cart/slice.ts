@@ -75,6 +75,15 @@ const cartSlice = createSlice({
       );
     },
 
+    /** Fill in the salon price of a cart line (added as a guest, who never receives salon prices). */
+    setRolePrice: (state, action: PayloadAction<{ productId: string | number; rolePrice: number; stylistPrice: number }>) => {
+      for (const item of state.items) {
+        if (String(item.productId) === String(action.payload.productId)) {
+          item.rolePrice = action.payload.rolePrice;
+          item.product = { ...item.product, stylistPrice: action.payload.stylistPrice };
+        }
+      }
+    },
     updateQuantity: (
       state,
       action: PayloadAction<{
@@ -141,6 +150,7 @@ export const {
   addItem,
   removeItem,
   updateQuantity,
+  setRolePrice,
   clearCart,
   applyBundle,
   setItems,

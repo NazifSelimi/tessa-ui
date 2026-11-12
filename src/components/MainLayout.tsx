@@ -17,6 +17,7 @@ import './storefront/new-look.css';
 import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
 import { useFeature } from '@/shared/hooks/useFeature';
 import { captureReferralCode } from '@/shared/utils/referral';
+import { useSalonPriceRefresh } from '@/features/cart/useSalonPriceRefresh';
 
 const CartDrawer = lazyWithReload(() => import('./CartDrawer'));
 const AdminDock = lazyWithReload(() => import('./storefront/AdminDock'));
@@ -24,6 +25,7 @@ const AdminDock = lazyWithReload(() => import('./storefront/AdminDock'));
 const PAGES_WITH_OWN_SEARCH = new Set(['/shop', '/stylist/quick-order']);
 
 export default function MainLayout() {
+  useSalonPriceRefresh();
   const { t } = useTranslation();
   const { user, isStylist, isAdmin, isDistributor, logout } = useAuth();
   const { itemCount, subtotal } = useCart();
