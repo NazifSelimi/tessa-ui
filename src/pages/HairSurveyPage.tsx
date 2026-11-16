@@ -11,7 +11,7 @@
  * page (and a returning visitor) starts from them.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Progress, Alert, Spin } from 'antd';
 import { ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, ExperimentOutlined, UndoOutlined } from '@ant-design/icons';
@@ -80,6 +80,22 @@ export default function HairSurveyPage() {
   const [steps, setSteps] = useState<RoutineStep[] | null>(() => (saved?.answers ? (saved.survey.steps as RoutineStep[] | undefined) ?? null : null));
   const [budget, setBudget] = useState<string | null>(() => (saved?.answers ? saved.survey.budget_range ?? null : null));
 
+  const panelRef = useRef<HTMLElement>(null);
+  const firstRender = useRef(true);
+
+  // A new question starts at the top of the panel (on phones the Next button
+  // sits far below the question title).
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const panel = panelRef.current;
+    if (panel && panel.getBoundingClientRect().top < 0) {
+      panel.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }, [page]);
+
   const question = QUESTIONS[page];
   const onRoutinePage = page === QUESTIONS.length;
   // Until the person changes them, the steps follow their answers.
@@ -132,7 +148,7 @@ export default function HairSurveyPage() {
         <Paragraph>{t('quiz.intro')}</Paragraph>
       </header>
 
-      <section className="hair-quiz__panel">
+      <section className="hair-quiz__panel" ref={panelRef}>
         <div className="hair-quiz__progress">
           <Text>{t('survey.stepOf', { step: page + 1, total: TOTAL_PAGES })}</Text>
           <Progress percent={Math.round(((page + 1) / TOTAL_PAGES) * 100)} showInfo={false} strokeColor="var(--color-primary)" />

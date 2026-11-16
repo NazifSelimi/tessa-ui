@@ -1787,6 +1787,7 @@ a {
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
   overflow: clip;
   contain: layout paint;
+  scroll-margin-top: 90px;
 }
 
 .hair-quiz__progress {
