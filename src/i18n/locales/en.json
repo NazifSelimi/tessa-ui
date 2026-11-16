@@ -1125,7 +1125,9 @@
       "all": "All",
       "whyItFits": "Why it fits",
       "forType": "For {{type}} hair",
-      "suitsYou": "Suits your hair type"
+      "suitsYou": "Suits your hair type",
+      "companion": "For your other washes",
+      "pickShade": "Pick your shade:"
     }
   }
 }

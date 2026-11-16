@@ -4943,3 +4943,34 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
     width: 100%;
   }
 }
+
+.quiz-routine__companion {
+  padding-top: 12px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.quiz-shades {
+  display: grid;
+  gap: 6px;
+}
+
+.quiz-shades__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.quiz-shades__item {
+  padding: 4px 9px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.quiz-shades__item:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}

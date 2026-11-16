@@ -1125,7 +1125,9 @@
       "all": "Të gjitha",
       "whyItFits": "Pse ju përshtatet",
       "forType": "Për flokë {{type}}",
-      "suitsYou": "I përshtatet llojit të flokëve tuaj"
+      "suitsYou": "I përshtatet llojit të flokëve tuaj",
+      "companion": "Për larjet e tjera",
+      "pickShade": "Zgjidhni nuancën:"
     }
   }
 }

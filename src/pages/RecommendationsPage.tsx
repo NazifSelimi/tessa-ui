@@ -36,6 +36,30 @@ function toProduct(product: RecommendedProduct): Product {
   return { ...product, description: product.description ?? '' };
 }
 
+/** Colour lines and colour masks: the person picks the shade first. */
+function needsShade(product: RecommendedProduct): boolean {
+  return Boolean(product.familyId) || (product.shadeOptions?.length ?? 0) > 1;
+}
+
+function ResultProduct({ product }: { product: RecommendedProduct }) {
+  const { t } = useTranslation();
+  const shades = product.shadeOptions ?? [];
+  return (
+    <>
+      <ProductCard product={toProduct(product)} showQuickAdd={!needsShade(product)} />
+      {shades.length > 1 ? (
+        <div className="quiz-shades">
+          <Text type="secondary" className="quiz-routine__tip">{t('quiz.results.pickShade')}</Text>
+          <div className="quiz-shades__list">
+            {shades.map((shade) => <Link key={shade.id} to={`/product/${shade.id}`} className="quiz-shades__item">{shade.name}</Link>)}
+          </div>
+        </div>
+      ) : product.familyId ? <Link to={`/product/${product.id}`} className="nl-add-button nl-choose-shade quiz-routine__shade">{t('product.chooseShade')}</Link> : null}
+      <WhyItFits product={product} />
+    </>
+  );
+}
+
 function priceOf(product: RecommendedProduct): number {
   return product.sale?.price ?? product.price;
 }
@@ -55,7 +79,7 @@ function WhyItFits({ product }: { product: RecommendedProduct }) {
   );
 }
 
-function RoutineStepCard({ index, step, product }: { index: number; step: string; product: RecommendedProduct }) {
+function RoutineStepCard({ index, step, product, companion }: { index: number; step: string; product: RecommendedProduct; companion?: RecommendedProduct | null }) {
   const { t } = useTranslation();
   const isToner = (product.matchedNeedIds ?? []).some((id) => TONER_NEEDS.includes(id));
   const tip = isToner ? t('quiz.tip.toner') : t(`quiz.tip.${step}`);
@@ -70,10 +94,14 @@ function RoutineStepCard({ index, step, product }: { index: number; step: string
         </div>
       </div>
       <div className="quiz-routine__product">
-        <ProductCard product={toProduct(product)} showQuickAdd={!product.familyId} />
-        {product.familyId && <Link to={`/product/${product.id}`} className="nl-add-button nl-choose-shade quiz-routine__shade">{t('product.chooseShade')}</Link>}
-        <WhyItFits product={product} />
+        <ResultProduct product={product} />
       </div>
+      {companion && (
+        <div className="quiz-routine__product quiz-routine__companion">
+          <Text strong className="quiz-routine__tip">{t('quiz.results.companion')}</Text>
+          <ResultProduct product={companion} />
+        </div>
+      )}
     </li>
   );
 }
@@ -143,17 +171,19 @@ export default function RecommendationsPage() {
   const { products, bundles } = data.recommendations;
   const routine = data.recommendations.routine ?? [];
   const askedSteps = data.recommendations.steps ?? [];
-  const routineIds = new Set(routine.map((entry) => entry.product.id));
+  const routineIds = new Set(routine.flatMap((entry) => [entry.product.id, entry.companion?.id]));
   const missingSteps = askedSteps.filter((step) => !routine.some((entry) => entry.step === step));
   const more = products.filter((p) => !routineIds.has(p.id));
   const moreGroups = [...new Set(more.map((p) => STEP_GROUP[p.quizStep ?? ''] ?? 'other'))];
   const shownMore = filter === 'all' ? more : more.filter((p) => (STEP_GROUP[p.quizStep ?? ''] ?? 'other') === filter);
 
   // Colour lines need a shade choice first, so they are not added in one click.
-  const addable = routine.filter((entry) => !entry.product.familyId && entry.product.inStock);
-  const routineTotal = addable.reduce((sum, entry) => sum + priceOf(entry.product), 0);
+  const addable = routine
+    .flatMap((entry) => [entry.product, entry.companion])
+    .filter((product): product is RecommendedProduct => Boolean(product && product.inStock && !needsShade(product)));
+  const routineTotal = addable.reduce((sum, product) => sum + priceOf(product), 0);
   const addRoutine = () => {
-    addable.forEach(({ product }) => addItem(toProduct(product), 1));
+    addable.forEach((product) => addItem(toProduct(product), 1));
     message.success(t('quiz.results.routineAdded', { count: addable.length }));
   };
 
@@ -180,7 +210,7 @@ export default function RecommendationsPage() {
             )}
           </div>
           <ol className="quiz-routine__list">
-            {routine.map((entry, index) => <RoutineStepCard key={entry.step} index={index} step={entry.step} product={entry.product} />)}
+            {routine.map((entry, index) => <RoutineStepCard key={entry.step} index={index} step={entry.step} product={entry.product} companion={entry.companion} />)}
           </ol>
           {missingSteps.length > 0 && (
             <Paragraph type="secondary" className="quiz-routine__missing">
@@ -204,11 +234,7 @@ export default function RecommendationsPage() {
           </div>
           <div className="nl-product-grid">
             {shownMore.map((product) => (
-              <div key={product.id} className="quiz-more__item">
-                <ProductCard product={toProduct(product)} showQuickAdd={!product.familyId} />
-                {product.familyId && <Link to={`/product/${product.id}`} className="nl-add-button nl-choose-shade quiz-routine__shade">{t('product.chooseShade')}</Link>}
-                <WhyItFits product={product} />
-              </div>
+              <div key={product.id} className="quiz-more__item"><ResultProduct product={product} /></div>
             ))}
           </div>
         </section>

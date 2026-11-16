@@ -508,6 +508,8 @@ export interface RecommendedProduct {
   matchedTypeIds?: number[];
   /** Set for colour lines: the shade is chosen on the product page. */
   familyId?: string | null;
+  /** Colour masks: the shades of this line to choose from. */
+  shadeOptions?: { id: string; name: string }[];
   sale: { price: number; startDate: string; endDate: string } | null;
   createdAt: string;
   updatedAt: string;
@@ -572,6 +574,8 @@ export type RecommendedBundle = StaticBundle | DynamicBundle;
 export interface RoutineEntry {
   step: string;
   product: RecommendedProduct;
+  /** With a toner/colour mask: the regular product for the other washes. */
+  companion?: RecommendedProduct | null;
 }
 
 export interface RecommendationResult {
