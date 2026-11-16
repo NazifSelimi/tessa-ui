@@ -4942,6 +4942,15 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   }
   .quiz-routine__bar .ant-btn {
     width: 100%;
+    height: auto;
+    min-height: 44px;
+    padding-block: 10px;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  /* One product per row: a lower photo keeps each step short. */
+  .quiz-routine__step .nl-product-art {
+    aspect-ratio: 4 / 3;
   }
 }
 
