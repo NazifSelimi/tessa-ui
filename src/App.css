@@ -4776,3 +4776,170 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 
 /* Product name sits right under the brand (antd adds 1.2em above a heading that follows text) */
 .ant-typography + h1.product-detail__title.ant-typography { margin-top: 6px; }
+
+/* ── Hair quiz v2: multi-select ticks, results routine ───────────── */
+.hair-quiz__tick {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-surface);
+  font-size: 12px;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.hair-quiz__tick--box {
+  border-radius: 6px;
+}
+
+.hair-quiz__option--selected .hair-quiz__tick {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.hair-quiz__mode {
+  display: inline-block;
+  padding: 1px 8px;
+  color: var(--color-selection-text);
+  background: var(--color-selection-bg);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.hair-quiz__restart {
+  padding: 5px 9px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.quiz-results {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 16px 96px;
+}
+
+.quiz-results__header {
+  margin-bottom: 32px;
+}
+
+.quiz-results__answers {
+  padding: 0 0 16px;
+}
+
+.quiz-routine,
+.quiz-more {
+  margin-top: 40px;
+}
+
+.quiz-routine__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quiz-routine__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz-routine__step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-background-alt);
+  border-radius: 20px;
+}
+
+.quiz-routine__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 58px;
+}
+
+.quiz-routine__number {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--color-surface);
+  background: var(--color-primary);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.quiz-routine__label {
+  font-size: 16px;
+}
+
+.quiz-routine__tip {
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
+.quiz-routine__product,
+.quiz-more__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.quiz-routine__shade {
+  justify-content: center;
+  text-align: center;
+}
+
+.quiz-routine__missing {
+  margin-top: 14px;
+}
+
+.quiz-why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.quiz-why__chip {
+  padding: 3px 8px;
+  color: var(--color-selection-text);
+  background: var(--color-selection-bg);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.quiz-why__chip--type,
+.quiz-why__chip--plain {
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+}
+
+@media (max-width: 575px) {
+  .quiz-routine__list {
+    grid-template-columns: 1fr;
+  }
+  .quiz-routine__bar .ant-btn {
+    width: 100%;
+  }
+}

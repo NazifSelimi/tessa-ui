@@ -896,5 +896,236 @@
     "referral": "Kodi im i rekomandimit",
     "quickOrder": "Porosi e shpejtë",
     "businessRequest": "Kërkesë për llogari biznesi"
+  },
+  "quiz": {
+    "intro": "Gjashtë pyetje të shkurtra, shumica me disa përgjigje. Merrni një rutinë sipas radhës së përdorimit dhe pse ju përshtatet çdo produkt.",
+    "chooseAll": "Zgjidhni të gjitha që vlejnë",
+    "chooseOne": "Zgjidhni një",
+    "skip": "Kapërce",
+    "startOver": "Fillo nga e para",
+    "yourAnswers": "Përgjigjet tuaja",
+    "showRoutine": "Shfaq rutinën time",
+    "q": {
+      "pattern": {
+        "title": "Çfarë forme natyrale kanë flokët tuaj?",
+        "hint": "Shikoni flokët kur thahen pa stilim."
+      },
+      "thickness": {
+        "title": "Sa e trashë është çdo fije?",
+        "hint": "Nuk jeni të sigurt? Kapërceni."
+      },
+      "colour": {
+        "title": "A janë flokët të ngjyrosur ose të trajtuar?",
+        "hint": "Tonuesit dhe kujdesi për ngjyrën sugjerohen vetëm kur ju duhen."
+      },
+      "lengths": {
+        "title": "Si janë gjatësitë dhe majat?",
+        "hint": ""
+      },
+      "scalp": {
+        "title": "Si është lëkura e kokës?",
+        "hint": ""
+      },
+      "styling": {
+        "title": "Si i stiloni flokët?",
+        "hint": ""
+      },
+      "routine": {
+        "title": "Cilat produkte dëshironi?",
+        "hint": "I zgjodhëm sipas përgjigjeve tuaja. Ndryshojini si të doni."
+      },
+      "budget": {
+        "title": "Buxheti për produkt",
+        "hint": ""
+      }
+    },
+    "o": {
+      "straight": {
+        "label": "E drejtë",
+        "desc": "Pa valë e kaçurrela"
+      },
+      "wavy": {
+        "label": "Me valë",
+        "desc": "Valë të lehta në formë S"
+      },
+      "curly": {
+        "label": "Kaçurrel",
+        "desc": "Kaçurrela spirale të qarta"
+      },
+      "coily": {
+        "label": "Shumë kaçurrel",
+        "desc": "Kaçurrela të ngushta ose zigzag"
+      },
+      "fine": {
+        "label": "E hollë",
+        "desc": "Fije të holla, rrafshohet lehtë"
+      },
+      "normal": {
+        "label": "Mesatare",
+        "desc": "As e hollë, as e trashë"
+      },
+      "thick": {
+        "label": "E trashë",
+        "desc": "Fije të forta, shumë flokë"
+      },
+      "natural": {
+        "label": "Natyrale, e pa ngjyrosur",
+        "desc": "Pa ngjyrë e pa zbardhues"
+      },
+      "coloured": {
+        "label": "E ngjyrosur",
+        "desc": "E ngjyrosur në shtëpi ose në sallon"
+      },
+      "bleached": {
+        "label": "E zbardhur ose me thekse",
+        "desc": "E zbardhur, balayage, permanent"
+      },
+      "yellowTones": {
+        "label": "Bionde/thinjur që zverdhet",
+        "desc": "Tone të verdha të padëshiruara"
+      },
+      "orangeTones": {
+        "label": "Kafe që del portokalli",
+        "desc": "Tone portokalli të padëshiruara"
+      },
+      "redTones": {
+        "label": "Kafe me reflekse të kuqe",
+        "desc": "Tone të kuqe të padëshiruara"
+      },
+      "refreshColour": {
+        "label": "Fresko ngjyrën",
+        "desc": "Forco ngjyrën mes vizitave në sallon"
+      },
+      "dryness": {
+        "label": "E thatë",
+        "desc": "E ashpër, si kashtë"
+      },
+      "frizz": {
+        "label": "Me fryrje",
+        "desc": "Fije që ngrihen, vështirë të qetësohen"
+      },
+      "breakage": {
+        "label": "Thyhet, maja të çara",
+        "desc": "E dobët, këputet lehtë"
+      },
+      "dull": {
+        "label": "Pa shkëlqim",
+        "desc": "Pa shkëlqim e butësi"
+      },
+      "lengthsFine": {
+        "label": "Gjatësitë janë mirë",
+        "desc": "Pa probleme me gjatësitë"
+      },
+      "oily": {
+        "label": "Rrënjë të yndyrshme",
+        "desc": "Flokët yndyrosen shpejt"
+      },
+      "dandruff": {
+        "label": "Zbokth ose kruajtje",
+        "desc": "Zhvoshkje, kruajtje"
+      },
+      "hairLoss": {
+        "label": "Rënie ose rrallim",
+        "desc": "Flokët bien, më pak dendësi"
+      },
+      "scalpFine": {
+        "label": "Lëkura e kokës është mirë",
+        "desc": "Pa probleme me lëkurën e kokës"
+      },
+      "heat": {
+        "label": "Përdor nxehtësi",
+        "desc": "Tharëse, hekur, kaçurrelues"
+      },
+      "volume": {
+        "label": "Më shumë volum",
+        "desc": "Ngritje në rrënjë, flokë më të plota"
+      },
+      "curls": {
+        "label": "Kaçurrela të përcaktuara",
+        "desc": "Valë e kaçurrela elastike"
+      },
+      "hold": {
+        "label": "Fiksim",
+        "desc": "Llak, xhel, shkumë"
+      },
+      "texture": {
+        "label": "Teksturë e pamje mat",
+        "desc": "Dyll ose pastë"
+      },
+      "noStyling": {
+        "label": "E thjeshtë",
+        "desc": "Pa produkte stilimi"
+      },
+      "budgetAny": {
+        "label": "Më trego gjithçka",
+        "desc": "Më e mira, çdo çmim"
+      },
+      "budgetLow": {
+        "label": "Deri në 800 den.",
+        "desc": "Për produkt"
+      },
+      "budgetMid": {
+        "label": "Deri në 1.500 den.",
+        "desc": "Për produkt"
+      }
+    },
+    "step": {
+      "shampoo": "Shampo",
+      "condition": "Balsam ose maskë",
+      "leave_in": "Kujdes pa shpëlarje e serum",
+      "scalp": "Trajtim për lëkurën e kokës",
+      "style": "Stilim",
+      "other": "Tjetër"
+    },
+    "stepDesc": {
+      "shampoo": "Pastron lëkurën e kokës dhe flokët",
+      "condition": "Riparon dhe zbut gjatësitë",
+      "leave_in": "Mbron dhe përfundon, pa shpëlarje",
+      "scalp": "Locion ose ampula për rrënjët",
+      "style": "Fiksim, volum, kaçurrela ose teksturë"
+    },
+    "tip": {
+      "shampoo": "Masazhoni në lëkurën e lagur të kokës, shpëlajeni.",
+      "condition": "Pas shampos, në gjatësi. Lëreni 3–5 min, shpëlajeni.",
+      "leave_in": "Në flokë të tharë me peshqir para stilimit. Pa shpëlarje.",
+      "scalp": "Aplikojeni në lëkurën e kokës dhe masazhoni. Përdoreni si kurë.",
+      "style": "Në flokë të lagur ose të thatë për formë e përfundim.",
+      "toner": "Tonim: 1–2 herë në javë në vend të produktit të zakonshëm. Lëreni 2–5 min."
+    },
+    "need": {
+      "dryness": "Hidraton flokët e thatë",
+      "frizz": "Qetëson fryrjen",
+      "breakage": "Riparon thyerjet",
+      "hairLoss": "Kundër rënies",
+      "oiliness": "Balancon yndyrën",
+      "dandruff": "Kundër zbokthit",
+      "colorProtection": "Mbron ngjyrën",
+      "volume": "Jep volum",
+      "brassyYellow": "Heq tonet e verdha",
+      "brassyOrange": "Heq tonet portokalli",
+      "brassyRed": "Heq tonet e kuqe",
+      "curlDefinition": "Përcakton kaçurrelat",
+      "shine": "Jep shkëlqim",
+      "heatProtection": "Mbrojtje nga nxehtësia",
+      "bondRepair": "Rindërton flokët e trajtuar",
+      "colorRefresh": "Fresko ngjyrën",
+      "hold": "Fiksim",
+      "texture": "Teksturë"
+    },
+    "results": {
+      "eyebrow": "Profili i flokëve tuaj",
+      "title": "Rutina juaj personale e flokëve",
+      "subtitle": "Zgjedhur nga ajo që kemi në stok, sipas përgjigjeve tuaja. Çdo produkt tregon pse ju përshtatet.",
+      "editAnswers": "Ndrysho përgjigjet",
+      "routineTitle": "Rutina juaj",
+      "addRoutine": "Shto rutinën në shportë ({{count}}) · {{total}}",
+      "routineAdded": "{{count}} produkte u shtuan në shportë",
+      "missingSteps": "Tani nuk ka produkt në stok për: {{steps}}. Na pyesni dhe ju ndihmojmë.",
+      "moreTitle": "Më shumë produkte për ju",
+      "all": "Të gjitha",
+      "whyItFits": "Pse ju përshtatet",
+      "forType": "Për flokë {{type}}",
+      "suitsYou": "I përshtatet llojit të flokëve tuaj"
+    }
   }
 }

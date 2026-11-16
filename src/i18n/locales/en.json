@@ -896,5 +896,236 @@
     "referral": "My referral code",
     "quickOrder": "Quick order",
     "businessRequest": "Business account request"
+  },
+  "quiz": {
+    "intro": "Six quick questions, most with several answers. You get a routine in the order you use it, and why each product fits you.",
+    "chooseAll": "Choose all that apply",
+    "chooseOne": "Choose one",
+    "skip": "Skip",
+    "startOver": "Start over",
+    "yourAnswers": "Your answers",
+    "showRoutine": "Show my routine",
+    "q": {
+      "pattern": {
+        "title": "What is your natural hair pattern?",
+        "hint": "Look at your hair when it dries without styling."
+      },
+      "thickness": {
+        "title": "How thick is each strand?",
+        "hint": "Not sure? Skip this one."
+      },
+      "colour": {
+        "title": "Is your hair coloured or treated?",
+        "hint": "Toners and colour care are only suggested if you need them."
+      },
+      "lengths": {
+        "title": "How do your lengths and ends feel?",
+        "hint": ""
+      },
+      "scalp": {
+        "title": "How is your scalp?",
+        "hint": ""
+      },
+      "styling": {
+        "title": "How do you style your hair?",
+        "hint": ""
+      },
+      "routine": {
+        "title": "Which products do you want?",
+        "hint": "We picked these from your answers. Change them as you like."
+      },
+      "budget": {
+        "title": "Budget per product",
+        "hint": ""
+      }
+    },
+    "o": {
+      "straight": {
+        "label": "Straight",
+        "desc": "No wave or curl"
+      },
+      "wavy": {
+        "label": "Wavy",
+        "desc": "Loose S-shaped waves"
+      },
+      "curly": {
+        "label": "Curly",
+        "desc": "Defined spiral curls"
+      },
+      "coily": {
+        "label": "Coily",
+        "desc": "Tight coils or zig-zag"
+      },
+      "fine": {
+        "label": "Fine",
+        "desc": "Thin strands, gets flat easily"
+      },
+      "normal": {
+        "label": "Medium",
+        "desc": "Neither fine nor thick"
+      },
+      "thick": {
+        "label": "Thick",
+        "desc": "Strong strands, lots of hair"
+      },
+      "natural": {
+        "label": "Natural, never coloured",
+        "desc": "No colour or bleach"
+      },
+      "coloured": {
+        "label": "Coloured",
+        "desc": "Dyed at home or in a salon"
+      },
+      "bleached": {
+        "label": "Bleached or highlights",
+        "desc": "Lightened, balayage, perm"
+      },
+      "yellowTones": {
+        "label": "Blonde/grey turning yellow",
+        "desc": "Unwanted yellow tones"
+      },
+      "orangeTones": {
+        "label": "Brown turning orange",
+        "desc": "Brassy orange tones"
+      },
+      "redTones": {
+        "label": "Brown with red reflections",
+        "desc": "Unwanted red tones"
+      },
+      "refreshColour": {
+        "label": "Refresh my colour",
+        "desc": "Boost or tint between salon visits"
+      },
+      "dryness": {
+        "label": "Dry",
+        "desc": "Rough, straw-like, thirsty"
+      },
+      "frizz": {
+        "label": "Frizzy",
+        "desc": "Flyaways, hard to tame"
+      },
+      "breakage": {
+        "label": "Breakage & split ends",
+        "desc": "Weak, snaps easily"
+      },
+      "dull": {
+        "label": "Dull",
+        "desc": "No shine or softness"
+      },
+      "lengthsFine": {
+        "label": "My lengths are fine",
+        "desc": "No problems with the lengths"
+      },
+      "oily": {
+        "label": "Oily roots",
+        "desc": "Hair gets greasy fast"
+      },
+      "dandruff": {
+        "label": "Dandruff or itchy scalp",
+        "desc": "Flakes, itching"
+      },
+      "hairLoss": {
+        "label": "Hair loss or thinning",
+        "desc": "Hair falls out, less density"
+      },
+      "scalpFine": {
+        "label": "My scalp is fine",
+        "desc": "No scalp problems"
+      },
+      "heat": {
+        "label": "I use heat tools",
+        "desc": "Hair dryer, straightener, curling iron"
+      },
+      "volume": {
+        "label": "More volume",
+        "desc": "Lift at the roots, fuller hair"
+      },
+      "curls": {
+        "label": "Defined curls",
+        "desc": "Bouncy waves and curls"
+      },
+      "hold": {
+        "label": "Hold",
+        "desc": "Hairspray, gel, mousse"
+      },
+      "texture": {
+        "label": "Texture & matte look",
+        "desc": "Wax or paste"
+      },
+      "noStyling": {
+        "label": "I keep it simple",
+        "desc": "No styling products"
+      },
+      "budgetAny": {
+        "label": "Show me everything",
+        "desc": "Best match, any price"
+      },
+      "budgetLow": {
+        "label": "Up to 800 MKD",
+        "desc": "Per product"
+      },
+      "budgetMid": {
+        "label": "Up to 1,500 MKD",
+        "desc": "Per product"
+      }
+    },
+    "step": {
+      "shampoo": "Shampoo",
+      "condition": "Conditioner or mask",
+      "leave_in": "Leave-in & serum",
+      "scalp": "Scalp treatment",
+      "style": "Styling",
+      "other": "Other"
+    },
+    "stepDesc": {
+      "shampoo": "Cleanses scalp and hair",
+      "condition": "Repairs and softens the lengths",
+      "leave_in": "Protects and finishes, no rinsing",
+      "scalp": "Lotion or ampoules for the roots",
+      "style": "Hold, volume, curls or texture"
+    },
+    "tip": {
+      "shampoo": "Massage into wet scalp, rinse. Repeat if needed.",
+      "condition": "After shampoo, on the lengths. Leave 3–5 min, rinse.",
+      "leave_in": "On towel-dried hair before styling. Do not rinse.",
+      "scalp": "Apply to the scalp and massage. Use as a course.",
+      "style": "On damp or dry hair to shape and finish.",
+      "toner": "Toning: use 1–2 times a week instead of your usual product. Leave 2–5 min."
+    },
+    "need": {
+      "dryness": "Hydrates dry hair",
+      "frizz": "Tames frizz",
+      "breakage": "Repairs breakage",
+      "hairLoss": "Against hair loss",
+      "oiliness": "Balances oily scalp",
+      "dandruff": "Fights dandruff",
+      "colorProtection": "Protects colour",
+      "volume": "Adds volume",
+      "brassyYellow": "Removes yellow tones",
+      "brassyOrange": "Removes orange tones",
+      "brassyRed": "Removes red tones",
+      "curlDefinition": "Defines curls",
+      "shine": "Adds shine",
+      "heatProtection": "Heat protection",
+      "bondRepair": "Rebuilds treated hair",
+      "colorRefresh": "Refreshes colour",
+      "hold": "Hold",
+      "texture": "Texture"
+    },
+    "results": {
+      "eyebrow": "Your hair profile",
+      "title": "Your personal hair routine",
+      "subtitle": "Picked from what is in stock now, based on your answers. Each product shows why it fits you.",
+      "editAnswers": "Edit answers",
+      "routineTitle": "Your routine",
+      "addRoutine": "Add routine to cart ({{count}}) · {{total}}",
+      "routineAdded": "{{count}} products added to your cart",
+      "missingSteps": "Nothing in stock fits you for: {{steps}}. Ask us and we will help.",
+      "moreTitle": "More products for you",
+      "all": "All",
+      "whyItFits": "Why it fits",
+      "forType": "For {{type}} hair",
+      "suitsYou": "Suits your hair type"
+    }
   }
 }

@@ -11,23 +11,28 @@
  */
 
 import type { RecommendationResult, RecommendationPayload } from '@/types';
+import type { QuizAnswers } from '@/features/quiz/quizConfig';
 
 const STORAGE_KEY = 'tessa-hair-profile';
 
 export interface StoredHairProfile {
   recommendations: RecommendationResult;
   survey: RecommendationPayload;
+  /** The quiz answers, so the quiz can be edited later (absent in old saves). */
+  answers?: QuizAnswers;
   savedAt: string;
 }
 
 export function saveHairProfile(
   recommendations: RecommendationResult,
   survey: RecommendationPayload,
+  answers?: QuizAnswers,
 ): void {
   try {
     const payload: StoredHairProfile = {
       recommendations,
       survey,
+      answers,
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));

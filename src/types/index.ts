@@ -154,6 +154,11 @@ export interface ProductCollection {
 export interface HairProfileOption {
   id: number;
   name: string;
+  slug?: string | null;
+  /** hair types: pattern | thickness; needs: lengths | scalp | colour | style */
+  group?: string;
+  /** Needs only: recommended only to people who chose this need. */
+  gated?: boolean;
 }
 
 export interface Category {
@@ -473,8 +478,10 @@ export interface DashboardStats {
 // ==================== RECOMMENDATION PAYLOAD ====================
 
 export interface RecommendationPayload {
-  hair_type_id: number;
+  hair_type_ids: number[];
   concerns: number[];
+  /** Routine steps wanted: shampoo | condition | leave_in | scalp | style. */
+  steps?: string[];
   budget_range?: string; // "min-max"
 }
 
@@ -494,6 +501,13 @@ export interface RecommendedProduct {
   category: { id: string; name: string } | null;
   image: string | null;
   recommendationScore: number;
+  /** shampoo | conditioner | mask | leave_in | scalp | style */
+  quizStep?: string | null;
+  /** The person's needs this product answers (hair_concerns ids). */
+  matchedNeedIds?: number[];
+  matchedTypeIds?: number[];
+  /** Set for colour lines: the shade is chosen on the product page. */
+  familyId?: string | null;
   sale: { price: number; startDate: string; endDate: string } | null;
   createdAt: string;
   updatedAt: string;
@@ -555,8 +569,16 @@ export interface DynamicBundle {
 
 export type RecommendedBundle = StaticBundle | DynamicBundle;
 
+export interface RoutineEntry {
+  step: string;
+  product: RecommendedProduct;
+}
+
 export interface RecommendationResult {
   products: RecommendedProduct[];
+  /** Best product per routine step (missing in results saved by the old quiz). */
+  routine?: RoutineEntry[];
+  steps?: string[];
   bundles: RecommendedBundle[];
 }
 

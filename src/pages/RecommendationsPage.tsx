@@ -1,363 +1,233 @@
 /**
- * Recommendations Page
+ * Hair quiz results (/recommendations).
  *
- * Displays results from the hair survey:
- *   Section 1 — Recommended Products (responsive grid)
- *   Section 2 — Recommended Bundles (cards with product list, discount, add-to-cart)
+ *   1. Your routine — the best product for each step the person asked for,
+ *      in the order they are used, with why it fits and how to use it, and
+ *      one button that puts the whole routine in the cart.
+ *   2. More matches — the other ranked products, filterable by step.
+ *   3. Sets — static bundles that contain matching products.
  *
- * Data arrives via React Router `location.state` (set by HairSurveyPage after
- * the POST /v1/recommendations call).
- *
- * If the user lands here without state, they are redirected to /hair-survey.
+ * Data comes from the quiz page (router state) or, after a refresh, from the
+ * hair profile saved in localStorage.
  */
 
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import {
-  Typography,
-  Button,
-  Card,
-  Row,
-  Col,
-  Tag,
-  Space,
-  Empty,
-  Divider,
-  List,
-  message,
-} from 'antd';
-import {
-  ShoppingCartOutlined,
-  ArrowLeftOutlined,
-  GiftOutlined,
-  StarOutlined,
-} from '@ant-design/icons';
-import { useMemo } from 'react';
+import { Typography, Button, Card, Row, Col, Tag, Space, Empty, List, Segmented, message } from 'antd';
+import { ShoppingCartOutlined, EditOutlined, GiftOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
-import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
-import type {
-  RecommendationResult,
-  RecommendedBundle,
-  RecommendedProduct,
-  RecommendationPayload,
-  BundleProduct,
-} from '@/types';
+import ProductCard from '@/components/ProductCard';
+import type { Product, RecommendationResult, RecommendedBundle, RecommendedProduct, RecommendationPayload, BundleProduct } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { loadHairProfile } from '@/shared/utils/hairProfile';
-import { useTranslation } from 'react-i18next';
+import { HAIR_TYPE_KEYS, NEED, NEED_KEYS, QUESTIONS, type QuizAnswers } from '@/features/quiz/quizConfig';
 
 const { Title, Text, Paragraph } = Typography;
 
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
+const TONER_NEEDS: number[] = [NEED.brassyYellow, NEED.brassyOrange, NEED.brassyRed];
 
-function ProductRecommendationCard({ product }: { product: RecommendedProduct }) {
-  const { addItem } = useCart();
+/** Which result filter a product step belongs to. */
+const STEP_GROUP: Record<string, string> = {
+  shampoo: 'shampoo', conditioner: 'condition', mask: 'condition', leave_in: 'leave_in', scalp: 'scalp', style: 'style',
+};
+
+function toProduct(product: RecommendedProduct): Product {
+  return { ...product, description: product.description ?? '' };
+}
+
+function priceOf(product: RecommendedProduct): number {
+  return product.sale?.price ?? product.price;
+}
+
+/** "Fights frizz · For curly hair" chips. */
+function WhyItFits({ product }: { product: RecommendedProduct }) {
   const { t } = useTranslation();
-
-  const PLACEHOLDER =
-    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="100%" height="100%" fill="%23f3f3f3"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-family="Arial,sans-serif" font-size="14">No image</text></svg>';
-
-  const handleAdd = () => {
-    // Map RecommendedProduct → cart-compatible Product shape
-    addItem(
-      {
-        id: product.id,
-        name: product.name,
-        description: product.description ?? '',
-        brand: product.brand,
-        brandId: product.brandId,
-        category: product.category,
-        categoryId: product.categoryId,
-        price: product.price,
-        stylistPrice: product.stylistPrice,
-        image: product.image,
-        inStock: product.inStock,
-        quantity: product.quantity,
-      },
-      1,
-    );
-    message.success(t('recommendations.addedToCart', { name: product.name }));
-  };
+  const needs = product.matchedNeedIds ?? [];
+  const types = product.matchedTypeIds ?? [];
+  if (!needs.length && !types.length) return <div className="quiz-why"><span className="quiz-why__chip quiz-why__chip--plain">{t('quiz.results.suitsYou')}</span></div>;
 
   return (
-    <Card
-      hoverable
-      styles={{ body: { padding: 16 } }}
-      cover={
-        <Link to={`/product/${product.id}`}>
-          <img
-            src={product.image || PLACEHOLDER}
-            alt={product.name}
-            style={{ width: '100%', height: 200, objectFit: 'cover' }}
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = PLACEHOLDER;
-            }}
-          />
-        </Link>
-      }
-    >
-      <Text type="secondary" style={{ fontSize: 12 }}>
-        {product.brand?.name}
-      </Text>
-      <Title level={5} ellipsis={{ rows: 2 }} style={{ marginTop: 4, marginBottom: 8 }}>
-        <Link to={`/product/${product.id}`} style={{ color: 'inherit' }}>
-          {product.name}
-        </Link>
-      </Title>
+    <div className="quiz-why" aria-label={t('quiz.results.whyItFits')}>
+      {needs.map((id) => NEED_KEYS[id] && <span key={`n${id}`} className="quiz-why__chip">{t(`quiz.need.${NEED_KEYS[id]}`)}</span>)}
+      {types.map((id) => HAIR_TYPE_KEYS[id] && <span key={`t${id}`} className="quiz-why__chip quiz-why__chip--type">{t('quiz.results.forType', { type: t(`quiz.o.${HAIR_TYPE_KEYS[id]}.label`).toLowerCase() })}</span>)}
+    </div>
+  );
+}
 
-      {/* Price */}
-      <div style={{ marginBottom: 8 }}>
-        {product.sale ? (
-          <Space size={8} align="baseline">
-            <Text delete type="secondary">{formatPrice(product.price)}</Text>
-            <Text strong style={{ fontSize: 16, color: 'var(--color-primary, #1677ff)' }}>
-              {formatPrice(product.sale.price)}
-            </Text>
-          </Space>
-        ) : (
-          <Text strong style={{ fontSize: 16 }}>{formatPrice(product.price)}</Text>
-        )}
+function RoutineStepCard({ index, step, product }: { index: number; step: string; product: RecommendedProduct }) {
+  const { t } = useTranslation();
+  const isToner = (product.matchedNeedIds ?? []).some((id) => TONER_NEEDS.includes(id));
+  const tip = isToner ? t('quiz.tip.toner') : t(`quiz.tip.${step}`);
+
+  return (
+    <li className="quiz-routine__step">
+      <div className="quiz-routine__head">
+        <span className="quiz-routine__number" aria-hidden="true">{index + 1}</span>
+        <div>
+          <Text strong className="quiz-routine__label">{t(`quiz.step.${step}`)}</Text>
+          <div><Text type="secondary" className="quiz-routine__tip">{tip}</Text></div>
+        </div>
       </div>
-
-      <Button
-        type="primary"
-        block
-        icon={<ShoppingCartOutlined />}
-        disabled={!product.inStock}
-        onClick={handleAdd}
-        style={{ marginTop: 4 }}
-        size="large"
-      >
-        {product.inStock ? t('recommendations.addToCart') : t('product.outOfStock')}
-      </Button>
-      <AdminProductShortcuts product={{ id: product.id, name: product.name }} />
-    </Card>
+      <div className="quiz-routine__product">
+        <ProductCard product={toProduct(product)} showQuickAdd={!product.familyId} />
+        {product.familyId && <Link to={`/product/${product.id}`} className="nl-add-button nl-choose-shade quiz-routine__shade">{t('product.chooseShade')}</Link>}
+        <WhyItFits product={product} />
+      </div>
+    </li>
   );
 }
 
 function BundleCard({ bundle }: { bundle: RecommendedBundle }) {
   const { addItem } = useCart();
   const { t } = useTranslation();
-
-  // Calculate total price from product prices
-  const totalPrice = bundle.isDynamic
-    ? bundle.totalPrice
-    : bundle.products.reduce((sum, p) => sum + p.price * p.quantity, 0);
-
-  // Calculate discounted price for static bundles
-  const discountedPrice =
-    !bundle.isDynamic && bundle.discountPercentage != null
-      ? totalPrice * (1 - bundle.discountPercentage / 100)
-      : null;
+  const totalPrice = bundle.isDynamic ? bundle.totalPrice : bundle.products.reduce((sum, p) => sum + p.price * p.quantity, 0);
+  const discountedPrice = !bundle.isDynamic && bundle.discountPercentage != null ? totalPrice * (1 - bundle.discountPercentage / 100) : null;
 
   const handleAddBundle = () => {
-    bundle.products.forEach((bp: BundleProduct & { stylistPrice?: number }) => {
-      // Map BundleProduct → cart-compatible Product shape
-      addItem(
-        {
-          id: bp.id,
-          name: bp.name,
-          brand: null,
-          category: null,
-          description: '',
-          price: bp.price,
-          stylistPrice: bp.stylistPrice ?? bp.price, // fallback to price if missing
-          image: bp.image,
-          inStock: true,
-          quantity: bp.quantity,
-        },
-        bp.quantity,
-      );
+    bundle.products.forEach((bp: BundleProduct) => {
+      addItem({ id: bp.id, name: bp.name, brand: null, category: null, description: '', price: bp.price, stylistPrice: bp.stylistPrice ?? bp.price, image: bp.image, inStock: true, quantity: bp.quantity }, bp.quantity);
     });
     message.success(t('recommendations.bundleAdded', { name: bundle.name, count: bundle.products.length }));
   };
 
   return (
-    <Card
-      style={{ height: '100%' }}
-      styles={{ body: { padding: 24, display: 'flex', flexDirection: 'column', height: '100%' } }}
-    >
+    <Card style={{ height: '100%' }} styles={{ body: { padding: 24, display: 'flex', flexDirection: 'column', height: '100%' } }}>
       <div style={{ flex: 1 }}>
         <Space align="center" style={{ marginBottom: 8 }}>
-          <GiftOutlined style={{ fontSize: 20, color: 'var(--color-primary, #1677ff)' }} />
-          <Title level={4} style={{ margin: 0 }}>
-            {bundle.name}
-          </Title>
+          <GiftOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />
+          <Title level={4} style={{ margin: 0 }}>{bundle.name}</Title>
         </Space>
-
-        {bundle.isDynamic && (
-          <Tag color="purple" style={{ marginBottom: 12 }}>
-            <StarOutlined /> {t('recommendations.recommendedRoutine')}
-          </Tag>
-        )}
-
-        {bundle.description && (
-          <Paragraph type="secondary" style={{ marginBottom: 12 }}>
-            {bundle.description}
-          </Paragraph>
-        )}
-
-        {/* Included products */}
-        <List
-          size="small"
-          dataSource={bundle.products}
-          renderItem={(p: BundleProduct) => (
-            <List.Item style={{ padding: '6px 0' }}>
-              <Text>{p.name}</Text>
-              <Text type="secondary" style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-                {formatPrice(p.price)}
-              </Text>
-            </List.Item>
-          )}
-          style={{ marginBottom: 16 }}
-        />
-
-        {/* Pricing */}
-        <div style={{ marginBottom: 16 }}>
-          {discountedPrice != null && discountedPrice < totalPrice ? (
-            <Space size={12} align="baseline">
-              <Text delete type="secondary" style={{ fontSize: 14 }}>
-                {formatPrice(totalPrice)}
-              </Text>
-              <Text strong style={{ fontSize: 20, color: 'var(--color-primary, #1677ff)' }}>
-                {formatPrice(discountedPrice)}
-              </Text>
-              {!bundle.isDynamic && bundle.discountPercentage != null && bundle.discountPercentage > 0 && (
-                <Tag color="red">{t('recommendations.save', { percent: bundle.discountPercentage })}</Tag>
-              )}
-            </Space>
-          ) : (
-            <Text strong style={{ fontSize: 20 }}>
-              {formatPrice(totalPrice)}
-            </Text>
-          )}
-        </div>
+        {bundle.description && <Paragraph type="secondary">{bundle.description}</Paragraph>}
+        <List size="small" dataSource={bundle.products} style={{ marginBottom: 16 }} renderItem={(p: BundleProduct) => (
+          <List.Item style={{ padding: '6px 0' }}><Text>{p.name}</Text><Text type="secondary" style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}>{formatPrice(p.price)}</Text></List.Item>
+        )} />
+        {discountedPrice != null && discountedPrice < totalPrice ? (
+          <Space size={12} align="baseline" style={{ marginBottom: 16 }}>
+            <Text delete type="secondary">{formatPrice(totalPrice)}</Text>
+            <Text strong style={{ fontSize: 20, color: 'var(--color-primary)' }}>{formatPrice(discountedPrice)}</Text>
+            {!bundle.isDynamic && bundle.discountPercentage ? <Tag color="red">{t('recommendations.save', { percent: bundle.discountPercentage })}</Tag> : null}
+          </Space>
+        ) : <Text strong style={{ fontSize: 20, display: 'block', marginBottom: 16 }}>{formatPrice(totalPrice)}</Text>}
       </div>
-
-      <Button
-        type="primary"
-        block
-        size="large"
-        icon={<ShoppingCartOutlined />}
-        onClick={handleAddBundle}
-      >
-        {t('recommendations.addBundleToCart')}
-      </Button>
+      <Button type="primary" block size="large" icon={<ShoppingCartOutlined />} onClick={handleAddBundle}>{t('recommendations.addBundleToCart')}</Button>
     </Card>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Main Page                                                          */
-/* ------------------------------------------------------------------ */
 
 export default function RecommendationsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { addItem } = useCart();
+  const [filter, setFilter] = useState('all');
 
-  const state = location.state as
-    | { recommendations: RecommendationResult; survey: RecommendationPayload }
-    | undefined;
+  const state = location.state as { recommendations: RecommendationResult; survey: RecommendationPayload } | undefined;
 
-  /* Prefer freshly-navigated state; fall back to the persisted profile so a
-     refresh, back-button, or shared link still shows the last result. */
-  const data = useMemo(() => {
-    if (state?.recommendations) return state;
+  /* Fresh results first; after a refresh, the saved hair profile. */
+  const data = useMemo((): { recommendations: RecommendationResult; answers?: QuizAnswers } | undefined => {
     const stored = loadHairProfile();
-    return stored ? { recommendations: stored.recommendations, survey: stored.survey } : undefined;
+    if (state?.recommendations) return { recommendations: state.recommendations, answers: stored?.answers };
+    return stored ? { recommendations: stored.recommendations, answers: stored.answers } : undefined;
   }, [state]);
 
-  /* If no data at all, redirect back to survey */
   if (!data?.recommendations) {
     return (
       <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
         <Empty description={t('recommendations.noRecommendationsYet')} />
-        <Button
-          type="primary"
-          size="large"
-          onClick={() => navigate('/hair-survey')}
-          style={{ marginTop: 24 }}
-        >
-          {t('recommendations.takeHairSurvey')}
-        </Button>
+        <Button type="primary" size="large" onClick={() => navigate('/quiz')} style={{ marginTop: 24 }}>{t('recommendations.takeHairSurvey')}</Button>
       </div>
     );
   }
 
-  const { recommendations } = data;
-  const { products, bundles } = recommendations;
-  const hasProducts = products.length > 0;
-  const hasBundles = bundles.length > 0;
+  const { products, bundles } = data.recommendations;
+  const routine = data.recommendations.routine ?? [];
+  const askedSteps = data.recommendations.steps ?? [];
+  const routineIds = new Set(routine.map((entry) => entry.product.id));
+  const missingSteps = askedSteps.filter((step) => !routine.some((entry) => entry.step === step));
+  const more = products.filter((p) => !routineIds.has(p.id));
+  const moreGroups = [...new Set(more.map((p) => STEP_GROUP[p.quizStep ?? ''] ?? 'other'))];
+  const shownMore = filter === 'all' ? more : more.filter((p) => (STEP_GROUP[p.quizStep ?? ''] ?? 'other') === filter);
+
+  // Colour lines need a shade choice first, so they are not added in one click.
+  const addable = routine.filter((entry) => !entry.product.familyId && entry.product.inStock);
+  const routineTotal = addable.reduce((sum, entry) => sum + priceOf(entry.product), 0);
+  const addRoutine = () => {
+    addable.forEach(({ product }) => addItem(toProduct(product), 1));
+    message.success(t('quiz.results.routineAdded', { count: addable.length }));
+  };
+
+  const answerChips = data.answers ? QUESTIONS.flatMap((q) => (data.answers?.[q.id] ?? []).map((key) => `quiz.o.${key}.label`)) : [];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px 80px' }}>
-      {/* Back + title */}
-      <Button
-        type="text"
-        icon={<ArrowLeftOutlined />}
-        onClick={() => navigate('/hair-survey')}
-        style={{ marginBottom: 16 }}
-      >
-        {t('recommendations.retakeSurvey')}
-      </Button>
+    <div className="quiz-results">
+      <header className="quiz-results__header">
+        <span className="nl-eyebrow">{t('quiz.results.eyebrow')}</span>
+        <Title level={1} style={{ marginTop: 6 }}>{t('quiz.results.title')}</Title>
+        <Paragraph type="secondary" style={{ maxWidth: 620 }}>{t('quiz.results.subtitle')}</Paragraph>
+        {answerChips.length > 0 && <div className="hair-quiz__answers quiz-results__answers">{answerChips.map((key) => <span key={key}>{t(key)}</span>)}</div>}
+        <Button icon={<EditOutlined />} onClick={() => navigate('/quiz')}>{t('quiz.results.editAnswers')}</Button>
+      </header>
 
-      <Title level={2}>{t('recommendations.title')}</Title>
-      <Paragraph type="secondary">
-        {t('recommendations.subtitle')}
-      </Paragraph>
-
-      <Divider />
-
-      {/* Section 1 — Products */}
-      {hasProducts ? (
-        <>
-          <Title level={3} style={{ marginBottom: 24 }}>
-            {t('recommendations.recommendedProducts')}
-          </Title>
-          <Row gutter={[24, 24]}>
-            {products.map((product) => (
-              <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
-                <ProductRecommendationCard product={product} />
-              </Col>
-            ))}
-          </Row>
-        </>
-      ) : (
-        <Empty description={t('recommendations.noProducts')} style={{ marginBottom: 40 }} />
+      {routine.length > 0 && (
+        <section className="quiz-routine" aria-labelledby="quiz-routine-title">
+          <div className="quiz-routine__bar">
+            <Title level={2} id="quiz-routine-title" style={{ margin: 0 }}>{t('quiz.results.routineTitle')}</Title>
+            {addable.length > 0 && (
+              <Button type="primary" size="large" icon={<ShoppingCartOutlined />} onClick={addRoutine}>
+                {t('quiz.results.addRoutine', { count: addable.length, total: formatPrice(routineTotal) })}
+              </Button>
+            )}
+          </div>
+          <ol className="quiz-routine__list">
+            {routine.map((entry, index) => <RoutineStepCard key={entry.step} index={index} step={entry.step} product={entry.product} />)}
+          </ol>
+          {missingSteps.length > 0 && (
+            <Paragraph type="secondary" className="quiz-routine__missing">
+              {t('quiz.results.missingSteps', { steps: missingSteps.map((s) => t(`quiz.step.${s}`)).join(', ') })}
+            </Paragraph>
+          )}
+        </section>
       )}
 
-      {/* Section 2 — Bundles */}
-      {hasBundles && (
-        <>
-          <Divider />
-          <Title level={3} style={{ marginBottom: 24 }}>
-            {t('recommendations.recommendedBundles')}
-          </Title>
-          <Row gutter={[24, 24]}>
-            {bundles.map((bundle, idx) => (
-              <Col key={bundle.id ?? `dynamic-${idx}`} xs={24} sm={12} lg={8}>
-                <BundleCard bundle={bundle} />
-              </Col>
+      {more.length > 0 && (
+        <section className="quiz-more" aria-labelledby="quiz-more-title">
+          <div className="quiz-routine__bar">
+            <Title level={2} id="quiz-more-title" style={{ margin: 0 }}>{routine.length ? t('quiz.results.moreTitle') : t('recommendations.recommendedProducts')}</Title>
+            {moreGroups.length > 1 && (
+              <Segmented
+                value={filter}
+                onChange={(value) => setFilter(String(value))}
+                options={[{ value: 'all', label: t('quiz.results.all') }, ...moreGroups.map((g) => ({ value: g, label: t(`quiz.step.${g}`) }))]}
+              />
+            )}
+          </div>
+          <div className="nl-product-grid">
+            {shownMore.map((product) => (
+              <div key={product.id} className="quiz-more__item">
+                <ProductCard product={toProduct(product)} showQuickAdd={!product.familyId} />
+                {product.familyId && <Link to={`/product/${product.id}`} className="nl-add-button nl-choose-shade quiz-routine__shade">{t('product.chooseShade')}</Link>}
+                <WhyItFits product={product} />
+              </div>
             ))}
-          </Row>
-        </>
+          </div>
+        </section>
       )}
 
-      {!hasProducts && !hasBundles && (
-        <div style={{ textAlign: 'center', marginTop: 40 }}>
+      {!routine.length && !more.length && (
+        <div style={{ textAlign: 'center', margin: '40px 0' }}>
           <Empty description={t('recommendations.noMatchingProducts')} />
-          <Button
-            type="primary"
-            size="large"
-            onClick={() => navigate('/hair-survey')}
-            style={{ marginTop: 24 }}
-          >
-            {t('recommendations.retakeSurvey')}
-          </Button>
+          <Button type="primary" size="large" onClick={() => navigate('/quiz')} style={{ marginTop: 24 }}>{t('recommendations.retakeSurvey')}</Button>
         </div>
+      )}
+
+      {bundles.length > 0 && (
+        <section className="quiz-more">
+          <Title level={2}>{t('recommendations.recommendedBundles')}</Title>
+          <Row gutter={[24, 24]}>
+            {bundles.map((bundle, idx) => <Col key={bundle.id ?? `bundle-${idx}`} xs={24} sm={12} lg={8}><BundleCard bundle={bundle} /></Col>)}
+          </Row>
+        </section>
       )}
     </div>
   );

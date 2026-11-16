@@ -8,6 +8,7 @@
 import { baseApi, API_TAGS } from '@/api/baseApi';
 
 export type QuizMode = 'auto' | 'featured' | 'hidden';
+export type QuizStep = 'shampoo' | 'conditioner' | 'mask' | 'leave_in' | 'scalp' | 'style';
 
 export interface HairQuizProduct {
   id: number;
@@ -16,10 +17,16 @@ export interface HairQuizProduct {
   category: string | null;
   quantity: number;
   quizMode: QuizMode;
+  /** Set by an admin or the catalogue; null = taken from the category. */
+  quizStep: QuizStep | null;
+  /** The step the quiz uses; null = not a care product, never recommended. */
+  effectiveStep: QuizStep | null;
   hairTypeIds: number[];
   hairConcernIds: number[];
   image: string | null;
   score?: number;
+  matchedNeedIds?: number[];
+  routineStep?: string | null;
 }
 
 export interface HairQuizProductsParams {
@@ -27,6 +34,7 @@ export interface HairQuizProductsParams {
   mode?: QuizMode;
   tagged?: 'yes' | 'no';
   stock?: 'in' | 'out';
+  step?: QuizStep | 'none';
   page?: number;
   per_page?: number;
 }
@@ -47,14 +55,14 @@ export const hairQuizApi = baseApi.injectEndpoints({
       providesTags: [QUIZ_TAG],
     }),
 
-    updateHairQuizProduct: builder.mutation<HairQuizProduct, { id: number; quiz_mode?: QuizMode; hair_type_ids?: number[]; hair_concern_ids?: number[] }>({
+    updateHairQuizProduct: builder.mutation<HairQuizProduct, { id: number; quiz_mode?: QuizMode; quiz_step?: QuizStep | null; hair_type_ids?: number[]; hair_concern_ids?: number[] }>({
       query: ({ id, ...body }) => ({ url: `/v1/admin/hair-quiz/products/${id}`, method: 'PUT', body }),
       transformResponse: (response: any) => response.data,
       // Quiz results and storefront product data (hair tags) both change.
       invalidatesTags: [QUIZ_TAG, { type: API_TAGS.Products, id: 'LIST' }, API_TAGS.Product],
     }),
 
-    previewHairQuiz: builder.mutation<HairQuizProduct[], { hair_type_id: number; concerns: number[] }>({
+    previewHairQuiz: builder.mutation<HairQuizProduct[], { hair_type_ids: number[]; concerns: number[] }>({
       query: (body) => ({ url: '/v1/admin/hair-quiz/preview', method: 'POST', body }),
       transformResponse: (response: any) => response.data ?? [],
     }),
