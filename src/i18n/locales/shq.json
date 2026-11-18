@@ -828,6 +828,7 @@
       "aboutPlaceholder": "Përvoja juaj, specialitetet ose pse doni të bashkoheni..."
     },
     "invite": {
+      "welcomePrefilled": "Mirë se vini, {{name}}. I kemi plotësuar të dhënat që i kemi. Shtoni vetëm atë që mungon, pastaj zgjidhni fjalëkalimin.",
       "unavailableText": "Kjo lidhje aktivizimi nuk është e disponueshme.",
       "failed": "Nuk mundëm ta aktivizojmë llogarinë.",
       "ready": "Llogaria juaj e biznesit është gati.",

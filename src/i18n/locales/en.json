@@ -828,6 +828,7 @@
       "aboutPlaceholder": "Share your experience, specialties, or why you want to join..."
     },
     "invite": {
+      "welcomePrefilled": "Welcome, {{name}}. We have prefilled the details we already know. Add only what is missing below, then choose your password.",
       "unavailableText": "This activation link is unavailable.",
       "failed": "We could not activate your account.",
       "ready": "Your stylist account is ready.",

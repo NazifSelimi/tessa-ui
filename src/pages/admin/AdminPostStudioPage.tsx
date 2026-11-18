@@ -35,9 +35,9 @@ import {
   type Platform, type Tone,
 } from '@/features/studio/caption';
 import { IDEAS, IDEA_GROUPS, ideaById, ideaText, upcomingIdeas, type IdeaGroup, type PostIdea } from '@/features/studio/ideas';
-import { useGetAllProductsQuery } from '@/features/admin/api';
+import { useGetAdminBundlesQuery, useGetAllProductsQuery } from '@/features/admin/api';
 import { useLazyGetProductByIdQuery } from '@/features/products/api';
-import type { Product } from '@/types';
+import type { Product, StoreBundle } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import { site } from '@/shared/config/site';
 import {
@@ -373,6 +373,49 @@ export default function AdminPostStudioPage() {
     setProducts(chosen);
     return chosen;
   }, [catalogue, fetchProduct, products]);
+
+  /* ------------------------------------------------------------ bundle → offer post */
+
+  const { data: bundles = [] } = useGetAdminBundlesQuery();
+
+  /** Turns a bundle into an Offer post: its products, a "-10%" sticker and "together X instead of Y". */
+  const applyBundle = (bundle: StoreBundle) => {
+    const salon = bundle.audience === 'stylist';
+    const unit = (item: StoreBundle['products'][number]) => Number((salon && item.stylistPrice) || item.price || 0);
+    const paid = bundle.products.filter((item) => !item.isBonus);
+    const full = bundle.products.reduce((sum, item) => sum + unit(item) * (item.quantity || 1), 0);
+    const paidTotal = paid.reduce((sum, item) => sum + unit(item) * (item.quantity || 1), 0);
+    const pct = Number(bundle.discountPercentage ?? 0);
+    const deal = bundle.promotionType === 'fixed_price' && bundle.bundlePrice ? Number(bundle.bundlePrice)
+      : bundle.promotionType === 'bonus_items' ? paidTotal
+      : pct > 0 ? full * (1 - pct / 100) : full;
+    const off = full > 0 ? Math.round((1 - deal / full) * 100) : 0;
+    const lang = design.lang;
+    const badge = bundle.promotionType === 'bonus_items'
+      ? (lang === 'en' ? 'FREE GIFT' : lang === 'sq' ? 'DHURATË' : 'ПОДАРОК')
+      : off > 0 ? `-${off}%` : '';
+    const together = { mk: 'Заедно', sq: 'Së bashku', en: 'Together' }[lang] ?? 'Заедно';
+    const instead = { mk: 'наместо', sq: 'në vend të', en: 'instead of' }[lang] ?? 'наместо';
+    const subline = deal > 0 && deal < full ? `${together} ${formatPrice(deal)} ${instead} ${formatPrice(full)}` : (bundle.description ?? '');
+    const eyebrow = salon
+      ? ({ mk: 'За салони', sq: 'Për sallone', en: 'For salons' }[lang] ?? '')
+      : ({ mk: 'Сет понуда', sq: 'Ofertë set', en: 'Bundle deal' }[lang] ?? '');
+    const offerMax = TEMPLATES.find((item) => item.id === 'offer')?.maxProducts ?? 3;
+    setDesign((current) => ({
+      ...current,
+      ...templateDefaults('offer', current.lang),
+      template: 'offer',
+      eyebrow,
+      headline: bundle.name,
+      subline,
+      badge,
+      info: 'price',
+      priceMode: salon ? 'salon' : 'retail',
+    }));
+    selectProducts(bundle.products.slice(0, offerMax).map((item) => String(item.id)));
+    setCaptionEdited(null);
+    if (bundle.products.length > offerMax) message.info(`Offer posts show ${offerMax} products; the bundle has ${bundle.products.length}. Try the Product lineup layout for all of them.`);
+  };
 
   // ?product=ID (from the shop's admin bar) preselects a product and its name.
   const preselected = useRef(false);
@@ -1760,6 +1803,21 @@ export default function AdminPostStudioPage() {
             </Card>
 
             <Card size="small" title={`2 · Products (up to ${template.maxProducts})`}>
+              {bundles.length > 0 && (
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Start from a bundle (fills the offer post)…"
+                  value={null}
+                  onChange={(id: string | null) => { const found = bundles.find((item) => String(item.id) === id); if (found) applyBundle(found); }}
+                  options={bundles.map((item) => ({
+                    value: String(item.id),
+                    label: `${item.name}${item.audience === 'stylist' ? ' · salons' : ''}${item.isActive ? '' : ' · off'} · ${item.products.length} products`,
+                  }))}
+                  optionFilterProp="label"
+                  style={{ width: '100%', marginBottom: 8 }}
+                />
+              )}
               <Select
                 mode="multiple"
                 showSearch

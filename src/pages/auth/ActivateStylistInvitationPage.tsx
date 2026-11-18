@@ -137,7 +137,7 @@ export default function ActivateStylistInvitationPage() {
         {!loading && invitation && (
           <>
             <Title level={2} style={{ marginBottom: 8 }}>{t('pages.invite.title')}</Title>
-            <Paragraph type="secondary">Welcome, {invitation.display_name}. We have prefilled the details we already know. Add only the missing information below, then choose your password.</Paragraph>
+            <Paragraph type="secondary">{t('pages.invite.welcomePrefilled', { name: invitation.display_name })}</Paragraph>
             <Alert type="info" showIcon icon={<ShopOutlined />} message={t('pages.invite.proAccount')} description={t('pages.invite.proText')} style={{ marginBottom: 20 }} />
             <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
               <Form.Item name="first_name" label={t('auth.firstName')} rules={[{ required: true, message: t('pages.invite.enterFirstName') }]}>

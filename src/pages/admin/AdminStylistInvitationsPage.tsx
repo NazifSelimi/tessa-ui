@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Col, Form, Input, Popconfirm, Row, Space, Table, Tag, Typography, message } from 'antd';
-import { CopyOutlined, QrcodeOutlined, ScissorOutlined } from '@ant-design/icons';
+import { CopyOutlined, MessageOutlined, QrcodeOutlined, ScissorOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDate } from '@/shared/utils/formatDate';
@@ -47,6 +47,27 @@ interface InvitationMeta {
   last_page: number;
 }
 
+
+/** Macedonian numbers as Viber wants them: 070 123 456 -> +38970123456. */
+const viberNumber = (phone: string | null): string | null => {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `389${digits.slice(1)}`;
+  else if (digits.length === 8 && digits.startsWith('7')) digits = `389${digits}`;
+  return digits.length >= 10 ? `+${digits}` : null;
+};
+
+/** The personal Viber message with the stylist's own activation link. */
+const viberInviteText = (name: string, url: string) => {
+  const first = name.trim().split(/\s+/)[0] ?? '';
+  return `Здраво${first ? ` ${first}` : ''}! Ова е Теса 💇‍♀️
+Ви подготвивме салонски профил на tessa.mk со податоците што веќе ги имаме. Само отворете го линкот и поставете лозинка (важи 30 дена):
+${url}
+
+Со профилот гледате салонски цени и нарачувате директно. До 2 декември: -15% на салонските сетови.`;
+};
+
 export default function AdminStylistInvitationsPage() {
   const { token } = useAuth();
   const [form] = Form.useForm<InviteFormValues>();
@@ -55,11 +76,12 @@ export default function AdminStylistInvitationsPage() {
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(true);
   const [invitationMeta, setInvitationMeta] = useState<InvitationMeta>({ current_page: 1, per_page: 25, total: 0, last_page: 1 });
+  const [search, setSearch] = useState('');
 
   const loadInvitations = async (page = invitationMeta.current_page) => {
     setLoadingInvitations(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations?page=${page}&per_page=25`, {
+      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations?page=${page}&per_page=25${search.trim() ? `&search=${encodeURIComponent(search.trim())}` : ''}`, {
         headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       const payload = await response.json();
@@ -124,6 +146,31 @@ export default function AdminStylistInvitationsPage() {
     }
   };
 
+  /** New link -> personal message copied -> the stylist's Viber chat opens; paste and send. */
+  const sendOnViber = async (record: InvitationRow) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations/${record.id}/reissue`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Could not make a new link.');
+      const data = payload.data as CreatedInvitation;
+      setCreated(data);
+      await navigator.clipboard.writeText(viberInviteText(record.display_name, data.activation_url));
+      void loadInvitations();
+      const number = viberNumber(record.phone);
+      if (number) {
+        window.location.href = `viber://chat?number=${encodeURIComponent(number)}`;
+        message.success('Message copied. Viber is opening: paste it (Cmd+V) and send.');
+      } else {
+        message.warning('Message copied, but this phone number does not look valid for Viber.');
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Could not make a new link.');
+    }
+  };
+
   const revokeInvitation = async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/v1/admin/stylist-invitations/${id}/revoke`, {
@@ -183,7 +230,16 @@ export default function AdminStylistInvitationsPage() {
           </Card>
         </Col>
       </Row>
-      <Card title={`Imported invitations (${invitationMeta.total})`} style={{ marginTop: 24 }} extra={<Button onClick={() => void loadInvitations()}>Refresh</Button>}>
+      <Card
+        title={`Imported invitations (${invitationMeta.total})`}
+        style={{ marginTop: 24 }}
+        extra={(
+          <Space>
+            <Input.Search allowClear placeholder="Name, salon, phone, email" value={search} onChange={(event) => setSearch(event.target.value)} onSearch={() => void loadInvitations(1)} style={{ width: 240 }} />
+            <Button onClick={() => void loadInvitations()}>Refresh</Button>
+          </Space>
+        )}
+      >
         <Table
           loading={loadingInvitations}
           dataSource={invitations}
@@ -203,7 +259,7 @@ export default function AdminStylistInvitationsPage() {
             { title: 'Salon', dataIndex: 'business_name', key: 'business_name', width: 190, render: (value: string | null) => value || 'Not provided' },
             { title: 'Status', dataIndex: 'status', key: 'status', width: 110, render: (status: InvitationRow['status']) => <Tag color={status === 'activated' ? 'green' : status === 'pending' ? 'blue' : 'red'}>{status}</Tag> },
             { title: 'Expires', dataIndex: 'expires_at', key: 'expires_at', width: 130, render: (value: string) => formatDate(value) },
-            { title: 'Actions', key: 'actions', width: 180, render: (_: unknown, record: InvitationRow) => record.status === 'activated' ? 'Account active' : <Space size="small"><Button size="small" onClick={() => void reissueInvitation(record.id)}>New QR</Button><Popconfirm title="Revoke this activation link?" onConfirm={() => void revokeInvitation(record.id)} okText="Revoke" okButtonProps={{ danger: true }}><Button size="small" danger>Revoke</Button></Popconfirm></Space> },
+            { title: 'Actions', key: 'actions', width: 250, render: (_: unknown, record: InvitationRow) => record.status === 'activated' ? 'Account active' : <Space size="small"><Button size="small" type="primary" icon={<MessageOutlined />} onClick={() => void sendOnViber(record)}>Viber</Button><Button size="small" onClick={() => void reissueInvitation(record.id)}>New QR</Button><Popconfirm title="Revoke this activation link?" onConfirm={() => void revokeInvitation(record.id)} okText="Revoke" okButtonProps={{ danger: true }}><Button size="small" danger>Revoke</Button></Popconfirm></Space> },
           ]}
         />
       </Card>
