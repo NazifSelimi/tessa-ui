@@ -1,21 +1,16 @@
 /**
- * Optional automatic WhatsApp (Meta Cloud API). Premium plan only, OFF by
- * default; Meta bills per message. Setup steps: tessa-api docs/WHATSAPP_SETUP.md.
+ * Optional automatic WhatsApp (Meta Cloud API). OFF by default (Admin →
+ * Features); Meta bills per message. Setup steps: tessa-api docs/WHATSAPP_SETUP.md.
  */
 
 import { useEffect, useState } from 'react';
 import { Alert, App, Button, Card, Flex, Input, InputNumber, Result, Spin, Switch, Table, Tag, Typography } from 'antd';
-import { CrownOutlined } from '@ant-design/icons';
 import {
   apiErrorMessage, isFeatureOff, useGetWhatsAppSettingsQuery, useSaveWhatsAppSettingsMutation, useSendWhatsAppTestMutation,
   type StatusTemplate,
 } from './api';
 
 const { Text, Paragraph } = Typography;
-
-export function PremiumBadge() {
-  return <Tag icon={<CrownOutlined />} color="gold">Premium</Tag>;
-}
 
 export function CostNote() {
   return (
@@ -64,9 +59,8 @@ export default function WhatsAppAutoPanel() {
   if (isFeatureOff(error)) {
     return (
       <Result
-        icon={<CrownOutlined style={{ color: '#d4a106' }} />}
-        title="Automatic WhatsApp is a Premium feature"
-        subTitle="Upgrade to Premium to send order updates on WhatsApp automatically. The free Viber / WhatsApp buttons and Send to a list work on every plan."
+        title="Automatic WhatsApp is switched off"
+        subTitle="Switch it on in Admin → Features to send order updates on WhatsApp automatically. The Viber / WhatsApp buttons work without it."
       />
     );
   }
@@ -98,7 +92,6 @@ export default function WhatsAppAutoPanel() {
     <Flex vertical gap={16} style={{ maxWidth: 760 }}>
       <Flex align="center" gap={8} wrap>
         <Text strong style={{ fontSize: 16 }}>Automatic WhatsApp</Text>
-        <PremiumBadge />
         <Tag color={data.enabled ? 'green' : 'default'}>{data.enabled ? 'ON' : 'OFF'}</Tag>
       </Flex>
       <CostNote />

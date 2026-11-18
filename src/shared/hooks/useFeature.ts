@@ -5,8 +5,7 @@
  */
 import { useSyncExternalStore } from 'react';
 
-export type FeaturePlan = 'basic' | 'pro' | 'premium';
-export interface FeatureState { enabled: boolean; plan: FeaturePlan; included: boolean }
+export interface FeatureState { enabled: boolean }
 export type FeatureMap = Record<string, FeatureState>;
 
 let states: FeatureMap | null = null;
@@ -17,13 +16,13 @@ function emit() {
   listeners.forEach((listener) => listener());
 }
 
-/** Accepts the new {enabled, plan, included} shape and the older plain booleans. */
+/** Accepts the {enabled} shape and older plain booleans. */
 function normalize(data: Record<string, unknown>): FeatureMap {
   const result: FeatureMap = {};
   Object.entries(data ?? {}).forEach(([key, value]) => {
     result[key] = typeof value === 'boolean'
-      ? { enabled: value, plan: 'basic', included: true }
-      : { enabled: Boolean((value as FeatureState)?.enabled), plan: (value as FeatureState)?.plan ?? 'basic', included: (value as FeatureState)?.included !== false };
+      ? { enabled: value }
+      : { enabled: Boolean((value as FeatureState)?.enabled) };
   });
   return result;
 }
@@ -52,8 +51,8 @@ export function useFeatureStates(): FeatureMap | null {
   return useSyncExternalStore(subscribe, () => states, () => null);
 }
 
-/** True unless the feature is switched off or not in the shop's plan. */
+/** True unless the feature is switched off. */
 export function useFeature(key: string): boolean {
   const state = useFeatureStates()?.[key];
-  return !state || (state.enabled && state.included);
+  return !state || state.enabled;
 }

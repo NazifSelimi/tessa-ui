@@ -1,4 +1,4 @@
-/** /admin/messages API: templates, send-to-a-list list, optional automatic WhatsApp (Premium). */
+/** /admin/messages API: templates, send-to-a-list list, optional automatic WhatsApp (switch: whatsapp_auto). */
 
 import { baseApi } from '@/api/baseApi';
 import type { MessageTemplateDef } from './templates';

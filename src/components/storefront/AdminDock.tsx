@@ -33,7 +33,7 @@ export default function AdminDock() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const features = useFeatureStates();
-  const visibleLinks = links.filter(({ to }) => !ADMIN_PATH_FEATURE[to] || (features?.[ADMIN_PATH_FEATURE[to]]?.enabled !== false && features?.[ADMIN_PATH_FEATURE[to]]?.included !== false));
+  const visibleLinks = links.filter(({ to }) => !ADMIN_PATH_FEATURE[to] || (features?.[ADMIN_PATH_FEATURE[to]]?.enabled !== false));
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 

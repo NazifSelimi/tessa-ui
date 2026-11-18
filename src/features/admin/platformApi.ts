@@ -12,7 +12,6 @@ export type FeatureKey =
   | 'messaging' | 'excel_import' | 'pdf_documents' | 'sales_reports' | 'hair_quiz' | 'referrals' | 'bundles' | 'quick_order' | 'admin_emails' | 'mcp' | 'whatsapp_auto' | 'order_delete'
   | 'post_studio' | 'content_blocks' | 'image_review' | 'stylist_invitations' | 'distributors' | 'supplier_list';
 
-export type PlanKey = 'basic' | 'pro' | 'premium';
 
 export interface AdminFeature {
   key: FeatureKey;
@@ -22,14 +21,9 @@ export interface AdminFeature {
   /** The switch. */
   enabled: boolean;
   default: boolean;
-  /** Lowest plan that includes it. */
-  plan: PlanKey;
-  defaultPlan: PlanKey;
-  /** In the shop's current plan. */
-  included: boolean;
 }
 
-export interface AdminFeatures { plan: PlanKey; plans: PlanKey[]; features: AdminFeature[] }
+export interface AdminFeatures { features: AdminFeature[] }
 
 /* ------------------------------------------------------------------ business */
 
@@ -166,7 +160,7 @@ export const platformApi = baseApi.injectEndpoints({
       transformResponse: (response: any) => response.data,
       providesTags: [API_TAGS.Features],
     }),
-    updateFeatures: builder.mutation<AdminFeatures, { features?: Partial<Record<FeatureKey, boolean>>; plans?: Partial<Record<FeatureKey, PlanKey>>; shop_plan?: PlanKey }>({
+    updateFeatures: builder.mutation<AdminFeatures, { features: Partial<Record<FeatureKey, boolean>> }>({
       query: (body) => ({ url: '/v1/admin/features', method: 'PUT', body }),
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Features, API_TAGS.Bundles],

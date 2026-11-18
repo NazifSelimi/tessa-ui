@@ -150,7 +150,7 @@ export default function AdminLayout() {
     { key: '/admin/distributors', icon: <TeamOutlined />, label: <Link to="/admin/distributors">Distributors</Link> },
     { key: '/admin/business', icon: <IdcardOutlined />, label: <Link to="/admin/business">Business profile</Link> },
     { key: '/admin/features', icon: <AppstoreOutlined />, label: <Link to="/admin/features">Features</Link> },
-  ].filter((item) => !ADMIN_PATH_FEATURE[item.key] || features?.[ADMIN_PATH_FEATURE[item.key]]?.enabled !== false && features?.[ADMIN_PATH_FEATURE[item.key]]?.included !== false),
+  ].filter((item) => !ADMIN_PATH_FEATURE[item.key] || features?.[ADMIN_PATH_FEATURE[item.key]]?.enabled !== false),
   [pendingCount, pendingOrders, failedEmails, features]);
 
   // The same links under short headings, so a long list is easy to scan.

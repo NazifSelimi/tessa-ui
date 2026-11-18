@@ -1,55 +1,35 @@
 /**
- * Features: switch every optional tool of the platform on or off. Off means
+ * Features: switch every optional tool of the shop on or off. Off means
  * hidden in the admin and the shop, and blocked on the server. Also where an
  * admin connects an AI assistant (MCP) to the shop.
  */
 import { useMemo, useState } from 'react';
-import { Alert, App, Button, Card, Col, Empty, Input, Row, Segmented, Select, Space, Switch, Tag, Tooltip, Typography } from 'antd';
-import { CopyOutlined, CrownOutlined, DeleteOutlined, KeyOutlined, LockOutlined, RobotOutlined } from '@ant-design/icons';
+import { Alert, App, Button, Card, Col, Empty, Input, Row, Space, Switch, Tag, Typography } from 'antd';
+import { CopyOutlined, DeleteOutlined, KeyOutlined, RobotOutlined } from '@ant-design/icons';
 import {
   useCreateAiTokenMutation, useGetAdminFeaturesQuery, useGetAiTokensQuery, useRevokeAiTokenMutation, useUpdateFeaturesMutation,
-  type AdminFeature, type FeatureKey, type PlanKey,
+  type AdminFeature, type FeatureKey,
 } from '@/features/admin/platformApi';
 import { formatDateTime } from '@/shared/utils/formatDate';
 
 const { Title, Text, Paragraph } = Typography;
 
-const PLAN_META: Record<PlanKey, { label: string; color: string; blurb: string }> = {
-  basic: { label: 'Basic', color: 'default', blurb: 'The online shop: orders, products, customers, coupons, plus these extras.' },
-  pro: { label: 'Pro', color: 'blue', blurb: 'Marketing and admin tools for a growing business.' },
-  premium: { label: 'Premium', color: 'gold', blurb: 'Automation: AI assistant and automatic messages.' },
-};
+const AREAS: { area: AdminFeature['area']; title: string; hint: string }[] = [
+  { area: 'shop', title: 'In the shop', hint: 'Customers and business accounts notice these.' },
+  { area: 'admin', title: 'In the admin', hint: 'Only admins see these.' },
+];
 
-function FeatureRow({ feature, saving, editPlans, onToggle, onPlan }: {
-  feature: AdminFeature; saving: boolean; editPlans: boolean; onToggle: (on: boolean) => void; onPlan: (plan: PlanKey) => void;
-}) {
-  const locked = !feature.included;
+function FeatureRow({ feature, saving, onToggle }: { feature: AdminFeature; saving: boolean; onToggle: (on: boolean) => void }) {
   return (
-    <div className={`admin-feature-row${locked ? ' is-locked' : ''}`}>
+    <div className="admin-feature-row">
       <div>
         <Space size={8} wrap>
           <Text strong>{feature.label}</Text>
-          <Tag>{feature.area === 'shop' ? 'Shop' : 'Admin'}</Tag>
-          {!locked && !feature.enabled && <Tag>Off</Tag>}
-          {locked && <Tag color={PLAN_META[feature.plan].color} icon={<LockOutlined />}>Upgrade to {PLAN_META[feature.plan].label}</Tag>}
+          {!feature.enabled && <Tag>Off</Tag>}
         </Space>
         <Paragraph type="secondary" style={{ margin: '2px 0 0', fontSize: 13 }}>{feature.description}</Paragraph>
       </div>
-      <Space>
-        {editPlans && (
-          <Select<PlanKey>
-            size="small"
-            value={feature.plan}
-            style={{ width: 110 }}
-            onChange={onPlan}
-            options={(Object.keys(PLAN_META) as PlanKey[]).map((plan) => ({ value: plan, label: PLAN_META[plan].label }))}
-            aria-label={`Plan for ${feature.label}`}
-          />
-        )}
-        <Tooltip title={locked ? `Not in the current plan. Upgrade to ${PLAN_META[feature.plan].label} to use it.` : undefined}>
-          <Switch checked={feature.enabled && !locked} disabled={locked} loading={saving} onChange={onToggle} aria-label={`${feature.label}: ${feature.enabled ? 'on' : 'off'}`} />
-        </Tooltip>
-      </Space>
+      <Switch checked={feature.enabled} loading={saving} onChange={onToggle} aria-label={`${feature.label}: ${feature.enabled ? 'on' : 'off'}`} />
     </div>
   );
 }
@@ -75,7 +55,7 @@ function AiAssistantCard({ enabled }: { enabled: boolean }) {
   return (
     <Card title={<Space><RobotOutlined /> Connect an AI assistant (MCP)</Space>}>
       {!enabled ? (
-        <Alert type="info" showIcon message="The AI assistant connection is off or not in this plan (Premium)." />
+        <Alert type="info" showIcon message="The AI assistant connection is switched off." />
       ) : (
         <Space direction="vertical" size={14} style={{ width: '100%' }}>
           <Paragraph style={{ margin: 0 }}>
@@ -165,24 +145,17 @@ function AiAssistantCard({ enabled }: { enabled: boolean }) {
 }
 
 export default function AdminFeaturesPage() {
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const { data, isLoading } = useGetAdminFeaturesQuery();
   const [updateFeatures] = useUpdateFeaturesMutation();
   const [saving, setSaving] = useState<FeatureKey | null>(null);
-  const [editPlans, setEditPlans] = useState(false);
   const features = useMemo(() => data?.features ?? [], [data]);
-  const shopPlan = data?.plan ?? 'premium';
 
-  const byPlan = useMemo(() => (['basic', 'pro', 'premium'] as PlanKey[]).map((plan) => ({
-    plan,
-    items: features.filter((feature) => feature.plan === plan),
-  })), [features]);
-
-  const save = async (key: FeatureKey | null, body: Parameters<typeof updateFeatures>[0], done: string) => {
-    setSaving(key);
+  const toggle = async (feature: AdminFeature, on: boolean) => {
+    setSaving(feature.key);
     try {
-      await updateFeatures(body).unwrap();
-      message.success(done);
+      await updateFeatures({ features: { [feature.key]: on } }).unwrap();
+      message.success(`${feature.label} ${on ? 'switched on' : 'switched off'}`);
     } catch {
       message.error('Could not save');
     } finally {
@@ -190,65 +163,32 @@ export default function AdminFeaturesPage() {
     }
   };
 
-  const changePlan = (plan: PlanKey) => modal.confirm({
-    title: `Put this shop on the ${PLAN_META[plan].label} plan?`,
-    content: plan === 'premium'
-      ? 'Every feature becomes available.'
-      : 'Features above this plan stop working straight away (nothing is deleted; they come back when you upgrade).',
-    okText: `Switch to ${PLAN_META[plan].label}`,
-    onOk: () => save(null, { shop_plan: plan }, `Shop is now on ${PLAN_META[plan].label}`),
-  });
-
-  const aiOn = features.some((feature) => feature.key === 'mcp' && feature.enabled && feature.included);
+  const aiOn = features.some((feature) => feature.key === 'mcp' && feature.enabled);
 
   return (
     <div className="admin-features">
-      <Title level={2} style={{ marginBottom: 4 }}>Features & plan</Title>
+      <Title level={2} style={{ marginBottom: 4 }}>Features</Title>
       <Paragraph type="secondary">
-        Keep only what the business uses. A switched-off feature disappears from the admin and the shop and its server routes stop;
+        Keep only what the shop uses. A switched-off feature disappears from the admin and the shop and its server routes stop;
         switch it on again any time — nothing is deleted. Orders, products, customers, coupons and settings are always on.
       </Paragraph>
-      <Card size="small" style={{ marginBottom: 24 }} loading={isLoading}>
-        <Space wrap size={16} style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space wrap>
-            <CrownOutlined style={{ fontSize: 20, color: '#c49a2c' }} />
-            <Text strong>Plan of this shop</Text>
-            <Segmented<PlanKey>
-              value={shopPlan}
-              onChange={(plan) => plan !== shopPlan && changePlan(plan)}
-              options={(Object.keys(PLAN_META) as PlanKey[]).map((plan) => ({ value: plan, label: PLAN_META[plan].label }))}
-            />
-          </Space>
-          <Space>
-            <Text type="secondary">Edit which plan each feature belongs to</Text>
-            <Switch size="small" checked={editPlans} onChange={setEditPlans} />
-          </Space>
-        </Space>
-        <Paragraph type="secondary" style={{ margin: '8px 0 0', fontSize: 12 }}>
-          For selling the platform: each business gets a plan. Set by hand for now (no online payment). {PLAN_META[shopPlan].blurb}
-        </Paragraph>
-      </Card>
       <Row gutter={[24, 24]}>
         <Col xs={24} xl={13}>
-          {byPlan.map(({ plan, items }) => items.length > 0 && (
-            <Card
-              key={plan}
-              loading={isLoading}
-              style={{ marginBottom: 24 }}
-              title={<Space><Tag color={PLAN_META[plan].color} style={{ fontSize: 13 }}>{PLAN_META[plan].label}</Tag><Text type="secondary" style={{ fontWeight: 400, fontSize: 13 }}>{PLAN_META[plan].blurb}</Text></Space>}
-            >
-              {items.map((feature) => (
-                <FeatureRow
-                  key={feature.key}
-                  feature={feature}
-                  saving={saving === feature.key}
-                  editPlans={editPlans}
-                  onToggle={(on) => save(feature.key, { features: { [feature.key]: on } }, `${feature.label} ${on ? 'switched on' : 'switched off'}`)}
-                  onPlan={(level) => save(feature.key, { plans: { [feature.key]: level } }, `${feature.label} is now in ${PLAN_META[level].label}`)}
-                />
-              ))}
-            </Card>
-          ))}
+          {AREAS.map(({ area, title, hint }) => {
+            const items = features.filter((feature) => feature.area === area);
+            return items.length > 0 && (
+              <Card
+                key={area}
+                loading={isLoading}
+                style={{ marginBottom: 24 }}
+                title={<Space>{title}<Text type="secondary" style={{ fontWeight: 400, fontSize: 13 }}>{hint}</Text></Space>}
+              >
+                {items.map((feature) => (
+                  <FeatureRow key={feature.key} feature={feature} saving={saving === feature.key} onToggle={(on) => toggle(feature, on)} />
+                ))}
+              </Card>
+            );
+          })}
         </Col>
         <Col xs={24} xl={11}>
           <AiAssistantCard enabled={aiOn} />

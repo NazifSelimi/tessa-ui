@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Tabs, Typography } from 'antd';
 import SendToListPanel from '@/features/messaging/SendToListPanel';
 import TemplatesPanel from '@/features/messaging/TemplatesPanel';
-import WhatsAppAutoPanel, { PremiumBadge } from '@/features/messaging/WhatsAppAutoPanel';
+import WhatsAppAutoPanel from '@/features/messaging/WhatsAppAutoPanel';
 
 const TABS = ['send', 'templates', 'automatic'] as const;
 
@@ -22,7 +22,7 @@ export default function AdminMessagesPage() {
         items={[
           { key: 'send', label: 'Send to a list', children: <SendToListPanel /> },
           { key: 'templates', label: 'Templates', children: <TemplatesPanel /> },
-          { key: 'automatic', label: <span>Automatic <PremiumBadge /></span>, children: <WhatsAppAutoPanel /> },
+          { key: 'automatic', label: 'Automatic', children: <WhatsAppAutoPanel /> },
         ]}
       />
     </div>
