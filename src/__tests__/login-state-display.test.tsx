@@ -67,4 +67,18 @@ describe('login state display', () => {
     expect(store.getState().auth.user).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
+
+  it('repeats a public call as a guest after an expired token, also for calls that fail together', async () => {
+    const store = makeStore({ token: 'expired', user });
+    vi.stubGlobal('fetch', vi.fn(async (request: Request) => (request.headers.get('Authorization')
+      ? new Response(JSON.stringify({ code: 'session_expired' }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+      : new Response(JSON.stringify({ data: { id: '299', price: 990 } }), { status: 200, headers: { 'Content-Type': 'application/json' } }))));
+    const call = (endpoint: string) => baseQueryWithReauth('https://api.example.invalid/v1/products/299', { getState: store.getState, dispatch: store.dispatch, signal: undefined as unknown as AbortSignal, abort: vi.fn(), extra: undefined, endpoint, type: 'query' }, {});
+
+    const [first, second] = await Promise.all([call('getProduct'), call('getRelated')]);
+
+    expect(first.data).toEqual({ data: { id: '299', price: 990 } });
+    expect(second.data).toEqual({ data: { id: '299', price: 990 } });
+    expect(store.getState().auth.token).toBeNull();
+  });
 });

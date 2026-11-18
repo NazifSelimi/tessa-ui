@@ -8,7 +8,8 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom';
-import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider, Select } from 'antd';
+import { Typography, Card, Form, Input, Button, Row, Col, message, Avatar, Divider, Select, Popconfirm } from 'antd';
+import { useLogoutOthersMutation } from '@/features/auth/api';
 import { UserOutlined, MailOutlined, PhoneOutlined, ShoppingOutlined, ScissorOutlined, ThunderboltOutlined, HomeOutlined, PushpinOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +30,7 @@ export default function AccountPage() {
   const quizOn = useFeature('hair_quiz');
   const navigate = useNavigate();
   const { user, currentRole, updateProfile, changePassword, isLoading, logout } = useAuth();
+  const [logoutOthers, { isLoading: signingOutOthers }] = useLogoutOthersMutation();
   const [form] = Form.useForm();
 
   const handleUpdateProfile = async (values: {
@@ -86,6 +88,13 @@ export default function AccountPage() {
               {quizOn && <Link to="/quiz"><Button icon={<Sparkles size={16} />} block>{t('newLook.myHair')}</Button></Link>}
               <Link to="/contact"><Button icon={<Headphones size={16} />} block>{t('newLook.support')}</Button></Link>
               <Button icon={<LogOut size={16} />} block onClick={() => void logout().then(() => navigate('/'))}>{t('auth.logout')}</Button>
+              <Popconfirm
+                title={t('auth.logoutOthers')}
+                description={t('auth.logoutOthersHint')}
+                onConfirm={() => logoutOthers().unwrap().then(() => message.success(t('auth.logoutOthersDone')), () => message.error(t('common.error')))}
+              >
+                <Button type="text" size="small" block loading={signingOutOthers}>{t('auth.logoutOthers')}</Button>
+              </Popconfirm>
               {(currentRole === 'user' || currentRole === 'guest') && (
                 <Link to="/stylist/request">
                   <Button icon={<ScissorOutlined />} block>

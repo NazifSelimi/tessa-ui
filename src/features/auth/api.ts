@@ -99,6 +99,11 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.Auth],
     }),
 
+    logoutOthers: builder.mutation<{ signed_out: number }, void>({
+      query: () => ({ url: '/v1/auth/logout-others', method: 'POST' }),
+      transformResponse: (response: any) => response.data,
+    }),
+
     getCurrentUser: builder.query<User, void>({
       query: () => ({
         url: '/v1/auth/me',
@@ -165,6 +170,7 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useLogoutMutation,
+  useLogoutOthersMutation,
   useGetCurrentUserQuery,
   useLazyGetCurrentUserQuery,
   useUpdateProfileMutation,

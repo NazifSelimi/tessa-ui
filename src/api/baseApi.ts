@@ -22,12 +22,6 @@ import { notification } from 'antd';
 // import cycle (slice -> auth api -> baseApi) that breaks whichever module loads first.
 const logout = createAction('auth/logout');
 
-/**
- * Module-level flag so concurrent 401 responses produce one logout and one
- * notice. Resets after 3 s so a genuinely new session-expiry is still handled.
- */
-let _isHandling401 = false;
-
 // Base URL from environment - Laravel backend
 const API_BASE_URL = import.meta.env.VITE_API_URL as string;
 
@@ -59,51 +53,46 @@ const baseQuery = fetchBaseQuery({
 });
 
 /**
- * Base query with token refresh
+ * Base query with session-expiry handling.
  *
- * Handles 401 errors by attempting to refresh the token.
- * If refresh fails, logs out the user.
+ * A 401 on a call that carried a token means the sign-in ended (expired,
+ * revoked, password changed elsewhere): sign out once with a notice, then
+ * repeat the call as a guest so public pages keep working. A 401 without a
+ * token (e.g. wrong password on the login page) is passed through unchanged.
  */
 export const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
+  const sentWithToken = Boolean((api.getState() as RootState).auth.token);
   const result = await baseQuery(args, api, extraOptions);
 
-  // Handle 401 Unauthorized — only treat as session-expiry if user was
-  // authenticated (has a token). Unauthenticated 401s (e.g. wrong password
-  // on the login page) are passed through so the caller sees the real error.
-  if (result.error && result.error.status === 401) {
-    const state = api.getState() as RootState;
+  if (result.error && result.error.status === 401 && sentWithToken) {
+    // Several calls usually fail together on page load: the first one signs out
+    // (the notice has a fixed key, so it shows once).
+    if ((api.getState() as RootState).auth.token) {
+      logWarn('401 Unauthorized — session expired, logging out', {
+        url: typeof args === 'string' ? args : args.url,
+      });
+      api.dispatch(logout());
 
-    if (state.auth.token) {
-      // Deduplicate: only the first 401 dispatches logout + redirect
-      if (!_isHandling401) {
-        _isHandling401 = true;
-        logWarn('401 Unauthorized — session expired, logging out', {
-          url: typeof args === 'string' ? args : args.url,
-        });
-        api.dispatch(logout());
-
-        // No hard redirect: public pages stay put as a guest, and ProtectedRoute
-        // sends protected pages to the locale-aware /login?continue=... route.
-        notification.info({ key: 'session-expired', message: i18n.t('auth.sessionExpired'), placement: 'topRight' });
-
-        // Allow the flag to reset so a future (genuinely new) 401 is handled
-        setTimeout(() => { _isHandling401 = false; }, 3000);
-      }
-
-      // Return a consistent error shape for session-expiry 401s
-      return {
-        error: {
-          status: 401,
-          data: { success: false, message: 'Session expired. Please log in again.' },
-        } as FetchBaseQueryError,
-      };
+      // No hard redirect: public pages stay put as a guest, and ProtectedRoute
+      // sends protected pages to the locale-aware /login?continue=... route.
+      notification.info({ key: 'session-expired', message: i18n.t('auth.sessionExpired'), placement: 'topRight' });
     }
 
-    // No token → pass through the original error (e.g. login failure)
+    if (!(api.getState() as RootState).auth.token) {
+      const asGuest = await baseQuery(args, api, extraOptions);
+      if (!asGuest.error) return asGuest;
+    }
+
+    return {
+      error: {
+        status: 401,
+        data: { success: false, message: 'Session expired. Please log in again.' },
+      } as FetchBaseQueryError,
+    };
   }
 
   // Log 500-level server errors for observability
