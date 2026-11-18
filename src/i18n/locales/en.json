@@ -1139,5 +1139,14 @@
       "pickShade": "Pick your shade:"
     },
     "chooseToContinue": "Choose at least one option to continue."
+  },
+  "bundles": {
+    "eyebrow": "BUNDLE DEALS",
+    "title": "Better together",
+    "subtitle": "Routines and salon sets for less, until 2 December.",
+    "salonOffer": "FOR SALONS",
+    "limitedOffer": "LIMITED OFFER",
+    "add": "Add the set",
+    "added": "{{name}} added to your cart"
   }
 }

@@ -1139,5 +1139,14 @@
       "pickShade": "Zgjidhni nuancën:"
     },
     "chooseToContinue": "Zgjidhni të paktën një opsion për të vazhduar."
+  },
+  "bundles": {
+    "eyebrow": "SETE ME ZBRITJE",
+    "title": "Më mirë së bashku",
+    "subtitle": "Rutina dhe sete për sallone me çmim më të ulët, vetëm deri më 2 dhjetor.",
+    "salonOffer": "PËR SALLONE",
+    "limitedOffer": "OFERTË E KUFIZUAR",
+    "add": "Shto setin",
+    "added": "{{name}} u shtua në shportë"
   }
 }

@@ -46,26 +46,26 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
       brand: null, category: null, description: '', image: product.image, quantity: product.quantity, inStock: true,
     }, product.quantity));
     applyBundle(bundle.id);
-    message.success(`${bundle.name} added to your cart`);
+    message.success(t('bundles.added', { name: bundle.name }));
   };
 
   return (
     <section className="bundle-deal-rail" aria-label="Current offers">
       <div className="bundle-deal-rail__heading">
-        <div><Text className="bundle-deal-rail__eyebrow">CURATED VALUE</Text><Title level={3}>Better together</Title></div>
-        <Text type="secondary">Salon restocks, routines, and limited bundles.</Text>
+        <div><Text className="bundle-deal-rail__eyebrow">{t('bundles.eyebrow')}</Text><Title level={3}>{t('bundles.title')}</Title></div>
+        <Text type="secondary">{t('bundles.subtitle')}</Text>
       </div>
       <div className="bundle-deal-rail__scroller">
         {visibleBundles.map((bundle) => {
           const regular = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
           const price = bundlePrice(bundle, isProfessional);
           return <article className="bundle-deal-card" key={bundle.id}>
-            <div className="bundle-deal-card__top"><Tag>{bundle.audience === 'stylist' ? 'STYLIST OFFER' : 'LIMITED OFFER'}</Tag><GiftOutlined /></div>
+            <div className="bundle-deal-card__top"><Tag>{bundle.audience === 'stylist' ? t('bundles.salonOffer') : t('bundles.limitedOffer')}</Tag><GiftOutlined /></div>
             <Title level={4}>{bundle.name}</Title>
             <Text type="secondary" className="bundle-deal-card__copy">{bundle.description}</Text>
             <div className="bundle-deal-card__items">{bundle.products.map((product) => <span key={product.id}>{product.quantity}x {product.name}{(product.bonusQuantity ?? 0) > 0 ? ` - ${product.bonusQuantity} free` : ''}</span>)}</div>
             <div className="bundle-deal-card__price"><Text delete>{formatPrice(regular)}</Text><strong>{formatPrice(price)}</strong></div>
-            <Button type="primary" block icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>Add offer</Button>
+            <Button type="primary" block icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>{t('bundles.add')}</Button>
           </article>;
         })}
       </div>
