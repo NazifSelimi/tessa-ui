@@ -33,6 +33,7 @@ import uiReducer from '@/features/ui/slice';
 import { baseApi } from '@/api/baseApi';
 import { createSessionCacheMiddleware } from './sessionCacheMiddleware';
 import { createCartPersistConfig } from './cartPersistence';
+import { logoutCleanupMiddleware } from './logoutCleanupMiddleware';
 import { followAuthAcrossTabs } from './crossTabAuth';
 
 // Import feature API files so their injectEndpoints() calls execute at startup.
@@ -78,7 +79,7 @@ export const store = configureStore({
         // Ignore redux-persist actions
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(createSessionCacheMiddleware(baseApi.util.resetApiState), baseApi.middleware),
+    }).concat(createSessionCacheMiddleware(baseApi.util.resetApiState), logoutCleanupMiddleware, baseApi.middleware),
   devTools: import.meta.env.DEV,
 });
 

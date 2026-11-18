@@ -4984,3 +4984,10 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+
+.hair-quiz__why-disabled {
+  display: block;
+  margin-top: 12px;
+  text-align: right;
+  font-size: 13px;
+}

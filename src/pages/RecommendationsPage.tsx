@@ -8,19 +8,20 @@
  *   3. Sets — static bundles that contain matching products.
  *
  * Data comes from the quiz page (router state) or, after a refresh, from the
- * hair profile saved in localStorage.
+ * saved quiz answers, which are sent to the API again.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Typography, Button, Card, Row, Col, Tag, Space, Empty, List, Segmented, message } from 'antd';
+import { Typography, Button, Card, Row, Col, Tag, Space, Empty, List, Segmented, Spin, message } from 'antd';
 import { ShoppingCartOutlined, EditOutlined, GiftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
 import ProductCard from '@/components/ProductCard';
 import type { Product, RecommendationResult, RecommendedBundle, RecommendedProduct, RecommendationPayload, BundleProduct } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
-import { loadHairProfile } from '@/shared/utils/hairProfile';
+import { buildRecommendationPayload, loadHairProfile } from '@/shared/utils/hairProfile';
+import { useGetRecommendationsMutation } from '@/features/recommendations/api';
 import { HAIR_TYPE_KEYS, NEED, NEED_KEYS, QUESTIONS, type QuizAnswers } from '@/features/quiz/quizConfig';
 
 const { Title, Text, Paragraph } = Typography;
@@ -152,12 +153,25 @@ export default function RecommendationsPage() {
 
   const state = location.state as { recommendations: RecommendationResult; survey: RecommendationPayload } | undefined;
 
-  /* Fresh results first; after a refresh, the saved hair profile. */
-  const data = useMemo((): { recommendations: RecommendationResult; answers?: QuizAnswers } | undefined => {
-    const stored = loadHairProfile();
-    if (state?.recommendations) return { recommendations: state.recommendations, answers: stored?.answers };
-    return stored ? { recommendations: stored.recommendations, answers: stored.answers } : undefined;
-  }, [state]);
+  /* Fresh results come with the navigation; after a refresh the saved answers
+     (never products or prices) are sent again, so the prices are current. */
+  const stored = useMemo(() => loadHairProfile(), []);
+  const [refetch, { data: refetched, isLoading: refetching, isUninitialized }] = useGetRecommendationsMutation();
+  const needsRefetch = !state?.recommendations && Boolean(stored);
+  useEffect(() => {
+    if (needsRefetch && stored) {
+      void refetch(buildRecommendationPayload(stored.answers, stored.steps, stored.budget)).catch(() => undefined);
+    }
+  }, [needsRefetch, stored, refetch]);
+
+  const recommendations = state?.recommendations ?? refetched;
+  const data = useMemo((): { recommendations: RecommendationResult; answers?: QuizAnswers } | undefined => (
+    recommendations ? { recommendations, answers: stored?.answers } : undefined
+  ), [recommendations, stored]);
+
+  if (needsRefetch && !recommendations && (refetching || isUninitialized)) {
+    return <div style={{ textAlign: 'center', margin: '120px 0' }}><Spin size="large" /></div>;
+  }
 
   if (!data?.recommendations) {
     return (
