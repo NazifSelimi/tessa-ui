@@ -51,6 +51,7 @@
 .nl-cart-button em, .nl-cart-icon em { font-style: normal; padding: 2px 7px; background: var(--nl-pink); border-radius: 20px; font-size: 11px; color: #24171b; }
 .nl-cart-icon em { position: absolute; right: 0; top: 0; }
 .nl-cart-button b { font-size: 12px; }
+.nl-cart-label { font-size: 13px; font-weight: 600; }
 .nl-search { min-height: 48px; display: flex; align-items: center; gap: 11px; padding: 0 16px; border: 1px solid var(--color-border); border-radius: 13px; color: #8e817d; background: white; }
 .nl-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; padding: 12px 0; color: var(--nl-ink); }
 .nl-search button { border: 0; background: transparent; min-height: 44px; min-width: 32px; display: grid; place-items: center; }
@@ -273,7 +274,7 @@
   .nl-mobile-logo { display: block; }
   .nl-header-logo svg { height: 27px !important; }
   .nl-account-button { display: none; }
-  .nl-cart-button b { display: none; }
+  .nl-cart-button b, .nl-cart-label { display: none; }
   .nl-cart-button { padding: 0 10px; }
   .nl-content, .nl-consumer .nl-content { padding: 25px 16px 40px; min-height: calc(100dvh - 68px); }
   .nl-page-heading { gap: 10px; align-items: flex-start; margin-bottom: 25px; }
