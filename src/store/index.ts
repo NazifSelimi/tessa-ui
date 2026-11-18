@@ -35,6 +35,7 @@ import { createSessionCacheMiddleware } from './sessionCacheMiddleware';
 import { createCartPersistConfig } from './cartPersistence';
 import { logoutCleanupMiddleware } from './logoutCleanupMiddleware';
 import { followAuthAcrossTabs } from './crossTabAuth';
+import { followCartAcrossTabs } from './crossTabCart';
 
 // Import feature API files so their injectEndpoints() calls execute at startup.
 // The imported modules don't add new reducers; they register endpoints on baseApi.
@@ -89,9 +90,10 @@ setupListeners(store.dispatch);
 // Create persistor
 export const persistor = persistStore(store);
 
-// Sign-in, sign-out and token changes in another tab apply here at once.
+// Sign-in, sign-out, token and cart changes in another tab apply here at once.
 if (typeof window !== 'undefined') {
   followAuthAcrossTabs(store.dispatch, () => store.getState().auth.token);
+  followCartAcrossTabs(store.dispatch);
 }
 
 // Infer types from store

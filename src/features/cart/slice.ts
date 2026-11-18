@@ -127,6 +127,12 @@ const cartSlice = createSlice({
       state.items = action.payload;
     },
 
+    /** Another tab changed the cart: take its items and bundles as they are. */
+    syncFromOtherTab: (state, action: PayloadAction<{ items: CartItem[]; bundleIds: string[] }>) => {
+      state.items = action.payload.items;
+      state.bundleIds = action.payload.bundleIds;
+    },
+
     openDrawer: (state) => {
       state.isDrawerOpen = true;
     },
@@ -172,6 +178,7 @@ export const {
   clearCart,
   applyBundle,
   setItems,
+  syncFromOtherTab,
   openDrawer,
   closeDrawer,
   toggleDrawer,
