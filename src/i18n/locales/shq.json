@@ -901,7 +901,7 @@
     "businessRequest": "Kërkesë për llogari biznesi"
   },
   "quiz": {
-    "intro": "Gjashtë pyetje të shkurtra, shumica me disa përgjigje. Merrni një rutinë sipas radhës së përdorimit dhe pse ju përshtatet çdo produkt.",
+    "intro": "Shtatë hapa të shkurtër: gjashtë pyetje për flokët tuaj, pastaj rutina dhe buxheti. Shumica e pyetjeve pranojnë disa përgjigje. Merrni një rutinë sipas radhës së përdorimit dhe pse ju përshtatet çdo produkt.",
     "chooseAll": "Zgjidhni të gjitha që vlejnë",
     "chooseOne": "Zgjidhni një",
     "skip": "Kapërce",
@@ -1131,6 +1131,7 @@
       "suitsYou": "I përshtatet llojit të flokëve tuaj",
       "companion": "Për larjet e tjera",
       "pickShade": "Zgjidhni nuancën:"
-    }
+    },
+    "chooseToContinue": "Zgjidhni të paktën një opsion për të vazhduar."
   }
 }

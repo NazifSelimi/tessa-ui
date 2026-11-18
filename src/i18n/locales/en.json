@@ -901,7 +901,7 @@
     "businessRequest": "Business account request"
   },
   "quiz": {
-    "intro": "Six quick questions, most with several answers. You get a routine in the order you use it, and why each product fits you.",
+    "intro": "Seven quick steps: six questions about your hair, then your routine and budget. Most questions take several answers. You get a routine in the order you use it, and why each product fits you.",
     "chooseAll": "Choose all that apply",
     "chooseOne": "Choose one",
     "skip": "Skip",
@@ -1131,6 +1131,7 @@
       "suitsYou": "Suits your hair type",
       "companion": "For your other washes",
       "pickShade": "Pick your shade:"
-    }
+    },
+    "chooseToContinue": "Choose at least one option to continue."
   }
 }
