@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { isProfileComplete } from '@/features/auth/profile';
 import AuthPageHeader from '@/components/AuthPageHeader';
+import { safeContinuePath } from '@/i18n/routing';
 import {
   MACEDONIA_CITY_OPTIONS,
   MACEDONIA_POSTCODE_OPTIONS,
@@ -38,7 +39,7 @@ function getContinuePath(search: string): string {
   const params = new URLSearchParams(search);
   const continueTo = params.get('continue') || '/';
 
-  return continueTo.startsWith('/') ? continueTo : '/';
+  return safeContinuePath(continueTo);
 }
 
 function getRequestedAccountType(search: string): 'customer' | 'stylist' {

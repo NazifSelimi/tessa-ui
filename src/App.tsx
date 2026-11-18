@@ -10,7 +10,6 @@ import './App.css';
 import { useAppSelector } from '@/app/hooks';
 import { useGetCurrentUserQuery } from '@/features/auth/api';
 import { baseApi, API_TAGS } from '@/api/baseApi';
-import i18n, { isSupportedLocale, type Locale } from '@/i18n';
 import { urlLocaleFromPathname } from '@/i18n/routing';
 
 // Eagerly loaded components (no antd dependency)
@@ -101,20 +100,12 @@ function LegacyProductRedirect() {
 function AuthBootstrap() {
   const dispatch = useDispatch();
   const token = useAppSelector((state) => state.auth.token);
-  const preferredLocale = useAppSelector((state) => state.auth.user?.preferredLocale);
   const currentRole = useAppSelector((state) => state.auth.user?.role ?? 'guest');
 
   useGetCurrentUserQuery(undefined, {
     skip: !token,
     refetchOnMountOrArgChange: true,
   });
-
-  useEffect(() => {
-    if (!preferredLocale || !isSupportedLocale(preferredLocale)) return;
-    if (i18n.language === preferredLocale) return;
-
-    void i18n.changeLanguage(preferredLocale as Locale);
-  }, [preferredLocale]);
 
   useEffect(() => {
     dispatch(baseApi.util.invalidateTags([

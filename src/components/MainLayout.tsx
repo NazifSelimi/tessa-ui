@@ -103,7 +103,7 @@ export default function MainLayout() {
             {!professionalShell && <Link className="nl-audience-link" to="/for-professionals"><UserRoundCheck size={17} />{t('nav.forProfessionals')}</Link>}
             <LanguageSwitcher />
             {!professionalShell && <Link className="nl-icon-button" to="/shop?focus=search" aria-label={t('newLook.search')}><Search size={21} /></Link>}
-            <Link to="/cart" className={professionalShell ? 'nl-cart-button' : 'nl-icon-button nl-cart-icon'} aria-label={`${t('cart.shoppingCart')} (${itemCount})`}><ShoppingBag size={20} />{(professionalShell || itemCount > 0) && <em>{itemCount}</em>}{professionalShell && <b>{formatPrice(subtotal)}</b>}</Link>
+            <Link to="/cart" className={professionalShell ? 'nl-cart-button' : 'nl-icon-button nl-cart-icon'} aria-label={`${t('cart.shoppingCart')} (${itemCount})`}><ShoppingBag size={20} />{professionalShell && <span className="nl-cart-label">{t('cart.shoppingCart')}</span>}{(professionalShell || itemCount > 0) && <em title={t('orders.itemCount', { count: itemCount })}>{itemCount}</em>}{professionalShell && <b title={t('cart.subtotal')}>{formatPrice(subtotal)}</b>}</Link>
             {!professionalShell && <Dropdown menu={{ items: accountItems }} trigger={['click']}><button className="nl-icon-button nl-account-button" aria-label={t('auth.account')}><UserRound size={20} /></button></Dropdown>}
           </div>
         </header>

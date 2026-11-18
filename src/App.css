@@ -3768,10 +3768,15 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 
 .shade-picker__header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+}
+
+.shade-picker__current {
+  flex: 1 1 100%;
 }
 
 .shade-picker__all {
@@ -4983,4 +4988,11 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 .quiz-shades__item:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.hair-quiz__why-disabled {
+  display: block;
+  margin-top: 12px;
+  text-align: right;
+  font-size: 13px;
 }

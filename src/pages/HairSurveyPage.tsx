@@ -17,19 +17,17 @@ import { Typography, Button, Progress, Alert, Spin } from 'antd';
 import { ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, ExperimentOutlined, UndoOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetRecommendationsMutation } from '@/features/recommendations/api';
-import { loadHairProfile, saveHairProfile } from '@/shared/utils/hairProfile';
+import { buildRecommendationPayload, loadHairProfile, saveHairProfile } from '@/shared/utils/hairProfile';
 import {
   BUDGETS,
   QUESTIONS,
   ROUTINE_STEPS,
-  answerNeedIds,
   answerTypeIds,
   suggestedSteps,
   toggleOption,
   type QuizAnswers,
   type RoutineStep,
 } from '@/features/quiz/quizConfig';
-import type { RecommendationPayload } from '@/types';
 import Seo from '@/shared/components/Seo';
 
 const { Title, Text, Paragraph } = Typography;
@@ -77,8 +75,8 @@ export default function HairSurveyPage() {
   const saved = useMemo(() => loadHairProfile(), []);
   const [page, setPage] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>(() => saved?.answers ?? {});
-  const [steps, setSteps] = useState<RoutineStep[] | null>(() => (saved?.answers ? (saved.survey.steps as RoutineStep[] | undefined) ?? null : null));
-  const [budget, setBudget] = useState<string | null>(() => (saved?.answers ? saved.survey.budget_range ?? null : null));
+  const [steps, setSteps] = useState<RoutineStep[] | null>(() => (saved?.steps.length ? (saved.steps as RoutineStep[]) : null));
+  const [budget, setBudget] = useState<string | null>(() => saved?.budget ?? null);
 
   const panelRef = useRef<HTMLElement>(null);
   const firstRender = useRef(true);
@@ -120,16 +118,11 @@ export default function HairSurveyPage() {
   };
 
   const handleSubmit = async () => {
-    const payload: RecommendationPayload = {
-      hair_type_ids: answerTypeIds(answers),
-      concerns: answerNeedIds(answers),
-      steps: chosenSteps,
-      ...(budget ? { budget_range: budget } : {}),
-    };
+    const payload = buildRecommendationPayload(answers, chosenSteps, budget);
 
     try {
       const result = await getRecommendations(payload).unwrap();
-      saveHairProfile(result, payload, answers);
+      saveHairProfile(answers, chosenSteps, budget);
       navigate('/recommendations', { state: { recommendations: result, survey: payload } });
     } catch {
       // shown through RTK Query `error`
@@ -231,6 +224,10 @@ export default function HairSurveyPage() {
             {chips.map(({ q, key }) => <span key={`${q}-${key}`}>{t(`quiz.o.${key}.label`)}</span>)}
             <button type="button" className="hair-quiz__restart" onClick={restart}><UndoOutlined /> {t('quiz.startOver')}</button>
           </div>
+        )}
+
+        {!onRoutinePage && !canGoNext && (
+          <Text type="secondary" className="hair-quiz__why-disabled" role="status">{t('quiz.chooseToContinue')}</Text>
         )}
 
         <div className="hair-quiz__actions">

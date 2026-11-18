@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from './locales/en.json';
 import mk from './locales/mk.json';
@@ -19,15 +18,20 @@ export function isSupportedLocale(value: string): value is Locale {
   return SUPPORTED_LANGUAGES.some((language) => language.code === value);
 }
 
-const localeFromPath = typeof window !== 'undefined'
-  ? urlLocaleFromPathname(window.location.pathname)
-  : null;
+/**
+ * The URL decides the language: /en and /sq are English and Albanian, every
+ * unprefixed path is the Macedonian site. Stored or account preferences never
+ * override it (the language switcher navigates to the prefixed URL instead).
+ */
+export function initialLocaleFor(pathname: string): Locale {
+  const fromPath = urlLocaleFromPathname(pathname);
+  return fromPath ? appLocaleFromUrl(fromPath) : 'mk';
+}
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    ...(localeFromPath ? { lng: appLocaleFromUrl(localeFromPath) } : {}),
+    lng: initialLocaleFor(typeof window !== 'undefined' ? window.location.pathname : '/'),
     resources: {
       en: { translation: en },
       mk: { translation: mk },
@@ -37,11 +41,6 @@ i18n
     supportedLngs: ['en', 'mk', 'shq'],
     interpolation: {
       escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      lookupLocalStorage: 'tessa-locale',
-      caches: ['localStorage'],
     },
   });
 
