@@ -92,6 +92,8 @@ function ShadeGroups({ shades, currentId, onPick }: { shades: ProductShade[]; cu
 export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  // Starts collapsed so the swatches never push into the title and price on first load.
+  const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState('');
   const [find, setFind] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
@@ -109,7 +111,7 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
         row.scrollLeft = dot.offsetLeft - row.clientWidth / 2 + dot.clientWidth / 2;
       }
     }
-  }, [currentId]);
+  }, [currentId, expanded]);
 
   const matchShades = (query: string) => {
     const q = query.trim().toLowerCase();
@@ -124,15 +126,25 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
   return (
     <div className="shade-picker">
       <div className="shade-picker__header">
-        <Text>
+        <Text className="shade-picker__current">
           {t('product.shade')}: <strong>{current ? shadeTitle(current) : '—'}</strong>
         </Text>
+        <button
+          type="button"
+          className="shade-picker__all"
+          aria-expanded={expanded}
+          aria-controls="shade-picker-body"
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {t('product.chooseShade')} {expanded ? '▴' : '▾'}
+        </button>
         <button type="button" className="shade-picker__all" onClick={() => setOpen(true)}>
           {t('product.allShades', { count: shades.length })}
         </button>
       </div>
 
-      <div className="shade-picker__body">
+      {expanded && (
+      <div className="shade-picker__body" id="shade-picker-body">
         {current && (
           <figure className="shade-picker__preview">
             <figcaption className="shade-picker__preview-code">{shadeLabel(current)}</figcaption>
@@ -162,6 +174,7 @@ export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
           )}
         </div>
       </div>
+      )}
 
       <Modal
         open={open}

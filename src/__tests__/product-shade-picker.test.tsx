@@ -16,9 +16,20 @@ const shade = (id: string, code: string | null, name: string, inStock = true): P
 
 const shades = Array.from({ length: 14 }, (_, i) => shade(String(i + 1), `${(i % 9) + 1}.${i < 9 ? '0' : '3'}`, `Shade ${i + 1}`, i !== 2));
 
+const expand = () => fireEvent.click(screen.getByRole('button', { name: /product\.chooseShade/ }));
+
 describe('shade picker', () => {
+  it('starts collapsed so it cannot cover the title and price', () => {
+    render(<MemoryRouter><ShadePicker currentId="2" shades={shades} /></MemoryRouter>);
+    expect(document.querySelector('.shade-picker__body')).toBeNull();
+    expect(screen.getByText('2.0 – Shade 2')).toBeTruthy();
+    expand();
+    expect(document.querySelectorAll('.shade-picker__groups .shade-dot')).toHaveLength(14);
+  });
+
   it('shows the current shade, links every shade to its product and marks sold-out shades', () => {
     render(<MemoryRouter><ShadePicker currentId="2" shades={shades} /></MemoryRouter>);
+    expand();
 
     expect(screen.getByText('2.0 – Shade 2')).toBeTruthy();
     expect(document.querySelector('.shade-picker__preview-code')!.textContent).toBe('2.0');
@@ -44,6 +55,7 @@ describe('shade picker', () => {
 
   it('filters the swatches on the page from the search box above them', () => {
     render(<MemoryRouter><ShadePicker currentId="1" shades={shades} /></MemoryRouter>);
+    expand();
 
     fireEvent.change(screen.getByPlaceholderText('product.searchShades'), { target: { value: 'shade 12' } });
 
@@ -52,6 +64,7 @@ describe('shade picker', () => {
 
   it('labels sold-out shades instead of hiding their colour', () => {
     render(<MemoryRouter><ShadePicker currentId="1" shades={shades} /></MemoryRouter>);
+    expand();
 
     const soldOut = document.querySelector('.shade-picker__groups [data-shade-id="3"]')!;
     expect(soldOut.querySelector('.shade-dot__out')?.textContent).toBe('product.outOfStock');
@@ -88,6 +101,7 @@ describe('shade tone groups', () => {
 
   it('shows no group headings for a line without numbered tones', () => {
     render(<MemoryRouter><ShadePicker currentId="m1" shades={[shade('m1', null, 'Copper Flow'), shade('m2', null, 'Ocean Blue')]} /></MemoryRouter>);
+    expand();
     expect(document.querySelectorAll('.shade-group__title')).toHaveLength(0);
     expect(document.querySelectorAll('.shade-picker__groups .shade-dot')).toHaveLength(2);
   });

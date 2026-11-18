@@ -3768,10 +3768,15 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 
 .shade-picker__header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+}
+
+.shade-picker__current {
+  flex: 1 1 100%;
 }
 
 .shade-picker__all {
