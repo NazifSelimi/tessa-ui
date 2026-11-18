@@ -37,7 +37,9 @@ export default function AdminBundlesPage() {
 
   /** Normal price of the chosen products (salon prices for a stylist offer), free items not counted. */
   const normalTotal = (values: Partial<BundleForm>) => (values.products ?? []).reduce((sum, line) => {
-    const product = line?.product_id ? products.find((item) => String(item.id) === String(line.product_id)) : undefined;
+    const id = line?.product_id ? String(line.product_id) : '';
+    // The product list, or (while it is still loading) the prices that came with the bundle.
+    const product = products.find((item) => String(item.id) === id) ?? editing?.products.find((item) => String(item.id) === id);
     if (!product) return sum;
     const unit = values.audience === 'stylist' && Number(product.stylistPrice) > 0 ? Number(product.stylistPrice) : Number(product.price ?? 0);
     return sum + unit * Math.max(1, Number(line.quantity ?? 1));
