@@ -41,8 +41,8 @@ export default function AdminDock() {
     {open && <nav className="nl-admin-dock__menu" aria-label="Admin tools">
       {visibleLinks.map(({ to, label, icon: Icon }) => <Link key={to} to={to}><Icon size={16} />{label}</Link>)}
     </nav>}
-    <button type="button" className="nl-admin-dock__toggle" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-      {open ? <X size={17} /> : <Shield size={17} />}Admin
+    <button type="button" className="nl-admin-dock__toggle" aria-label="Admin" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      {open ? <X size={17} /> : <Shield size={17} />}<span className="nl-admin-dock__label">Admin</span>
     </button>
   </div>;
 }

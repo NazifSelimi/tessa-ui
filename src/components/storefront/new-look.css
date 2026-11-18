@@ -502,10 +502,10 @@
 .nl-page-edit-btn { position: fixed; right: 20px; bottom: 20px; z-index: 1000; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
 @media (max-width: 760px) {
   .nl-page-edit-btn { right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: 44px; height: 44px; padding: 0; border-radius: 50%; }
-  .nl-page-edit-btn > span:not(.anticon) { display: none; }
+  .nl-page-edit-btn > span:not(.ant-btn-icon) { display: none; }
   /* On phones the admin buttons are small round icons, so they cover as little of the shop as possible. */
-  .nl-admin-dock__toggle { width: 44px; min-height: 44px; padding: 0; justify-content: center; font-size: 0; }
-  .nl-admin-dock__toggle svg { width: 18px; height: 18px; }
+  .nl-admin-dock__toggle { width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+  .nl-admin-dock__label { display: none; }
 }
 
 /* Stylist referral page */
