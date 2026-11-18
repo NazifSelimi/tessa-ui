@@ -45,7 +45,7 @@ export default function AdminOrdersPage() {
   const [forceDeleteOrder] = useForceDeleteOrderMutation();
   const [search, setSearch] = useUrlState('search', '');
   const [statusFilter, setStatusFilter] = useUrlState('status', 'all');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [pickedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useUrlState('page', 1);
 
   const debouncedSearch = useDebounce(search, 300);
@@ -62,13 +62,14 @@ export default function AdminOrdersPage() {
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
   const orders = data?.data ?? [];
+  // The open modal follows the list, so a status change shows up in it at once.
+  const selectedOrder = pickedOrder ? (orders.find((o) => String(o.id) === String(pickedOrder.id)) ?? pickedOrder) : null;
   const pagination = data?.meta;
 
-  const handleStatusChange = async (orderId: string, newStatus: OrderStatus, e: React.MouseEvent) => {
-    // Stop propagation so the row click doesn't fire
-    e.stopPropagation();
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     try {
       await updateOrderStatus({ id: orderId, status: newStatus }).unwrap();
+      setSelectedOrder((current) => (current && String(current.id) === String(orderId) ? { ...current, status: newStatus } : current));
       message.success('Order status updated');
     } catch (error: any) {
       message.error(error?.data?.message || 'Failed to update status');
@@ -143,13 +144,11 @@ export default function AdminOrdersPage() {
       dataIndex: 'status',
       key: 'status',
       render: (status: OrderStatus, record: Order) => (
+        // The dropdown list renders in a portal, but React still bubbles its clicks to the row, so stop them on this wrapper.
+        <div onClick={(e) => e.stopPropagation()} style={{ display: 'inline-block' }}>
         <Select
           value={status}
-          onChange={(val) => {
-            // Create a synthetic event to stop propagation in the onSelect handler
-            handleStatusChange(record.id, val, { stopPropagation: () => {} } as React.MouseEvent);
-          }}
-          onClick={(e) => e.stopPropagation()}
+          onChange={(val) => handleStatusChange(record.id, val)}
           style={{ width: 130 }}
           size="small"
         >
@@ -159,6 +158,7 @@ export default function AdminOrdersPage() {
             </Select.Option>
           ))}
         </Select>
+        </div>
       ),
     },
     {

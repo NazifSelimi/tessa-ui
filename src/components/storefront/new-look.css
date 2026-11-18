@@ -567,3 +567,7 @@
   .nl-professional .nl-top-search { display: flex; order: 10; flex: 1 0 100%; max-width: none; min-height: 44px; }
   .nl-professional .nl-top-search input { font-size: 16px; padding: 10px 0; }
 }
+
+/* Admin floating buttons: leave room under the last product cards so they never sit on top of them. */
+body:has(.nl-admin-dock, .nl-page-edit-btn) .nl-content { padding-bottom: 96px; }
+@media (max-width: 760px) { body:has(.nl-admin-dock, .nl-page-edit-btn) .nl-content { padding-bottom: 150px; } }
