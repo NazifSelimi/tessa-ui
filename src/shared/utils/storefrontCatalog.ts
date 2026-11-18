@@ -50,7 +50,9 @@ export function storefrontPhotos(media?: ProductMediaAsset[] | null): ProductMed
 
 /** First real image URL, skipping the supplier "pending review" placeholder. */
 export function storefrontImageUrl(product: Pick<Product, 'image' | 'images'>): string | undefined {
-  return [product.image, ...(product.images ?? [])].find((url): url is string => Boolean(url) && !isPendingPlaceholderUrl(url));
+  const usable = [product.image, ...(product.images ?? [])].filter((url): url is string => Boolean(url) && !isPendingPlaceholderUrl(url));
+  // Raw uploads from the admin review folder are heavy originals: use them only when nothing else exists.
+  return usable.find((url) => !url.includes('/admin-review/')) ?? usable[0];
 }
 
 export const visibleBrands = (brands: Brand[]) => brands.filter((brand) => !isInternalBrandName(brand.name));
