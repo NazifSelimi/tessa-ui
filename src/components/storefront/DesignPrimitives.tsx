@@ -21,7 +21,7 @@ export function ProductImage({ product, priority = false, hoverAngle = false }: 
   if (second) {
     return <span className="nl-product-photos" onMouseEnter={() => setHoverUrl(second)}>
       <ProductMainImage product={product} priority={priority} />
-      {hoverUrl && <img className="nl-product-photo-alt" src={hoverUrl} alt="" aria-hidden="true" decoding="async" />}
+      {hoverUrl && <img className="nl-product-photo-alt" src={hoverUrl} alt="" aria-hidden="true" loading="lazy" decoding="async" />}
     </span>;
   }
   return <ProductMainImage product={product} priority={priority} />;

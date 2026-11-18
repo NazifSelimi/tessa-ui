@@ -95,7 +95,7 @@ export default function SearchSuggest({ className = '' }: { className?: string }
                 <Link to={`/product/${product.id}`} className="nl-suggest__link" onClick={() => setOpen(false)}>
                   {/* Hair colours show their colour swatch; other products their photo. */}
                   <span className={`nl-suggest__thumb${product.swatch ? ' nl-suggest__thumb--swatch' : ''}`}>
-                    {product.swatch || product.image ? <img src={product.swatch || product.image || ''} alt="" /> : null}
+                    {product.swatch || product.image ? <img src={product.swatch || product.image || ''} alt="" loading="lazy" /> : null}
                   </span>
                   <span className="nl-suggest__text">
                     <strong>{product.name}</strong>

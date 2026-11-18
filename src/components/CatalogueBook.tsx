@@ -130,7 +130,7 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
           // As wide as fits both the stage width and its height, keeping the page's shape so spots stay on their swatches.
           style={{ aspectRatio: `${page.width} / ${page.height}`, width: `min(100%, calc(var(--catalogue-page-h) * ${page.width / page.height}))` }}
         >
-          <img src={page.image} alt={`${catalogue.title} – ${index + 1}`} draggable={false} />
+          <img src={page.image} alt={`${catalogue.title} – ${index + 1}`} draggable={false} loading="lazy" />
           {page.spots.filter((spot) => spot.productId).map((spot) => {
             const key = `${spot.code}-${spot.x}-${spot.y}`;
             const current = spot.productId === String(currentId);

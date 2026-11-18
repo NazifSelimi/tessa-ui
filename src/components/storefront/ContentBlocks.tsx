@@ -16,14 +16,14 @@ export default function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
     {blocks.map((block) => block.kind === 'bundle_rail'
       ? <BundleDealRail key={block.id} showEmpty bundleIds={block.items.map((item) => item.bundleId).filter((id): id is string => Boolean(id))} />
       : <section key={block.id} className={block.kind === 'hero' ? 'nl-professional-invite' : 'nl-section'}>
-      {block.imageUrl && <img src={block.imageUrl} alt="" style={{ width: block.kind === 'hero' ? 180 : '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 12 }} />}
+      {block.imageUrl && <img src={block.imageUrl} alt="" loading="lazy" style={{ width: block.kind === 'hero' ? 180 : '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 12 }} />}
       <div style={{ width: '100%' }}>
         {block.eyebrow && <span className="nl-eyebrow">{block.eyebrow}</span>}
         {block.title && <h2>{block.title}</h2>}
         {block.body && <p>{block.body}</p>}
         {block.items.length > 0 && <div className="nl-concern-grid" style={{ marginTop: 20 }}>
           {block.items.map((item, index) => <article className={`nl-concern nl-concern-${(index % 4) + 1}`} key={`${block.id}-${index}`}>
-            {item.imageUrl && <img src={item.imageUrl} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 12 }} />}
+            {item.imageUrl && <img src={item.imageUrl} alt="" loading="lazy" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 12 }} />}
             {item.title && <strong>{item.title}</strong>}
             {item.body && <small style={{ display: 'block', marginTop: 6 }}>{item.body}</small>}
             <BlockLink to={item.actionUrl}>{item.actionLabel || ''}</BlockLink>
