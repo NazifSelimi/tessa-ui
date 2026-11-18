@@ -34,6 +34,35 @@ export default function AdminBundlesPage() {
   const draft = Form.useWatch([], form);
 
   const products = productPage?.data ?? [];
+
+  /** Normal price of the chosen products (salon prices for a stylist offer), free items not counted. */
+  const normalTotal = (values: Partial<BundleForm>) => (values.products ?? []).reduce((sum, line) => {
+    const product = line?.product_id ? products.find((item) => String(item.id) === String(line.product_id)) : undefined;
+    if (!product) return sum;
+    const unit = values.audience === 'stylist' && Number(product.stylistPrice) > 0 ? Number(product.stylistPrice) : Number(product.price ?? 0);
+    return sum + unit * Math.max(1, Number(line.quantity ?? 1));
+  }, 0);
+
+  /** Change the % and the bundle price fixes itself, and the other way round; new products keep the % (or the fixed price). */
+  const syncPrices = (changed: Partial<BundleForm>, all: BundleForm) => {
+    const total = normalTotal(all);
+    if (total <= 0) return;
+    const round = (value: number) => Math.round(value);
+    if ('bundle_price' in changed) {
+      const price = Number(changed.bundle_price ?? 0);
+      if (price > 0) form.setFieldsValue({ discount_percentage: Math.max(0, Math.round((1 - price / total) * 1000) / 10) });
+      return;
+    }
+    if ('discount_percentage' in changed || all.promotion_type === 'percentage') {
+      const pct = Number(all.discount_percentage ?? 0);
+      if (pct > 0) form.setFieldsValue({ bundle_price: round(total * (1 - pct / 100)) });
+      return;
+    }
+    if (all.promotion_type === 'fixed_price' && Number(all.bundle_price) > 0) {
+      form.setFieldsValue({ discount_percentage: Math.max(0, Math.round((1 - Number(all.bundle_price) / total) * 1000) / 10) });
+    }
+  };
+  const total = normalTotal(draft ?? {});
   const productOptions = products.map((product) => ({
     value: String(product.id),
     label: `${product.name} (${Number(product.price).toFixed(0)} / salon ${Number(product.stylistPrice ?? 0).toFixed(0)} MKD)`,
@@ -56,14 +85,20 @@ export default function AdminBundlesPage() {
       products: [{ quantity: 1, bonus_quantity: 0 }, { quantity: 1, bonus_quantity: 0 }, { quantity: 1, bonus_quantity: 1 }],
     });
     setOpen(true);
+    setTimeout(() => syncPrices({}, form.getFieldsValue(true) as BundleForm), 0);
   };
+
+  /** Only the field that defines the offer is saved; the other one is just shown. */
+  const cleanPrices = (values: BundleForm): BundleForm => (values.promotion_type === 'percentage'
+    ? { ...values, bundle_price: undefined }
+    : values.promotion_type === 'fixed_price' ? { ...values, discount_percentage: undefined } : values);
 
   const submit = async (values: BundleForm) => {
     try {
       if (editing) {
-        await updateBundle({ id: editing.id, data: values }).unwrap();
+        await updateBundle({ id: editing.id, data: cleanPrices(values) }).unwrap();
       } else {
-        await createBundle(values).unwrap();
+        await createBundle(cleanPrices(values)).unwrap();
       }
       message.success(editing ? 'Offer updated' : 'Offer created');
       setOpen(false);
@@ -98,15 +133,21 @@ export default function AdminBundlesPage() {
       />
 
       <Drawer title={editing ? 'Edit offer' : 'Create offer'} width={720} open={open} onClose={() => setOpen(false)}>
-        <Form form={form} layout="vertical" onFinish={submit}>
+        <Form form={form} layout="vertical" onFinish={submit} onValuesChange={syncPrices}>
           <Form.Item name="name" label="Offer name" rules={[{ required: true }]}><Input placeholder="No Yellow salon restock 5+1" /></Form.Item>
           <Form.Item name="description" label="What makes this worthwhile?"><Input.TextArea rows={3} placeholder="Six salon-size shampoos, with one free." /></Form.Item>
           <Space style={{ display: 'flex' }} size={12}>
             <Form.Item name="audience" label="Audience" rules={[{ required: true }]} style={{ flex: 1 }}><Select options={[{ value: 'all', label: 'Everyone' }, { value: 'stylist', label: 'Stylists only' }]} /></Form.Item>
             <Form.Item name="promotion_type" label="Offer rule" rules={[{ required: true }]} style={{ flex: 1 }}><Select options={[{ value: 'bonus_items', label: 'Free included items (2+1 / 5+1)' }, { value: 'percentage', label: 'Percentage off' }, { value: 'fixed_price', label: 'Fixed bundle price' }]} /></Form.Item>
           </Space>
-          {promotionType === 'percentage' && <Form.Item name="discount_percentage" label="Discount percentage" rules={[{ required: true }]}><InputNumber min={1} max={100} style={{ width: '100%' }} addonAfter="%" /></Form.Item>}
-          {promotionType === 'fixed_price' && <Form.Item name="bundle_price" label="Bundle price (MKD)" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>}
+          {(promotionType === 'percentage' || promotionType === 'fixed_price') && (
+            <Space style={{ display: 'flex' }} size={12} align="start">
+              <Form.Item name="discount_percentage" label="Discount" rules={[{ required: promotionType === 'percentage' }]} style={{ flex: 1 }}><InputNumber min={0} max={100} step={1} style={{ width: '100%' }} addonAfter="%" /></Form.Item>
+              <Form.Item name="bundle_price" label="Bundle price" rules={[{ required: promotionType === 'fixed_price' }]} style={{ flex: 1 }}><InputNumber min={0} step={10} style={{ width: '100%' }} addonAfter="MKD" /></Form.Item>
+              <Form.Item label="Normal price" style={{ flex: 1 }}><Text strong style={{ lineHeight: '32px' }}>{total > 0 ? `${Math.round(total)} MKD` : '—'}</Text></Form.Item>
+            </Space>
+          )}
+          {(promotionType === 'percentage' || promotionType === 'fixed_price') && <Text type="secondary" style={{ display: 'block', marginTop: -12, marginBottom: 16, fontSize: 12 }}>Change either one and the other updates. {promotionType === 'percentage' ? 'The % is saved; the price follows product prices.' : 'The price is saved; the % is shown for posts.'}</Text>}
           <Card size="small" title="Included products" style={{ marginBottom: 16 }}>
             <Form.List name="products">
               {(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }} size={10}>

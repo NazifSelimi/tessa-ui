@@ -377,6 +377,8 @@ export default function AdminPostStudioPage() {
   /* ------------------------------------------------------------ bundle → offer post */
 
   const { data: bundles = [] } = useGetAdminBundlesQuery();
+  /** Normal price of the bundle on the post, so editing the "-10%" sticker rewrites "Together X instead of Y". */
+  const bundleTotal = useRef<number | null>(null);
 
   /** Turns a bundle into an Offer post: its products, a "-10%" sticker and "together X instead of Y". */
   const applyBundle = (bundle: StoreBundle) => {
@@ -397,6 +399,7 @@ export default function AdminPostStudioPage() {
     const together = { mk: 'Заедно', sq: 'Së bashku', en: 'Together' }[lang] ?? 'Заедно';
     const instead = { mk: 'наместо', sq: 'në vend të', en: 'instead of' }[lang] ?? 'наместо';
     const subline = deal > 0 && deal < full ? `${together} ${formatPrice(deal)} ${instead} ${formatPrice(full)}` : (bundle.description ?? '');
+    bundleTotal.current = full > 0 ? full : null;
     const eyebrow = salon
       ? ({ mk: 'За салони', sq: 'Për sallone', en: 'For salons' }[lang] ?? '')
       : ({ mk: 'Сет понуда', sq: 'Ofertë set', en: 'Bundle deal' }[lang] ?? '');
@@ -417,6 +420,22 @@ export default function AdminPostStudioPage() {
     if (bundle.products.length > offerMax) message.info(`Offer posts show ${offerMax} products; the bundle has ${bundle.products.length}. Try the Product lineup layout for all of them.`);
   };
 
+  useEffect(() => {
+    const full = bundleTotal.current;
+    if (!full || design.template !== 'offer') return;
+    const match = design.badge.match(/-?\s*(\d{1,2}(?:[.,]\d)?)\s*%/);
+    if (!match) return;
+    const pct = Number(match[1].replace(',', '.'));
+    const lang = design.lang;
+    const together = { mk: 'Заедно', sq: 'Së bashku', en: 'Together' }[lang] ?? 'Заедно';
+    const instead = { mk: 'наместо', sq: 'në vend të', en: 'instead of' }[lang] ?? 'наместо';
+    const next = `${together} ${formatPrice(full * (1 - pct / 100))} ${instead} ${formatPrice(full)}`;
+    // Only rewrite a line that is still the generated price line, never the user's own text.
+    if (design.subline !== next && (design.subline === '' || design.subline.startsWith(together))) {
+      setDesign((current) => ({ ...current, subline: next }));
+    }
+  }, [design.badge, design.template, design.lang, design.subline]);
+
   // ?product=ID (from the shop's admin bar) preselects a product and its name.
   const preselected = useRef(false);
   useEffect(() => {
@@ -432,6 +451,7 @@ export default function AdminPostStudioPage() {
   }, [catalogue, searchParams, selectProducts]);
 
   const onProductsChange = (ids: string[]) => {
+    bundleTotal.current = null; // hand-picked products: the bundle price line no longer applies
     if (erasingId && !ids.includes(erasingId)) setErasingId(null);
     const limited = ids.slice(0, template.maxProducts);
     if (ids.length > template.maxProducts) message.info(`${template.label} shows up to ${template.maxProducts} product${template.maxProducts > 1 ? 's' : ''}.`);
