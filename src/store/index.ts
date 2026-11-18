@@ -33,6 +33,7 @@ import uiReducer from '@/features/ui/slice';
 import { baseApi } from '@/api/baseApi';
 import { createSessionCacheMiddleware } from './sessionCacheMiddleware';
 import { createCartPersistConfig } from './cartPersistence';
+import { followAuthAcrossTabs } from './crossTabAuth';
 
 // Import feature API files so their injectEndpoints() calls execute at startup.
 // The imported modules don't add new reducers; they register endpoints on baseApi.
@@ -86,6 +87,11 @@ setupListeners(store.dispatch);
 
 // Create persistor
 export const persistor = persistStore(store);
+
+// Sign-in, sign-out and token changes in another tab apply here at once.
+if (typeof window !== 'undefined') {
+  followAuthAcrossTabs(store.dispatch, () => store.getState().auth.token);
+}
 
 // Infer types from store
 export type RootState = ReturnType<typeof store.getState>;
