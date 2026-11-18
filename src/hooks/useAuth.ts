@@ -31,6 +31,9 @@ import {
   useUpdateProfileMutation,
 } from '@/features/auth/api';
 import type { User, UserRole } from '@/types';
+import { Modal } from 'antd';
+import i18n from '@/i18n';
+import { clearCart } from '@/features/cart/slice';
 
 export function useAuth() {
   const dispatch = useAppDispatch();
@@ -76,8 +79,28 @@ export function useAuth() {
     return result.user;
   }, [registerMutation]);
 
-  // Logout handler — always clears local state even if the server call fails
+  const cartCount = useAppSelector((state) => state.cart.items.length);
+
+  // Logout handler — always clears local state even if the server call fails.
+  // With items in the cart the person chooses: keep them on this device or empty it.
   const logout = useCallback(async () => {
+    if (cartCount > 0) {
+      const keep = await new Promise<boolean>((resolve) => {
+        Modal.confirm({
+          title: i18n.t('auth.keepCartTitle'),
+          content: i18n.t('auth.keepCartText', { count: cartCount }),
+          okText: i18n.t('auth.keepCart'),
+          cancelText: i18n.t('auth.emptyCart'),
+          // Only the two buttons decide; no accidental close.
+          closable: false,
+          maskClosable: false,
+          keyboard: false,
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
+      });
+      if (!keep) dispatch(clearCart());
+    }
     try {
       await logoutMutation().unwrap();
     } catch {
@@ -85,7 +108,7 @@ export function useAuth() {
       // Fall through to always clear local state below.
     }
     dispatch(logoutAction());
-  }, [logoutMutation, dispatch]);
+  }, [logoutMutation, dispatch, cartCount]);
 
   // Update profile handler
   const updateProfile = useCallback(async (data: { 

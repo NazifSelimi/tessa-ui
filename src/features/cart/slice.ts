@@ -143,20 +143,6 @@ const cartSlice = createSlice({
       state.isLoading = action.payload;
     },
   },
-
-  // Signing out (by hand or because the session expired) must not leave the
-  // previous person's basket for the next visitor. Matched by type to avoid
-  // importing the auth slice here.
-  extraReducers: (builder) => {
-    builder.addMatcher(
-      (action) => action.type === 'auth/logout',
-      (state) => {
-        state.items = [];
-        state.bundleIds = [];
-        state.isDrawerOpen = false;
-      },
-    );
-  },
 });
 
 // Export actions
