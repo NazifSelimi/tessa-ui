@@ -12,7 +12,7 @@ import {
   App, Button, Card, Col, Drawer, Empty, Grid, Input, Radio, Tabs, Row, Segmented, Select, Slider, Space, Spin, Switch, Tag, Tooltip, Typography, Upload,
 } from 'antd';
 import {
-  AppstoreOutlined, ArrowDownOutlined, BgColorsOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
+  AppstoreOutlined, ArrowDownOutlined, BgColorsOutlined, GiftOutlined, EditOutlined, FolderOpenOutlined, QuestionCircleOutlined, ArrowUpOutlined, BulbOutlined, ClearOutlined, FontSizeOutlined, RedoOutlined, CopyOutlined, HighlightOutlined, DeleteOutlined, DownloadOutlined, FacebookFilled, InstagramOutlined, PictureOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, ScissorOutlined, ShareAltOutlined, SwapOutlined, SyncOutlined, UndoOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import { PanelLeft, PanelRight } from 'lucide-react';
@@ -1663,6 +1663,25 @@ export default function AdminPostStudioPage() {
         {panels.left && (
         <Col xs={24} lg={10} xl={7} className="post-studio__side">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            {bundles.length > 0 && (
+              <Card size="small" title={<Space><GiftOutlined />Bundle deals</Space>} extra={<Text type="secondary" style={{ fontSize: 12 }}>click = offer post</Text>}>
+                <div className="post-studio__ideas">
+                  {bundles.filter((item) => item.isActive).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="post-studio__idea"
+                      onClick={() => applyBundle(item)}
+                      title={item.description ?? item.name}
+                    >
+                      <span className="post-studio__idea-emoji">{item.audience === 'stylist' ? '✂️' : '🎁'}</span>
+                      <strong>{item.name}</strong>
+                      <small>{item.promotionType === 'percentage' && item.discountPercentage ? `-${Number(item.discountPercentage)}%` : item.promotionType === 'bonus_items' ? 'gift' : 'set price'} · {item.products.length} products{item.audience === 'stylist' ? ' · salons' : ''}</small>
+                    </button>
+                  ))}
+                </div>
+              </Card>
+            )}
             <Card
               size="small"
               title={<Space><BulbOutlined />Ready post ideas</Space>}
@@ -1803,21 +1822,6 @@ export default function AdminPostStudioPage() {
             </Card>
 
             <Card size="small" title={`2 · Products (up to ${template.maxProducts})`}>
-              {bundles.length > 0 && (
-                <Select
-                  showSearch
-                  allowClear
-                  placeholder="Start from a bundle (fills the offer post)…"
-                  value={null}
-                  onChange={(id: string | null) => { const found = bundles.find((item) => String(item.id) === id); if (found) applyBundle(found); }}
-                  options={bundles.map((item) => ({
-                    value: String(item.id),
-                    label: `${item.name}${item.audience === 'stylist' ? ' · salons' : ''}${item.isActive ? '' : ' · off'} · ${item.products.length} products`,
-                  }))}
-                  optionFilterProp="label"
-                  style={{ width: '100%', marginBottom: 8 }}
-                />
-              )}
               <Select
                 mode="multiple"
                 showSearch
