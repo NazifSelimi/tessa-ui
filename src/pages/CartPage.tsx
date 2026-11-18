@@ -40,6 +40,7 @@ import { useGetQuickOrderProductsQuery } from '@/features/quickorder/api';
 import { Check, Plus } from 'lucide-react';
 import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 import QuantityStepper from '@/components/QuantityStepper';
+import { useGetCartQuoteQuery } from '@/features/orders/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -47,7 +48,12 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isStylist } = useAuth();
-  const { items, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
+  const { items, bundleIds, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
+  // Same server pricing as checkout, so set discounts show here too (not only at checkout).
+  const { currentData: quote } = useGetCartQuoteQuery(
+    { items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })), bundle_ids: bundleIds },
+    { skip: items.length === 0 || bundleIds.length === 0 },
+  );
   const [quickSearch, setQuickSearch] = useState('');
   const [quickAdded, setQuickAdded] = useState<string | null>(null);
   const debouncedQuickSearch = useDebounce(quickSearch.trim(), 250);
@@ -82,7 +88,9 @@ const CartPage: React.FC = () => {
     navigate('/checkout');
   };
 
-  const totals = { subtotal, itemCount, savings: 0 };
+  const savings = quote && bundleIds.length ? Number(quote.bundleDiscount ?? 0) : 0;
+  const totals = { subtotal, itemCount, savings };
+  const shipping = quote && bundleIds.length ? Number(quote.shipping ?? 0) : shippingForSubtotal(subtotal);
 
   if (items.length === 0) {
     return (
@@ -247,7 +255,7 @@ const CartPage: React.FC = () => {
 
               <div className="price-row">
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
-                <Text>{shippingForSubtotal(totals.subtotal) === 0 ? t('checkout.free') : formatPrice(shippingForSubtotal(totals.subtotal))}</Text>
+                <Text>{shipping === 0 ? t('checkout.free') : formatPrice(shipping)}</Text>
               </div>
 
               <Divider style={{ margin: 'var(--spacing-sm) 0' }} />
@@ -255,7 +263,7 @@ const CartPage: React.FC = () => {
               <div className="price-row">
                 <Text strong style={{ fontSize: 'var(--font-size-lg)' }}>{t('checkout.total')}</Text>
                 <Text strong style={{ fontSize: 'var(--font-size-xl)', color: 'var(--color-text-primary)' }}>
-                  {formatPrice(totals.subtotal + shippingForSubtotal(totals.subtotal))}
+                  {formatPrice(totals.subtotal - totals.savings + shipping)}
                 </Text>
               </div>
 
