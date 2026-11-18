@@ -143,6 +143,24 @@ const cartSlice = createSlice({
       state.isLoading = action.payload;
     },
   },
+
+  // A cart kept after signing out must not keep salon prices on the device for the
+  // next visitor. Matched by type to avoid importing the auth slice (import cycle).
+  // useSalonPriceRefresh fills them in again when a business account signs in.
+  extraReducers: (builder) => {
+    builder.addMatcher(
+      (action) => action.type === 'auth/logout',
+      (state) => {
+        for (const item of state.items) {
+          const retail = Number(item.retailPrice ?? item.product.price);
+          item.unitPrice = Number.isFinite(retail) ? retail : item.unitPrice;
+          item.rolePrice = undefined;
+          const { stylistPrice: _drop, ...product } = item.product;
+          item.product = product;
+        }
+      },
+    );
+  },
 });
 
 // Export actions
