@@ -246,7 +246,8 @@
     "offerSavings": "Offer savings",
     "discountLimited": "Discounts are limited so they can't be combined below our minimum price.",
     "discountApplied": "Discount code applied!",
-    "shippingRequired": "Shipping information is required."
+    "shippingRequired": "Shipping information is required.",
+    "orderNumber": "Order number"
   },
   "home": {
     "searchProducts": "Search products (min 2 chars)...",

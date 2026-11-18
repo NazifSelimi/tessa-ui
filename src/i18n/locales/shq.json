@@ -246,7 +246,8 @@
     "offerSavings": "Kursim nga oferta",
     "discountLimited": "Zbritjet janë të kufizuara dhe nuk mund të kombinohen nën çmimin tonë minimal.",
     "discountApplied": "Kodi i zbritjes u aplikua!",
-    "shippingRequired": "Kërkohen të dhënat e dërgesës."
+    "shippingRequired": "Kërkohen të dhënat e dërgesës.",
+    "orderNumber": "Numri i porosisë"
   },
   "home": {
     "searchProducts": "Kërko produkte (min. 2 shkronja)...",

@@ -124,8 +124,10 @@ describe('Checkout flow', () => {
       bundle_ids: ['bundle-5-plus-1'],
       payment_method: 'cod',
     })));
+    expect(createOrderMock.mock.calls[0][0].shipping_address).not.toHaveProperty('state');
     expect(clearCartMock).toHaveBeenCalledOnce();
     expect(await screen.findByText('Order Placed Successfully!')).toBeInTheDocument();
+    expect(screen.getByTestId('order-number')).toHaveTextContent('#order-123');
   });
 
   it('shows the total the server will charge, including a limited discount', async () => {

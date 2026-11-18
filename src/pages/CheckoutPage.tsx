@@ -50,7 +50,6 @@ interface ShippingFormData {
   phone: string;
   address: string;
   city: string;
-  state: string;
   zip: string;
 }
 
@@ -72,6 +71,7 @@ export default function CheckoutPage() {
   const [discountInput, setDiscountInput] = useState('');
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [useStoreCredit, setUseStoreCredit] = useState(true);
   const [referralTried, setReferralTried] = useState(false);
 
@@ -88,7 +88,6 @@ export default function CheckoutPage() {
         address: user.address || '',
         city: user.city || '',
         zip: user.postcode || '',
-        state: 'North Macedonia',
       });
     }
   }, [user, shippingForm, shippingData, draft]);
@@ -202,7 +201,16 @@ export default function CheckoutPage() {
       <Result
         status="success"
         title={t('checkout.orderSuccess')}
-        subTitle={t('checkout.orderSuccessMessage')}
+        subTitle={(
+          <>
+            {orderNumber && (
+              <Paragraph strong style={{ fontSize: 18, marginBottom: 8 }} data-testid="order-number">
+                {t('checkout.orderNumber')}: #{orderNumber}
+              </Paragraph>
+            )}
+            {t('checkout.orderSuccessMessage')}
+          </>
+        )}
         extra={actions}
       />
     );
@@ -250,7 +258,6 @@ export default function CheckoutPage() {
           phone: shippingData.phone,
           address: shippingData.address,
           city: shippingData.city,
-          state: shippingData.state,
           zip: shippingData.zip,
         },
         payment_method: 'cod' as const,
@@ -260,7 +267,8 @@ export default function CheckoutPage() {
         use_store_credit: isAuthenticated && useStoreCredit && (quote?.storeCreditAvailable ?? 0) > 0,
       };
 
-      await createOrder(payload).unwrap();
+      const created = await createOrder(payload).unwrap();
+      setOrderNumber(created?.id != null ? String(created.id) : null);
       if (appliedCode && appliedCode === storedReferralCode()) forgetReferralCode();
       clearCheckoutDraft();
       clearCart();
@@ -387,16 +395,6 @@ export default function CheckoutPage() {
                   </Col>
                   <Col xs={24} sm={8}>
                     <Form.Item
-                      name="state"
-                      label={t('checkout.state')}
-                      rules={[{ required: true, message: t('common.required') }]}
-                      initialValue="North Macedonia"
-                    >
-                      <Input size="large" disabled />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} sm={8}>
-                    <Form.Item
                       name="zip"
                       label={t('checkout.zip')}
                       rules={[{ required: true, message: t('common.required') }]}
@@ -438,7 +436,7 @@ export default function CheckoutPage() {
                 <Paragraph type="secondary" style={{ margin: 0 }}>
                   {shippingData?.firstName} {shippingData?.lastName}<br />
                   {shippingData?.address}<br />
-                  {shippingData?.city}, {shippingData?.state} {shippingData?.zip}<br />
+                  {shippingData?.city} {shippingData?.zip}<br />
                   {shippingData?.email} • {shippingData?.phone}
                 </Paragraph>
               </div>
