@@ -3,6 +3,7 @@ import { Card, Spin, Typography, message } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/app/hooks';
 import { setCredentials } from '@/features/auth/slice';
+import { safeContinuePath } from '@/i18n/routing';
 import type { User } from '@/types';
 import { isProfileComplete } from '@/features/auth/profile';
 
@@ -52,7 +53,7 @@ export default function SocialAuthCallbackPage() {
     const error = params.get('error');
     const token = params.get('token');
     const encodedUser = params.get('user');
-    const redirect = params.get('redirect') || '/';
+    const redirect = safeContinuePath(params.get('redirect'));
     const accountType = params.get('account_type') === 'stylist' ? 'stylist' : 'customer';
 
     if (error) {

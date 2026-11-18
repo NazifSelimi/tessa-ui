@@ -21,6 +21,7 @@ import {
   LockOutlined,
   GoogleOutlined,
 } from '@ant-design/icons';
+import { safeContinuePath, withCurrentLocalePrefix } from '@/i18n/routing';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { extractErrorMessage } from '@/shared/utils/error';
@@ -48,8 +49,7 @@ const LoginPage: React.FC = () => {
   const stateFrom = (location.state as { from?: string })?.from;
   const queryFrom = new URLSearchParams(location.search).get('continue');
   const requested = stateFrom || queryFrom || '/';
-  // In-app paths only: '//host' would be read by the browser as another site.
-  const from = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+  const from = safeContinuePath(requested);
 
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);
@@ -67,7 +67,7 @@ const LoginPage: React.FC = () => {
   const handleSocialLogin = (provider: SocialProvider) => {
     startSocialAuth(provider, {
       intent: 'login',
-      redirect: from,
+      redirect: withCurrentLocalePrefix(from, window.location.pathname),
     });
   };
 

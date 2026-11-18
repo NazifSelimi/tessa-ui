@@ -29,6 +29,7 @@ import {
   GoogleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { withCurrentLocalePrefix } from '@/i18n/routing';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 import AuthPageHeader from '@/components/AuthPageHeader';
@@ -103,7 +104,7 @@ const RegisterPage: React.FC = () => {
 
     startSocialAuth(provider, {
       intent: 'register',
-      redirect: target,
+      redirect: withCurrentLocalePrefix(target, window.location.pathname),
       accountType,
     });
   };

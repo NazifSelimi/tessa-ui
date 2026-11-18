@@ -43,3 +43,19 @@ export function localizedPath(pathname: string, locale: UrlLocale): string {
   const logicalPath = stripLocalePrefix(pathname);
   return `/${locale}${logicalPath === '/' ? '' : logicalPath}`;
 }
+
+/**
+ * A path to continue to after login. Inside the router (basename = language prefix)
+ * the prefix is added automatically, so a stray prefix is dropped to avoid /en/en/...
+ * In-app paths only: '//host' would be read by the browser as another site.
+ */
+export function safeContinuePath(requested: string | null | undefined): string {
+  if (!requested || !requested.startsWith('/') || requested.startsWith('//')) return '/';
+  return stripLocalePrefix(requested);
+}
+
+/** Absolute path for leaving the SPA (social sign-in) and coming back to the same language. */
+export function withCurrentLocalePrefix(logicalPath: string, pathname: string): string {
+  const locale = urlLocaleFromPathname(pathname);
+  return locale ? localizedPath(logicalPath, locale) : logicalPath;
+}
