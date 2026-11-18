@@ -532,6 +532,8 @@ export interface StoreBundle {
   id: string;
   name: string;
   description: string | null;
+  /** Picture made in Post Studio → Bundles (null until saved). */
+  image?: string | null;
   isDynamic: false;
   discountPercentage: number | null;
   promotionType: BundlePromotionType;

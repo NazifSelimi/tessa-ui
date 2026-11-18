@@ -605,6 +605,23 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.Bundles],
     }),
 
+    /** Picture made in Post Studio → Bundles; replaces the bundle's previous picture. */
+    uploadBundleImage: builder.mutation<StoreBundle, { id: string; image: Blob }>({
+      query: ({ id, image }) => {
+        const body = new FormData();
+        body.append('image', image, `bundle-${id}.${image.type === 'image/png' ? 'png' : 'webp'}`);
+        return { url: `/v1/admin/bundles/${id}/image`, method: 'POST', body, formData: true };
+      },
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
+    deleteBundleImage: builder.mutation<StoreBundle, string>({
+      query: (id) => ({ url: `/v1/admin/bundles/${id}/image`, method: 'DELETE' }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
     // Profit of an offer while it is being edited; nothing is saved.
     simulateBundle: builder.mutation<OfferSimulation, BundlePayload>({
       query: (body) => ({ url: '/v1/admin/bundles/simulate', method: 'POST', body }),
@@ -694,6 +711,8 @@ export const {
   useCreateBundleMutation,
   useUpdateBundleMutation,
   useDeleteBundleMutation,
+  useUploadBundleImageMutation,
+  useDeleteBundleImageMutation,
   useSimulateBundleMutation,
   useGetPricingSettingsQuery,
   useUpdatePricingSettingsMutation,

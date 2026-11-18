@@ -3,7 +3,8 @@
  * captions from catalogue products, in the shop's own look: pick a ready post
  * idea, see the post in a feed preview, download the PNG and copy a caption
  * written for the chosen network. Everything renders in the browser; nothing is
- * saved on the server. Drafts are kept in this browser only.
+ * saved on the server except bundle pictures (Bundles tab). Drafts are kept in
+ * this browser only.
  */
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -21,6 +22,8 @@ import { usePanels } from '@/features/studio/panels';
 import ProductPhotoTab, { type PhotoProductOption } from '@/features/studio/ProductPhotoTab';
 import type { CanvasEditorApi } from '@/features/studio/canvas/CanvasEditor';
 import StudioHelp from '@/features/studio/StudioHelp';
+import BundlesTab from '@/features/studio/BundlesTab';
+import { OFFER_MAX_PRODUCTS, bundlePost, isPriceLine, priceLine } from '@/features/studio/bundlePost';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { lazyWithReload } from '@/shared/utils/chunkReload';
 import { getBrandKit } from '@/features/studio/brand';
@@ -234,8 +237,8 @@ const initialDesign = (lang: StudioLang = 'mk'): StudioDesign => ({
   qrUrl: '',
 });
 
-type StudioTab = 'create' | 'canvas' | 'photo' | 'templates' | 'drafts' | 'help';
-const STUDIO_TABS: StudioTab[] = ['create', 'canvas', 'photo', 'templates', 'drafts', 'help'];
+type StudioTab = 'create' | 'canvas' | 'photo' | 'bundles' | 'templates' | 'drafts' | 'help';
+const STUDIO_TABS: StudioTab[] = ['create', 'canvas', 'photo', 'bundles', 'templates', 'drafts', 'help'];
 // The Figma-style editor is a big piece of code: only load it when its tab opens.
 const CanvasEditor = lazyWithReload(() => import('@/features/studio/canvas/CanvasEditor'));
 const CANVAS_FRAMES = FORMATS.map((format) => ({ id: format.id, label: format.label, width: format.width, height: format.height }));
@@ -357,10 +360,9 @@ export default function AdminPostStudioPage() {
   const benefitOptions = useMemo(() => benefitChoices(design.lang).map((item) => ({ value: item, label: item })), [design.lang]);
 
   /** Loads full product details (all photos) for the chosen ids, keeping the photo already picked. */
-  const selectProducts = useCallback(async (ids: string[], photoIndexes: Record<string, number> = {}) => {
+  /** Products for a post with all their photos (product page data, else the catalogue list). */
+  const loadStudioProducts = useCallback(async (ids: string[], photoIndexes: Record<string, number> = {}) => {
     const list = await Promise.all(ids.map(async (id) => {
-      const existing = products.find((product) => product.id === id);
-      if (existing) return existing;
       const fromList = catalogue?.data.find((product) => String(product.id) === id);
       try {
         const detail = await fetchProduct(id, true).unwrap();
@@ -369,10 +371,18 @@ export default function AdminPostStudioPage() {
         return fromList ? { ...toStudioProduct(fromList), photoIndex: photoIndexes[id] ?? 0 } : null;
       }
     }));
-    const chosen = list.filter((product): product is StudioProduct => product !== null);
+    return list.filter((product): product is StudioProduct => product !== null);
+  }, [catalogue, fetchProduct]);
+
+  const selectProducts = useCallback(async (ids: string[], photoIndexes: Record<string, number> = {}) => {
+    const missing = ids.filter((id) => !products.some((product) => product.id === id));
+    const loaded = await loadStudioProducts(missing, photoIndexes);
+    const chosen = ids
+      .map((id) => products.find((product) => product.id === id) ?? loaded.find((product) => product.id === id))
+      .filter((product): product is StudioProduct => product !== undefined);
     setProducts(chosen);
     return chosen;
-  }, [catalogue, fetchProduct, products]);
+  }, [loadStudioProducts, products]);
 
   /* ------------------------------------------------------------ bundle → offer post */
 
@@ -380,42 +390,12 @@ export default function AdminPostStudioPage() {
 
   /** Turns a bundle into an Offer post: its products, a "-10%" sticker and "together X instead of Y". */
   const applyBundle = (bundle: StoreBundle) => {
-    const salon = bundle.audience === 'stylist';
-    const unit = (item: StoreBundle['products'][number]) => Number((salon && item.stylistPrice) || item.price || 0);
-    const paid = bundle.products.filter((item) => !item.isBonus);
-    const full = bundle.products.reduce((sum, item) => sum + unit(item) * (item.quantity || 1), 0);
-    const paidTotal = paid.reduce((sum, item) => sum + unit(item) * (item.quantity || 1), 0);
-    const pct = Number(bundle.discountPercentage ?? 0);
-    const deal = bundle.promotionType === 'fixed_price' && bundle.bundlePrice ? Number(bundle.bundlePrice)
-      : bundle.promotionType === 'bonus_items' ? paidTotal
-      : pct > 0 ? full * (1 - pct / 100) : full;
-    const off = full > 0 ? Math.round((1 - deal / full) * 100) : 0;
-    const lang = design.lang;
-    const badge = bundle.promotionType === 'bonus_items'
-      ? (lang === 'en' ? 'FREE GIFT' : lang === 'sq' ? 'DHURATË' : 'ПОДАРОК')
-      : off > 0 ? `-${off}%` : '';
-    const together = { mk: 'Заедно', sq: 'Së bashku', en: 'Together' }[lang] ?? 'Заедно';
-    const instead = { mk: 'наместо', sq: 'në vend të', en: 'instead of' }[lang] ?? 'наместо';
-    const subline = deal > 0 && deal < full ? `${together} ${formatPrice(deal)} ${instead} ${formatPrice(full)}` : (bundle.description ?? '');
-
-    const eyebrow = salon
-      ? ({ mk: 'За салони', sq: 'Për sallone', en: 'For salons' }[lang] ?? '')
-      : ({ mk: 'Сет понуда', sq: 'Ofertë set', en: 'Bundle deal' }[lang] ?? '');
-    const offerMax = TEMPLATES.find((item) => item.id === 'offer')?.maxProducts ?? 3;
-    setDesign((current) => ({
-      ...current,
-      ...templateDefaults('offer', current.lang),
-      template: 'offer',
-      eyebrow,
-      headline: bundle.name,
-      subline,
-      badge,
-      info: 'price',
-      priceMode: salon ? 'salon' : 'retail',
-    }));
-    selectProducts(bundle.products.slice(0, offerMax).map((item) => String(item.id)));
+    const post = bundlePost(bundle, design.lang);
+    setDesign((current) => ({ ...current, ...templateDefaults('offer', current.lang), ...post.design }));
+    selectProducts(post.productIds);
     setCaptionEdited(null);
-    if (bundle.products.length > offerMax) message.info(`Offer posts show ${offerMax} products; the bundle has ${bundle.products.length}. Try the Product lineup layout for all of them.`);
+    setActiveTab('create');
+    if (bundle.products.length > OFFER_MAX_PRODUCTS) message.info(`Offer posts show ${OFFER_MAX_PRODUCTS} products; the bundle has ${bundle.products.length}. Try the Product lineup layout for all of them.`);
   };
 
   useEffect(() => {
@@ -426,12 +406,9 @@ export default function AdminPostStudioPage() {
     const match = design.badge.match(/-?\s*(\d{1,2}(?:[.,]\d)?)\s*%/);
     if (!match) return;
     const pct = Number(match[1].replace(',', '.'));
-    const lang = design.lang;
-    const together = { mk: 'Заедно', sq: 'Së bashku', en: 'Together' }[lang] ?? 'Заедно';
-    const instead = { mk: 'наместо', sq: 'në vend të', en: 'instead of' }[lang] ?? 'наместо';
-    const next = `${together} ${formatPrice(full * (1 - pct / 100))} ${instead} ${formatPrice(full)}`;
+    const next = priceLine(design.lang, full * (1 - pct / 100), full);
     // Only rewrite a line that is still the generated price line, never the user's own text.
-    const generated = /^(Заедно|Së bashku|Together) /.test(design.subline);
+    const generated = isPriceLine(design.subline);
     if (design.subline !== next && (design.subline.trim() === '' || generated)) {
       setDesign((current) => ({ ...current, subline: next }));
     }
@@ -2331,6 +2308,21 @@ export default function AdminPostStudioPage() {
             children: (
               <ErrorBoundary resetKey={`photo:${activeTab}`}>
                 <ProductPhotoTab products={photoProductOptions} loading={catalogueLoading} active={activeTab === 'photo'} />
+              </ErrorBoundary>
+            ),
+          },
+          {
+            key: 'bundles',
+            label: <span><GiftOutlined /> Bundles</span>,
+            children: (
+              <ErrorBoundary resetKey={`bundles:${activeTab}`}>
+                <BundlesTab
+                  bundles={bundles}
+                  baseDesign={initialDesign}
+                  loadProducts={loadStudioProducts}
+                  onEdit={applyBundle}
+                  ready={fontsReady && !catalogueLoading}
+                />
               </ErrorBoundary>
             ),
           },
