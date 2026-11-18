@@ -48,7 +48,7 @@
     "email": "Е-пошта",
     "identifier": "Е-пошта или телефонски број",
     "enterIdentifier": "Внесете е-пошта или телефонски број.",
-    "identifierPlaceholder": "Телефонски број или vie@primer.com",
+    "identifierPlaceholder": "Телефонски број или ime@primer.com",
     "password": "Лозинка",
     "confirmPassword": "Потврди лозинка",
     "firstName": "Име",

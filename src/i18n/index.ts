@@ -44,4 +44,11 @@ i18n
     },
   });
 
+// <html lang> follows the language on every page, admin included (screen readers, translation tools).
+const setHtmlLang = (lng: string) => {
+  if (typeof document !== 'undefined') document.documentElement.lang = lng === 'shq' ? 'sq' : lng;
+};
+setHtmlLang(i18n.language);
+i18n.on('languageChanged', setHtmlLang);
+
 export default i18n;

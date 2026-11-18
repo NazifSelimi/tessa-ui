@@ -293,9 +293,9 @@ export default function AdminProductFixesPage() {
         ))}
       </Space>
       <Space wrap>
-        <Input.Search aria-label="Search products" placeholder="Name, ID or code" allowClear value={search} onChange={e => setSearch(e.target.value)} style={{ width: 240 }} />
-        <Select aria-label="Brand" placeholder="All brands" allowClear value={brand} onChange={setBrand} options={brands.map(b => ({ value: b, label: b }))} style={{ width: 170 }} />
-        <Select aria-label="Category" placeholder="All categories" allowClear value={category} onChange={setCategory} options={categories.map(c => ({ value: c, label: c }))} style={{ width: 190 }} />
+        <Input.Search aria-label="Search products" placeholder="Name, ID or code" allowClear value={search} onChange={e => setSearch(e.target.value)} style={{ width: 240, maxWidth: '100%' }} />
+        <Select aria-label="Brand" placeholder="All brands" allowClear value={brand} onChange={setBrand} options={brands.map(b => ({ value: b, label: b }))} style={{ width: 170, maxWidth: '100%' }} />
+        <Select aria-label="Category" placeholder="All categories" allowClear value={category} onChange={setCategory} options={categories.map(c => ({ value: c, label: c }))} style={{ width: 190, maxWidth: '100%' }} />
         <Space size={6}><Switch size="small" checked={showChecked} onChange={setShowChecked} /> Show checked ({report?.checked ?? 0})</Space>
         <Space size={6}><Switch size="small" checked={hideDone} onChange={setHideDone} /> Hide skipped ({done.length})</Space>
         {done.length > 0 && <Button size="small" onClick={() => { setDone([]); try { localStorage.removeItem(DONE_KEY); } catch { /* ignore */ } }}>Reset done</Button>}
@@ -359,7 +359,7 @@ export default function AdminProductFixesPage() {
                   <Space wrap style={{ justifyContent: 'center' }}>
                     <input ref={fileInput} type="file" accept={TYPES.join(',')} hidden onChange={e => { const f = e.target.files?.[0]; if (f) stage(f); e.target.value = ''; }} />
                     <Button type="primary" loading={busy} onClick={() => fileInput.current?.click()}>Choose file (U)</Button>
-                    <Input aria-label="Image web address" placeholder="…or paste an image address (https://…)" value={url} onChange={e => setUrl(e.target.value)} onPressEnter={() => void uploadUrl(url)} style={{ width: 340 }} />
+                    <Input aria-label="Image web address" placeholder="…or paste an image address (https://…)" value={url} onChange={e => setUrl(e.target.value)} onPressEnter={() => void uploadUrl(url)} style={{ width: 340, maxWidth: '100%' }} />
                     <Button onClick={() => void uploadUrl(url)} disabled={!url.trim()} loading={busy}>Add from address</Button>
                   </Space>
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>JPG, PNG or WebP up to 10 MB. New photos are added to the gallery; existing photos are never replaced. Check the photo shows this exact product and size.</Typography.Text>

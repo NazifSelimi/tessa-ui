@@ -104,7 +104,7 @@ export default function HomePageEditor({ page = 'home', pageLabel = 'Homepage' }
   };
 
   return <>
-    <Button type="primary" icon={<EditOutlined />} onClick={() => setOpen(true)} className="nl-page-edit-btn">
+    <Button type="primary" icon={<EditOutlined />} onClick={() => setOpen(true)} className="nl-page-edit-btn" aria-label="Edit this page">
       Edit this page
     </Button>
     <Drawer title={`${pageLabel} editor`} width={620} open={open} onClose={() => setOpen(false)}>
