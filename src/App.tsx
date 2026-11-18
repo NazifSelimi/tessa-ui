@@ -218,7 +218,7 @@ function App() {
               </Route>
 
               {/* Design Lab (standalone, no nav/footer) — design exploration only */}
-              <Route path="/design-lab" element={<DesignLabPage />} />
+              {import.meta.env.DEV && <Route path="/design-lab" element={<DesignLabPage />} />}
 
               {/* Auth routes (standalone, no nav/footer) */}
               <Route path="/login" element={<LoginPage />} />
