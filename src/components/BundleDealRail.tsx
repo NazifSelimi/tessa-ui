@@ -59,7 +59,10 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
         {visibleBundles.map((bundle) => {
           const regular = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
           const price = bundlePrice(bundle, isProfessional);
-          return <article className="bundle-deal-card" key={bundle.id}>
+          // Picture made in Post Studio → Bundles; ?v= makes a remade picture show at once.
+          const picture = bundle.image ? `${bundle.image}?v=${encodeURIComponent(bundle.updatedAt ?? '')}` : null;
+          return <article className={`bundle-deal-card${picture ? ' bundle-deal-card--picture' : ''}`} key={bundle.id}>
+            {picture && <img className="bundle-deal-card__picture" src={picture} alt={bundle.name} width={1080} height={1350} loading="lazy" decoding="async" />}
             <div className="bundle-deal-card__top"><Tag>{bundle.audience === 'stylist' ? t('bundles.salonOffer') : t('bundles.limitedOffer')}</Tag><GiftOutlined /></div>
             <Title level={4}>{bundle.name}</Title>
             <Text type="secondary" className="bundle-deal-card__copy">{bundle.description}</Text>
