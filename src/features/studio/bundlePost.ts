@@ -35,7 +35,36 @@ export const priceLine = (lang: StudioLang, deal: number, full: number) =>
 /** True for a second line written by priceLine (so it may be rewritten, unlike the admin's own text). */
 export const isPriceLine = (text: string) => /^(Заедно|Së bashku|Together) /.test(text);
 
+const ANY_SHADES: Record<StudioLang, string> = { mk: 'Било кои нијанси', sq: 'Çdo nuancë', en: 'Any shades' };
+const COLOURS: Record<StudioLang, string> = { mk: 'бои', sq: 'ngjyra', en: 'colours' };
+const FREE: Record<StudioLang, string> = { mk: 'гратис', sq: 'falas', en: 'free' };
+const OXIDANT: Record<StudioLang, string> = { mk: 'оксидант гратис', sq: 'oksidant falas', en: 'free oxidant' };
+
+/** "Pick any colours" offer: its steps as the second line, the biggest step on the sticker, the line and gifts as photos. */
+function colourDealPost(bundle: StoreBundle, lang: StudioLang): BundlePost {
+  const tiers = bundle.tiers ?? [];
+  const top = tiers[tiers.length - 1];
+  const step = (tier: NonNullable<StoreBundle['tiers']>[number]) => `${tier.min} ${COLOURS[lang]} → ${[
+    tier.free > 0 ? `+${tier.free} ${FREE[lang]}` : null, tier.gift ? OXIDANT[lang] : null,
+  ].filter(Boolean).join(' + ')}`;
+  return {
+    design: {
+      template: 'offer',
+      eyebrow: `${FOR_SALONS[lang]} · ${ANY_SHADES[lang]}`,
+      headline: bundle.name,
+      subline: tiers.map(step).join('  ·  '),
+      badge: top ? (top.free > 0 ? `${top.min}+${top.free}` : GIFT[lang]) : '',
+      info: 'none',
+      priceMode: 'salon',
+    },
+    productIds: [bundle.familyProductId, ...bundle.products.map((item) => item.id)].filter((id): id is string => Boolean(id)).slice(0, OFFER_MAX_PRODUCTS),
+    full: 0,
+    deal: 0,
+  };
+}
+
 export function bundlePost(bundle: StoreBundle, lang: StudioLang): BundlePost {
+  if (bundle.promotionType === 'mix_match') return colourDealPost(bundle, lang);
   const salon = bundle.audience === 'stylist';
   const unit = (item: BundleItem) => Number((salon && item.stylistPrice) || item.price || 0);
   const total = (items: BundleItem[]) => items.reduce((sum, item) => sum + unit(item) * (item.quantity || 1), 0);

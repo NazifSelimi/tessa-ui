@@ -11,7 +11,7 @@ import {
 } from 'antd';
 import { CopyOutlined, DeleteOutlined, DownOutlined, EditOutlined, GiftOutlined, PlusOutlined, SearchOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import {
-  useBulkBundlesMutation, useCreateBundleMutation, useDeleteBundleMutation, useGetAdminBundlesQuery, useGetAllProductsQuery, useUpdateBundleMutation,
+  useBulkBundlesMutation, useCreateBundleMutation, useDeleteBundleMutation, useGetAdminBundlesQuery, useGetAllProductsQuery, useGetProductFamiliesQuery, useUpdateBundleMutation,
   type BundleBulkAction,
 } from '@/features/admin/api';
 import type { BundleAudience, BundlePromotionType, StoreBundle } from '@/types';
@@ -34,7 +34,11 @@ const RULES: { value: BundlePromotionType; label: string }[] = [
   { value: 'bonus_items', label: 'Free included items (2+1 / 5+1)' },
   { value: 'percentage', label: 'Percentage off' },
   { value: 'fixed_price', label: 'Fixed bundle price' },
+  { value: 'mix_match', label: 'Pick any colours (reward steps)' },
 ];
+
+/** Starting steps for a new "pick any colours" offer. */
+const DEFAULT_TIERS = [{ min: 10, free: 0, gift: true }, { min: 20, free: 1, gift: true }, { min: 30, free: 3, gift: true }];
 
 type Status = 'live' | 'scheduled' | 'ended' | 'draft';
 const STATUS_TAG: Record<Status, { label: string; color?: string }> = {
@@ -47,7 +51,9 @@ function statusOf(bundle: StoreBundle): Status {
   return 'live';
 }
 
-const ruleSummary = (bundle: StoreBundle) => (bundle.promotionType === 'percentage' && bundle.discountPercentage ? `-${Number(bundle.discountPercentage)}%`
+const ruleSummary = (bundle: StoreBundle) => (bundle.promotionType === 'mix_match'
+  ? (bundle.tiers ?? []).map((tier) => `${tier.min}${tier.free ? `+${tier.free}` : ''}${tier.gift ? '🎁' : ''}`).join(' · ') || 'steps'
+  : bundle.promotionType === 'percentage' && bundle.discountPercentage ? `-${Number(bundle.discountPercentage)}%`
   : bundle.promotionType === 'fixed_price' && bundle.bundlePrice ? `${Math.round(bundle.bundlePrice)} MKD` : bundle.promotionType === 'bonus_items' ? 'free items' : '—');
 
 type BundleForm = {
@@ -60,6 +66,8 @@ type BundleForm = {
   is_active: boolean;
   is_featured: boolean;
   dates?: [Dayjs | null, Dayjs | null] | null;
+  product_family_id?: string;
+  tiers?: Array<{ min: number; free?: number; gift?: boolean }>;
   products: Array<{ product_id: string; quantity: number; bonus_quantity?: number }>;
 };
 
@@ -69,6 +77,7 @@ export default function AdminBundlesPage() {
   const { message } = App.useApp();
   const { data: bundles = [], isLoading } = useGetAdminBundlesQuery();
   const { data: productPage } = useGetAllProductsQuery({ perPage: 1000 });
+  const { data: families = [] } = useGetProductFamiliesQuery();
   const [createBundle, { isLoading: creating }] = useCreateBundleMutation();
   const [updateBundle, { isLoading: updating }] = useUpdateBundleMutation();
   const [deleteBundle] = useDeleteBundleMutation();
@@ -152,6 +161,8 @@ export default function AdminBundlesPage() {
     is_active: copy ? false : bundle.isActive,
     is_featured: copy ? false : bundle.isFeatured,
     dates: [bundle.startsAt ? dayjs(bundle.startsAt) : null, bundle.endsAt ? dayjs(bundle.endsAt) : null],
+    product_family_id: bundle.familyId ?? undefined,
+    tiers: bundle.tiers ?? undefined,
     products: bundle.products.map((product) => ({ product_id: product.id, quantity: product.quantity, bonus_quantity: product.bonusQuantity ?? (product.isBonus ? product.quantity : 0) })),
   });
 
@@ -172,7 +183,10 @@ export default function AdminBundlesPage() {
     const { dates, ...rest } = values;
     const prices = rest.promotion_type === 'percentage' ? { bundle_price: undefined }
       : rest.promotion_type === 'fixed_price' ? { discount_percentage: undefined } : {};
-    return { ...rest, ...prices, starts_at: toApiDate(dates?.[0]), ends_at: toApiDate(dates?.[1]?.endOf('day')) };
+    const colours = rest.promotion_type === 'mix_match'
+      ? { tiers: rest.tiers ?? [], products: (rest.products ?? []).filter((line) => line?.product_id).map((line) => ({ product_id: line.product_id, quantity: 1, bonus_quantity: 1 })) }
+      : { product_family_id: null, tiers: null };
+    return { ...rest, ...prices, ...colours, starts_at: toApiDate(dates?.[0]), ends_at: toApiDate(dates?.[1]?.endOf('day')) };
   };
 
   const submit = async (values: BundleForm) => {
@@ -288,7 +302,7 @@ export default function AdminBundlesPage() {
             title: 'Offer', dataIndex: 'name', sorter: (a, b) => a.name.localeCompare(b.name),
             render: (name: string, row) => <Space direction="vertical" size={0}>
               <Button type="link" style={{ padding: 0, height: 'auto', fontWeight: 600, textAlign: 'left', whiteSpace: 'normal' }} onClick={() => openEditor(row)}>{name}</Button>
-              <Text type="secondary" style={{ fontSize: 12 }}>{row.products.length} products · {row.products.reduce((sum, item) => sum + item.quantity, 0)} pcs</Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>{row.promotionType === 'mix_match' ? `${row.familyName ?? 'colour line'} · any shades · ${row.products.length} gift choices` : `${row.products.length} products · ${row.products.reduce((sum, item) => sum + item.quantity, 0)} pcs`}</Text>
             </Space>,
           },
           {
@@ -345,7 +359,9 @@ export default function AdminBundlesPage() {
             <Form.Item name="audience" label="Who sees it" rules={[{ required: true }]} style={{ flex: 1 }}>
               <Select options={AUDIENCES.map((item) => ({ value: item.value, label: item.label, title: item.hint }))} />
             </Form.Item>
-            <Form.Item name="promotion_type" label="Offer rule" rules={[{ required: true }]} style={{ flex: 1 }}><Select options={RULES} /></Form.Item>
+            <Form.Item name="promotion_type" label="Offer rule" rules={[{ required: true }]} style={{ flex: 1 }}>
+              <Select options={RULES} onChange={(value) => { if (value === 'mix_match' && !form.getFieldValue('tiers')?.length) form.setFieldsValue({ tiers: DEFAULT_TIERS, products: [] }); }} />
+            </Form.Item>
           </Space>
           {(promotionType === 'percentage' || promotionType === 'fixed_price') && (
             <Space style={{ display: 'flex' }} size={12} align="start">
@@ -354,16 +370,37 @@ export default function AdminBundlesPage() {
               <Form.Item label="Normal price" style={{ flex: 1 }}><Text strong style={{ lineHeight: '32px' }}>{total > 0 ? `${Math.round(total)} MKD` : '—'}</Text></Form.Item>
             </Space>
           )}
+          {promotionType === 'mix_match' && (
+            <Card size="small" title="Pick any colours" style={{ marginBottom: 16 }}>
+              <Form.Item name="product_family_id" label="Colour line (any shade counts)" rules={[{ required: true }]}>
+                <Select showSearch optionFilterProp="label" placeholder="Choose a colour line" options={families.map((family) => ({ value: String(family.id), label: `${family.name} (${family.shadeCount} shades)` }))} />
+              </Form.Item>
+              <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>Reward steps: from N colours in the cart, the cheapest X colours are free and/or one gift below is free. The highest step reached counts.</Text>
+              <Form.List name="tiers">
+                {(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                  {fields.map((field) => <Space key={field.key} align="center" wrap>
+                    <Form.Item {...field} name={[field.name, 'min']} rules={[{ required: true }]} style={{ marginBottom: 0 }}><InputNumber min={1} max={500} addonBefore="From" addonAfter="colours" /></Form.Item>
+                    <Form.Item {...field} name={[field.name, 'free']} style={{ marginBottom: 0 }}><InputNumber min={0} max={100} addonBefore="Free" addonAfter="colours" /></Form.Item>
+                    <Form.Item {...field} name={[field.name, 'gift']} valuePropName="checked" style={{ marginBottom: 0 }}><Switch checkedChildren="+ gift" unCheckedChildren="no gift" /></Form.Item>
+                    <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} aria-label="Remove step" />
+                  </Space>)}
+                  <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ min: 40, free: 4, gift: true })}>Add step</Button>
+                </Space>}
+              </Form.List>
+            </Card>
+          )}
           <Form.Item name="dates" label="Runs from – to" extra="Empty start = from now; empty end = until you switch it off.">
             <RangePicker allowEmpty={[true, true]} style={{ width: '100%' }} />
           </Form.Item>
-          <Card size="small" title="Included products" style={{ marginBottom: 16 }}>
+          <Card size="small" title={promotionType === 'mix_match' ? 'Gift choices (the stylist picks one: oxidant, activator…)' : 'Included products'} style={{ marginBottom: 16 }}>
             <Form.List name="products">
               {(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }} size={10}>
                 {fields.map((field) => <Space key={field.key} align="start" style={{ display: 'flex' }} wrap>
                   <Form.Item {...field} name={[field.name, 'product_id']} rules={[{ required: true }]} style={{ width: 340, marginBottom: 0 }}><Select showSearch optionFilterProp="label" options={productOptions} placeholder="Choose product" /></Form.Item>
-                  <Form.Item {...field} name={[field.name, 'quantity']} rules={[{ required: true }]} style={{ marginBottom: 0 }}><InputNumber min={1} addonBefore="Qty" /></Form.Item>
-                  <Form.Item {...field} name={[field.name, 'bonus_quantity']} style={{ marginBottom: 0 }}><InputNumber min={0} addonBefore="Free" disabled={promotionType !== 'bonus_items'} /></Form.Item>
+                  {promotionType !== 'mix_match' && <>
+                    <Form.Item {...field} name={[field.name, 'quantity']} rules={[{ required: true }]} style={{ marginBottom: 0 }}><InputNumber min={1} addonBefore="Qty" /></Form.Item>
+                    <Form.Item {...field} name={[field.name, 'bonus_quantity']} style={{ marginBottom: 0 }}><InputNumber min={0} addonBefore="Free" disabled={promotionType !== 'bonus_items'} /></Form.Item>
+                  </>}
                   <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} aria-label="Remove product" />
                 </Space>)}
                 <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, bonus_quantity: 0 })}>Add product</Button>
@@ -375,9 +412,9 @@ export default function AdminBundlesPage() {
               ? <BundlePicture bundle={liveEditing} />
               : <Text type="secondary">Save the offer first, then add its picture here or in Post Studio → Bundles.</Text>}
           </Card>
-          <Card size="small" title="What this offer earns" style={{ marginBottom: 16 }}>
+          {promotionType !== 'mix_match' && <Card size="small" title="What this offer earns" style={{ marginBottom: 16 }}>
             {open && <OfferProfitPanel draft={draft ?? {}} />}
-          </Card>
+          </Card>}
           <Space size={24}>
             <Form.Item name="is_active" valuePropName="checked" label="Live"><Switch /></Form.Item>
             <Form.Item name="is_featured" valuePropName="checked" label="Feature first in the shop"><Switch /></Form.Item>

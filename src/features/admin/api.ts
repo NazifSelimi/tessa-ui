@@ -135,7 +135,10 @@ type BundlePayload = {
   name?: string;
   description?: string;
   audience?: BundleAudience;
-  promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items';
+  promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items' | 'mix_match';
+  /** mix_match only: the colour line and its reward steps (products = gift choices). */
+  product_family_id?: string | number | null;
+  tiers?: Array<{ min: number; free?: number; gift?: boolean }> | null;
   discount_percentage?: number;
   bundle_price?: number;
   is_active?: boolean;

@@ -7,7 +7,7 @@ const { Text } = Typography;
 
 type OfferDraft = {
   audience?: import('@/types').BundleAudience;
-  promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items';
+  promotion_type?: import('@/types').BundlePromotionType;
   discount_percentage?: number;
   bundle_price?: number;
   products?: Array<{ product_id?: string; quantity?: number; bonus_quantity?: number } | undefined>;

@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { CatalogState } from './storefront/DesignPrimitives';
 import { Button, Typography, message } from 'antd';
 import { GiftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 import { useGetBundlesQuery } from '@/features/products/api';
+import ColourDealPicker, { useTierReward } from './ColourDealPicker';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import type { StoreBundle } from '@/types';
@@ -33,6 +35,9 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
   const { addItem, applyBundle } = useCart();
   const { isProfessional } = useAuth();
   const bundlesOn = useFeature('bundles');
+  const reward = useTierReward();
+  /** "Pick any colours" offer whose shade picker is open. */
+  const [picking, setPicking] = useState<StoreBundle | null>(null);
 
   const visibleBundles = bundleIds?.length ? bundles.filter((bundle) => bundleIds.includes(String(bundle.id))) : bundles;
 
@@ -59,6 +64,29 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
         {visibleBundles.map((bundle) => {
           const regular = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
           const price = bundlePrice(bundle, isProfessional);
+          if (bundle.promotionType === 'mix_match') {
+            const dealPicture = bundle.image ? `${bundle.image}?v=${encodeURIComponent(bundle.updatedAt ?? '')}` : null;
+            const top = bundle.tiers?.[bundle.tiers.length - 1];
+            return <article className="bundle-card bundle-card--colours" key={bundle.id}>
+              <div className={`bundle-card__media${dealPicture ? ' bundle-card__media--picture' : ''}`}>
+                {dealPicture
+                  ? <img src={dealPicture} alt={bundle.name} width={1080} height={1350} loading="lazy" decoding="async" />
+                  : <div className="bundle-card__palette" aria-hidden="true"><span /><span /><span /><span /><span /><span /></div>}
+                <div className="bundle-card__badges">
+                  {top && top.free > 0 && <span className="bundle-card__off">{top.min}+{top.free}</span>}
+                  {bundle.audience === 'stylist' && <span className="bundle-card__salon">{t('bundles.salonOffer')}</span>}
+                </div>
+              </div>
+              <div className="bundle-card__body">
+                <h4 className="bundle-card__title">{bundle.name}</h4>
+                <p className="bundle-card__lead">{t('bundles.pickAny')}{bundle.familyName ? ` · ${bundle.familyName}` : ''}</p>
+                <ol className="bundle-card__steps">
+                  {(bundle.tiers ?? []).map((tier) => <li key={tier.min}><strong>{t('bundles.colourCount', { count: tier.min })}</strong><span>{reward(tier)}</span></li>)}
+                </ol>
+                <Button type="primary" block size="large" shape="round" className="bundle-card__add" icon={<GiftOutlined />} onClick={() => setPicking(bundle)}>{t('bundles.pickColours')}</Button>
+              </div>
+            </article>;
+          }
           const saved = Math.max(0, regular - price);
           const off = regular > 0 ? Math.round((saved / regular) * 100) : 0;
           const isGift = bundle.promotionType === 'bonus_items';
@@ -95,6 +123,7 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
           </article>;
         })}
       </div>
+      {picking && <ColourDealPicker bundle={picking} open onClose={() => setPicking(null)} />}
     </section>
   );
 }

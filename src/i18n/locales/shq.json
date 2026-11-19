@@ -1151,6 +1151,26 @@
     "youSave": "Kurseni {{amount}}",
     "products_one": "{{count}} produkt",
     "products_other": "{{count}} produkte",
-    "gift": "Dhuratë"
+    "gift": "Dhuratë",
+    "pickColours": "Zgjidh ngjyrat",
+    "pickAny": "Çdo nuancë, si të duash",
+    "colourCount_one": "{{count}} ngjyrë",
+    "colourCount_other": "{{count}} ngjyra",
+    "freeColours_one": "{{count}} ngjyrë falas",
+    "freeColours_other": "{{count}} ngjyra falas",
+    "freeGiftOxidant": "oksidant falas",
+    "moreFor": "Edhe {{count}} për: {{reward}}",
+    "topReached": "Shpërblimi më i madh: {{reward}}",
+    "searchShade": "Kërko nuancë (p.sh. 7.1)",
+    "addShade": "Shto",
+    "removeShade": "Hiq një",
+    "chooseGift": "Dhurata juaj",
+    "giftWhenReached": "Falas kur arrini hapin.",
+    "addColours_one": "Shto {{count}} ngjyrë",
+    "addColours_other": "Shto {{count}} ngjyra",
+    "coloursAdded": "{{count}} ngjyra u shtuan në shportë",
+    "reachedNow": "Merrni: {{reward}}",
+    "addGift": "Shtoni oksidantin falas në shportë",
+    "from": "Nga {{count}} ngjyra"
   }
 }

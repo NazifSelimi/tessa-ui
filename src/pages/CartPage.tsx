@@ -28,6 +28,7 @@ import {
   SafetyCertificateOutlined,
   TruckOutlined,
   SearchOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/hooks/useCart';
@@ -41,6 +42,7 @@ import { Check, Plus } from 'lucide-react';
 import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 import QuantityStepper from '@/components/QuantityStepper';
 import { useGetCartQuoteQuery } from '@/features/orders/api';
+import { useTierReward } from '@/components/ColourDealPicker';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -48,11 +50,13 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isStylist } = useAuth();
+  const tierReward = useTierReward();
   const { items, bundleIds, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
   // Same server pricing as checkout, so set discounts show here too (not only at checkout).
   const { currentData: quote } = useGetCartQuoteQuery(
     { items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })), bundle_ids: bundleIds },
-    { skip: items.length === 0 || bundleIds.length === 0 },
+    // Salons always get a server price: colour deals apply without choosing an offer.
+    { skip: items.length === 0 || (bundleIds.length === 0 && !isStylist) },
   );
   const [quickSearch, setQuickSearch] = useState('');
   const [quickAdded, setQuickAdded] = useState<string | null>(null);
@@ -88,9 +92,10 @@ const CartPage: React.FC = () => {
     navigate('/checkout');
   };
 
-  const savings = quote && bundleIds.length ? Number(quote.bundleDiscount ?? 0) : 0;
+  const priced = Boolean(quote && (bundleIds.length || isStylist));
+  const savings = priced ? Number(quote?.bundleDiscount ?? 0) : 0;
   const totals = { subtotal, itemCount, savings };
-  const shipping = quote && bundleIds.length ? Number(quote.shipping ?? 0) : shippingForSubtotal(subtotal);
+  const shipping = priced ? Number(quote?.shipping ?? 0) : shippingForSubtotal(subtotal);
 
   if (items.length === 0) {
     return (
@@ -239,6 +244,15 @@ const CartPage: React.FC = () => {
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <ShippingProgress subtotal={totals.subtotal} />
             </div>
+
+            {(quote?.colourDeals ?? []).map((deal) => (
+              <div key={deal.bundleId} className="cart-colour-deal">
+                <Text strong><GiftOutlined /> {deal.name}</Text>
+                <Text>{t('bundles.colourCount', { count: deal.count })}{deal.reached ? ` · ${t('bundles.reachedNow', { reward: tierReward(deal.reached) })}` : ''}</Text>
+                {deal.next && <Text type="secondary">{t('bundles.moreFor', { count: deal.next.need, reward: tierReward(deal.next) })}</Text>}
+                {deal.giftMissing && <Text type="warning">{t('bundles.addGift')}</Text>}
+              </div>
+            ))}
 
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">

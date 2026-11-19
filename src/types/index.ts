@@ -526,7 +526,10 @@ export interface BundleProduct {
   bonusQuantity?: number;
 }
 
-export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items';
+export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items' | 'mix_match';
+
+/** A reward step of a "pick any colours" offer: from `min` colours, `free` colours free and/or a free gift (oxidant). */
+export interface BundleTier { min: number; free: number; gift: boolean }
 
 /** all = everyone, stylist = salons only, customer = shoppers and guests only. */
 export type BundleAudience = 'all' | 'stylist' | 'customer';
@@ -537,6 +540,11 @@ export interface StoreBundle {
   description: string | null;
   /** Picture made in Post Studio → Bundles (null until saved). */
   image?: string | null;
+  /** "Pick any colours" offers (mix_match): the colour line, one of its shades, and the reward steps. Products = gift choices. */
+  familyId?: string | null;
+  familyName?: string | null;
+  familyProductId?: string | null;
+  tiers?: BundleTier[] | null;
   isDynamic: false;
   discountPercentage: number | null;
   promotionType: BundlePromotionType;

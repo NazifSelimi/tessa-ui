@@ -1151,6 +1151,26 @@
     "youSave": "You save {{amount}}",
     "products_one": "{{count}} product",
     "products_other": "{{count}} products",
-    "gift": "Gift"
+    "gift": "Gift",
+    "pickColours": "Choose colours",
+    "pickAny": "Any shades, any mix",
+    "colourCount_one": "{{count}} colour",
+    "colourCount_other": "{{count}} colours",
+    "freeColours_one": "{{count}} free colour",
+    "freeColours_other": "{{count}} free colours",
+    "freeGiftOxidant": "free oxidant",
+    "moreFor": "{{count}} more for: {{reward}}",
+    "topReached": "Top reward reached: {{reward}}",
+    "searchShade": "Search a shade (e.g. 7.1)",
+    "addShade": "Add",
+    "removeShade": "Remove one",
+    "chooseGift": "Your gift",
+    "giftWhenReached": "Free once you reach the step.",
+    "addColours_one": "Add {{count}} colour",
+    "addColours_other": "Add {{count}} colours",
+    "coloursAdded": "{{count}} colours added to your cart",
+    "reachedNow": "You get: {{reward}}",
+    "addGift": "Add your free oxidant to the cart",
+    "from": "From {{count}} colours"
   }
 }

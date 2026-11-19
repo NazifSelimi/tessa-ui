@@ -56,6 +56,13 @@ export interface CartQuote {
   discountLimited: boolean;
   appliedBundleIds: string[];
   skippedBundles: Array<{ bundleId: string; reason: string }>;
+  /** "Pick any colours" offers the cart counts towards. */
+  colourDeals?: Array<{
+    bundleId: string; name: string; familyName: string | null; count: number;
+    reached: { min: number; free: number; gift: boolean } | null;
+    next: { min: number; free: number; gift: boolean; need: number } | null;
+    saving: number; giftProductId: string | null; giftOptions: string[]; giftMissing: boolean;
+  }>;
   couponCode: string | null;
   couponError: string | null;
   isReferralCode: boolean;

@@ -1151,6 +1151,26 @@
     "youSave": "Заштедувате {{amount}}",
     "products_one": "{{count}} производ",
     "products_other": "{{count}} производи",
-    "gift": "Подарок"
+    "gift": "Подарок",
+    "pickColours": "Избери бои",
+    "pickAny": "Било кои нијанси, по желба",
+    "colourCount_one": "{{count}} боја",
+    "colourCount_other": "{{count}} бои",
+    "freeColours_one": "{{count}} боја гратис",
+    "freeColours_other": "{{count}} бои гратис",
+    "freeGiftOxidant": "оксидант гратис",
+    "moreFor": "Уште {{count}} до: {{reward}}",
+    "topReached": "Освоивте најголема награда: {{reward}}",
+    "searchShade": "Барај нијанса (пр. 7.1)",
+    "addShade": "Додај",
+    "removeShade": "Одземи една",
+    "chooseGift": "Вашиот подарок",
+    "giftWhenReached": "Гратис кога ќе го достигнете чекорот.",
+    "addColours_one": "Додај {{count}} боја",
+    "addColours_other": "Додај {{count}} бои",
+    "coloursAdded": "{{count}} бои се додадени во кошничка",
+    "reachedNow": "Добивате: {{reward}}",
+    "addGift": "Додајте го гратис оксидантот во кошничка",
+    "from": "Од {{count}} бои"
   }
 }
