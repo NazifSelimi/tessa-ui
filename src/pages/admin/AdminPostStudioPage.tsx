@@ -38,7 +38,7 @@ import {
   type Platform, type Tone,
 } from '@/features/studio/caption';
 import { IDEAS, IDEA_GROUPS, ideaById, ideaText, upcomingIdeas, type IdeaGroup, type PostIdea } from '@/features/studio/ideas';
-import { useGetAdminBundlesQuery, useGetAllProductsQuery } from '@/features/admin/api';
+import { useGetAdminBundlesQuery, useGetAllProductsQuery, useUploadBundleImageMutation } from '@/features/admin/api';
 import { useLazyGetProductByIdQuery } from '@/features/products/api';
 import type { Product, StoreBundle } from '@/types';
 import { formatPrice } from '@/shared/utils/formatPrice';
@@ -387,6 +387,10 @@ export default function AdminPostStudioPage() {
   /* ------------------------------------------------------------ bundle → offer post */
 
   const { data: bundles = [] } = useGetAdminBundlesQuery();
+  /** Bundle whose picture this post becomes ("Save as bundle picture"); set when a bundle is opened here. */
+  const [bundleTargetId, setBundleTargetId] = useState<string | null>(null);
+  const bundleTarget = bundles.find((item) => item.id === bundleTargetId) ?? null;
+  const [uploadBundleImage, { isLoading: savingBundlePicture }] = useUploadBundleImageMutation();
 
   /** Turns a bundle into an Offer post: its products, a "-10%" sticker and "together X instead of Y". */
   const applyBundle = (bundle: StoreBundle) => {
@@ -394,7 +398,7 @@ export default function AdminPostStudioPage() {
     setDesign((current) => ({ ...current, ...templateDefaults('offer', current.lang), ...post.design }));
     selectProducts(post.productIds);
     setCaptionEdited(null);
-    setActiveTab('create');
+    setBundleTargetId(bundle.id);
     if (bundle.products.length > OFFER_MAX_PRODUCTS) message.info(`Offer posts show ${OFFER_MAX_PRODUCTS} products; the bundle has ${bundle.products.length}. Try the Product lineup layout for all of them.`);
   };
 
@@ -427,6 +431,20 @@ export default function AdminPostStudioPage() {
       if (chosen[0]) setDesign((current) => ({ ...current, headline: chosen[0].name, subline: chosen[0].brand }));
     });
   }, [catalogue, searchParams, selectProducts]);
+
+  // ?bundle=ID (from Admin → Offers & Bundles) opens that bundle as a post to change its picture.
+  const bundleOpened = useRef(false);
+  useEffect(() => {
+    const id = searchParams.get('bundle');
+    if (!id || bundleOpened.current || !catalogue || !bundles.length) return;
+    bundleOpened.current = true;
+    writeUrlParam('bundle', null);
+    const bundle = bundles.find((item) => item.id === id);
+    if (bundle) applyBundle(bundle);
+    else message.error('That bundle was not found.');
+    // applyBundle is recreated every render; this runs once per ?bundle=.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogue, bundles, searchParams]);
 
   const onProductsChange = (ids: string[]) => {
     if (erasingId && !ids.includes(erasingId)) setErasingId(null);
@@ -1171,6 +1189,25 @@ export default function AdminPostStudioPage() {
     message.success(`Downloaded ${format.width}×${format.height} PNG`);
   };
 
+  /** Saves the post as the picture the bundle shows in the shop (replaces its old picture). */
+  const saveAsBundlePicture = async () => {
+    if (!bundleTarget) return;
+    const canvas = canvasRef.current;
+    const blob = canvas ? await new Promise<Blob | null>((resolve) => {
+      try { canvas.toBlob(resolve, 'image/webp', 0.9); } catch { resolve(null); }
+    }) : null;
+    if (!blob) {
+      message.error('Could not export the image (a photo may come from another website).');
+      return;
+    }
+    try {
+      await uploadBundleImage({ id: bundleTarget.id, image: blob }).unwrap();
+      message.success(`Saved as the picture of "${bundleTarget.name}"`);
+    } catch {
+      message.error('The picture was not saved.');
+    }
+  };
+
   /** Transparent, trimmed, full-size PNG of one product (not saved to the shop's photos). */
   const downloadCutout = async (product: StudioProduct) => {
     const photo = await loadImage(product.photos[product.photoIndex]);
@@ -1332,7 +1369,7 @@ export default function AdminPostStudioPage() {
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
-    if (searchParams.get('product')) return;
+    if (searchParams.get('product') || searchParams.get('bundle')) return;
     try {
       const saved = JSON.parse(window.localStorage.getItem(AUTOSAVE_KEY) ?? 'null') as Draft | null;
       if (saved?.design) {
@@ -1374,6 +1411,7 @@ export default function AdminPostStudioPage() {
     setProducts([]);
     setBackgroundUrl(null);
     setCaptionEdited(null);
+    setBundleTargetId(null);
     setSocial((current) => ({ ...initialSocial(), platform: current.platform }));
   };
 
@@ -2188,6 +2226,16 @@ export default function AdminPostStudioPage() {
                   {slides.length > 0 && <Button icon={<DownloadOutlined />} onClick={exportSlides}>All {slides.length} slides</Button>}
                   <Button type="primary" icon={<DownloadOutlined />} onClick={download}>{slides.length ? 'This slide' : 'Download PNG'}</Button>
                 </Space>
+                {bundleTarget && (
+                  <Space wrap className="post-studio__bundle-target">
+                    <GiftOutlined />
+                    <Text>Bundle: <strong>{bundleTarget.name}</strong></Text>
+                    <Tooltip title="Replaces the picture this bundle shows in the shop and in Post Studio → Bundles">
+                      <Button type="primary" icon={<SaveOutlined />} loading={savingBundlePicture} onClick={saveAsBundlePicture}>Save as bundle picture</Button>
+                    </Tooltip>
+                    <Button type="text" size="small" onClick={() => setBundleTargetId(null)}>Not for this bundle</Button>
+                  </Space>
+                )}
               </div>
             </Card>
 
@@ -2320,7 +2368,7 @@ export default function AdminPostStudioPage() {
                   bundles={bundles}
                   baseDesign={initialDesign}
                   loadProducts={loadStudioProducts}
-                  onEdit={applyBundle}
+                  onEdit={(bundle) => { applyBundle(bundle); setActiveTab('create'); }}
                   ready={fontsReady && !catalogueLoading}
                 />
               </ErrorBoundary>

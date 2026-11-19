@@ -6,6 +6,7 @@ import type { BundlePromotionType, StoreBundle } from '@/types';
 import { extractErrorMessage } from '@/shared/utils/error';
 import OfferProfitPanel from '@/components/OfferProfitPanel';
 import PricingSettingsCard from '@/components/PricingSettingsCard';
+import BundlePicture, { BundlePictureThumb } from '@/features/admin/BundlePicture';
 
 const { Title, Text } = Typography;
 
@@ -34,6 +35,8 @@ export default function AdminBundlesPage() {
   const draft = Form.useWatch([], form);
 
   const products = productPage?.data ?? [];
+  /** The bundle being edited as the list has it now, so a new picture shows at once. */
+  const liveEditing = editing ? bundles.find((item) => item.id === editing.id) ?? editing : null;
 
   /** Normal price of the chosen products (salon prices for a stylist offer), free items not counted. */
   const normalTotal = (values: Partial<BundleForm>) => (values.products ?? []).reduce((sum, line) => {
@@ -126,6 +129,7 @@ export default function AdminBundlesPage() {
         dataSource={bundles}
         pagination={{ pageSize: 10 }}
         columns={[
+          { title: 'Picture', width: 72, render: (_: unknown, row: StoreBundle) => <BundlePictureThumb bundle={row} /> },
           { title: 'Offer', dataIndex: 'name', render: (name: string, row: StoreBundle) => <Space direction="vertical" size={0}><Text strong>{name}</Text><Text type="secondary">{row.products.length} product lines</Text></Space> },
           { title: 'Type', render: (_: unknown, row: StoreBundle) => <Tag color={row.promotionType === 'bonus_items' ? 'gold' : 'blue'}>{row.promotionType.replace('_', ' ')}</Tag> },
           { title: 'Audience', dataIndex: 'audience', render: (audience: string) => <Tag color={audience === 'stylist' ? 'purple' : 'green'}>{audience === 'stylist' ? 'Stylist only' : 'Everyone'}</Tag> },
@@ -162,6 +166,11 @@ export default function AdminBundlesPage() {
                 <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, bonus_quantity: 0 })}>Add product</Button>
               </Space>}
             </Form.List>
+          </Card>
+          <Card size="small" title="Picture in the shop" style={{ marginBottom: 16 }}>
+            {liveEditing
+              ? <BundlePicture bundle={liveEditing} />
+              : <Text type="secondary">Save the offer first, then add its picture here or in Post Studio → Bundles.</Text>}
           </Card>
           <Card size="small" title="What this offer earns" style={{ marginBottom: 16 }}>
             {open && <OfferProfitPanel draft={draft ?? {}} />}

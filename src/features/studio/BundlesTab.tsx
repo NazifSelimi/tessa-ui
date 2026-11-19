@@ -2,12 +2,12 @@
  * Post Studio → Bundles: one ready picture per bundle, made with the Offer
  * layout (bundle name, "-10%" sticker, "together X instead of Y", up to three
  * product photos) and saved on the server with the bundle, so every admin sees
- * the same pictures. "Edit in Create" opens the bundle as a normal post for
- * hand changes; that post can be downloaded, not saved here.
+ * the same pictures. "Edit" opens the bundle in Create for hand changes and
+ * "Save as bundle picture" there replaces it; admins can also upload their own.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { App, Button, Card, Empty, Popconfirm, Progress, Segmented, Select, Space, Tag, Tooltip, Typography } from 'antd';
-import { DeleteOutlined, DownloadOutlined, EditOutlined, PictureOutlined, ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { App, Button, Card, Empty, Popconfirm, Progress, Segmented, Select, Space, Tag, Tooltip, Typography, Upload } from 'antd';
+import { DeleteOutlined, DownloadOutlined, EditOutlined, PictureOutlined, ReloadOutlined, ThunderboltOutlined, UploadOutlined } from '@ant-design/icons';
 import { useDeleteBundleImageMutation, useUploadBundleImageMutation } from '@/features/admin/api';
 import { formatDate } from '@/shared/utils/formatDate';
 import type { StoreBundle } from '@/types';
@@ -167,6 +167,24 @@ export default function BundlesTab({ bundles, baseDesign, loadProducts, onEdit, 
     }
   };
 
+  /** Admin's own image instead of the made one. */
+  const uploadOwn = async (bundle: StoreBundle, file: File) => {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      message.error('Use a PNG, JPG or WebP image up to 5 MB.');
+      return false;
+    }
+    setBusyFor(bundle.id, true);
+    try {
+      await uploadImage({ id: bundle.id, image: file }).unwrap();
+      message.success(`Your image is now the picture of "${bundle.name}"`);
+    } catch {
+      message.error('The image was not saved.');
+    } finally {
+      setBusyFor(bundle.id, false);
+    }
+    return false;
+  };
+
   const remove = async (bundle: StoreBundle) => {
     try {
       await deleteImage(bundle.id).unwrap();
@@ -238,7 +256,7 @@ export default function BundlesTab({ bundles, baseDesign, loadProducts, onEdit, 
         )}
         <Paragraph type="secondary" style={{ fontSize: 12, margin: '10px 0 0' }}>
           Pictures use the Offer layout with up to {OFFER_MAX_PRODUCTS} products (the ones with photos first) and are saved with the bundle.
-          For hand changes use <strong>Edit in Create</strong>, download the post there, and keep it.
+          To pick other products or photos, change texts or colours, use <strong>Edit</strong> (opens Create, then <strong>Save as bundle picture</strong>), or upload your own image.
         </Paragraph>
       </Card>
 
@@ -271,7 +289,12 @@ export default function BundlesTab({ bundles, baseDesign, loadProducts, onEdit, 
                   <Tooltip key="download" title="Download the picture">
                     <Button type="text" size="small" icon={<DownloadOutlined />} disabled={!url} onClick={() => download(bundle)} aria-label="Download" />
                   </Tooltip>,
-                  <Tooltip key="edit" title="Open as a post in Create to change it by hand">
+                  <Upload key="upload" accept="image/png,image/jpeg,image/webp" showUploadList={false} beforeUpload={(file) => uploadOwn(bundle, file)} disabled={running}>
+                    <Tooltip title="Use my own image as this bundle's picture">
+                      <Button type="text" size="small" icon={<UploadOutlined />} disabled={running} aria-label="Upload my image" />
+                    </Tooltip>
+                  </Upload>,
+                  <Tooltip key="edit" title="Open in Create: change products, photos and texts, then Save as bundle picture">
                     <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(bundle)} aria-label="Edit in Create" />
                   </Tooltip>,
                   <Popconfirm key="remove" title="Remove this picture?" okText="Remove" onConfirm={() => remove(bundle)} disabled={!url}>

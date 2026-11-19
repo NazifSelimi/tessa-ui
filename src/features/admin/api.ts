@@ -609,7 +609,7 @@ export const adminApi = baseApi.injectEndpoints({
     uploadBundleImage: builder.mutation<StoreBundle, { id: string; image: Blob }>({
       query: ({ id, image }) => {
         const body = new FormData();
-        body.append('image', image, `bundle-${id}.${image.type === 'image/png' ? 'png' : 'webp'}`);
+        body.append('image', image, `bundle-${id}.${({ 'image/png': 'png', 'image/jpeg': 'jpg' } as Record<string, string>)[image.type] ?? 'webp'}`);
         return { url: `/v1/admin/bundles/${id}/image`, method: 'POST', body, formData: true };
       },
       transformResponse: (response: any) => response.data,

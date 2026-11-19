@@ -183,3 +183,10 @@
 @media (max-width: 480px) {
   .studio-bundles__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 }
+.post-studio__bundle-target {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ant-color-primary-bg, #fbeef1);
+}
