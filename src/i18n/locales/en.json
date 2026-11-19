@@ -1147,6 +1147,10 @@
     "salonOffer": "FOR SALONS",
     "limitedOffer": "LIMITED OFFER",
     "add": "Add the set",
-    "added": "{{name}} added to your cart"
+    "added": "{{name}} added to your cart",
+    "youSave": "You save {{amount}}",
+    "products_one": "{{count}} product",
+    "products_other": "{{count}} products",
+    "gift": "Gift"
   }
 }

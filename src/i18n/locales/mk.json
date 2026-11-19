@@ -1147,6 +1147,10 @@
     "salonOffer": "ЗА САЛОНИ",
     "limitedOffer": "ОГРАНИЧЕНА ПОНУДА",
     "add": "Додај го сетот",
-    "added": "{{name}} е додаден во кошничка"
+    "added": "{{name}} е додаден во кошничка",
+    "youSave": "Заштедувате {{amount}}",
+    "products_one": "{{count}} производ",
+    "products_other": "{{count}} производи",
+    "gift": "Подарок"
   }
 }

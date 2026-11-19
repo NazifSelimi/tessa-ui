@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CatalogState } from './storefront/DesignPrimitives';
-import { Button, Tag, Typography, message } from 'antd';
+import { Button, Typography, message } from 'antd';
 import { GiftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useGetBundlesQuery } from '@/features/products/api';
 import { useCart } from '@/hooks/useCart';
@@ -59,16 +59,39 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
         {visibleBundles.map((bundle) => {
           const regular = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
           const price = bundlePrice(bundle, isProfessional);
-          // Picture made in Post Studio → Bundles; ?v= makes a remade picture show at once.
+          const saved = Math.max(0, regular - price);
+          const off = regular > 0 ? Math.round((saved / regular) * 100) : 0;
+          const isGift = bundle.promotionType === 'bonus_items';
+          // Picture made in Post Studio → Bundles (or uploaded by an admin); ?v= shows a new one at once.
           const picture = bundle.image ? `${bundle.image}?v=${encodeURIComponent(bundle.updatedAt ?? '')}` : null;
-          return <article className={`bundle-deal-card${picture ? ' bundle-deal-card--picture' : ''}`} key={bundle.id}>
-            {picture && <img className="bundle-deal-card__picture" src={picture} alt={bundle.name} width={1080} height={1350} loading="lazy" decoding="async" />}
-            <div className="bundle-deal-card__top"><Tag>{bundle.audience === 'stylist' ? t('bundles.salonOffer') : t('bundles.limitedOffer')}</Tag><GiftOutlined /></div>
-            <Title level={4}>{bundle.name}</Title>
-            <Text type="secondary" className="bundle-deal-card__copy">{bundle.description}</Text>
-            <div className="bundle-deal-card__items">{bundle.products.map((product) => <span key={product.id}>{product.quantity}x {product.name}{(product.bonusQuantity ?? 0) > 0 ? ` - ${product.bonusQuantity} free` : ''}</span>)}</div>
-            <div className="bundle-deal-card__price"><Text delete>{formatPrice(regular)}</Text><strong>{formatPrice(price)}</strong></div>
-            <Button type="primary" block icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>{t('bundles.add')}</Button>
+          const photos = bundle.products.filter((product) => product.image).slice(0, 3);
+          return <article className="bundle-card" key={bundle.id}>
+            <div className={`bundle-card__media${picture ? ' bundle-card__media--picture' : ''}`}>
+              {picture
+                ? <img src={picture} alt={bundle.name} width={1080} height={1350} loading="lazy" decoding="async" />
+                : <div className={`bundle-card__collage bundle-card__collage--${photos.length || 0}`} aria-hidden="true">
+                    {photos.length ? photos.map((product) => <img key={product.id} src={product.image ?? ''} alt="" loading="lazy" decoding="async" />) : <GiftOutlined />}
+                  </div>}
+              <div className="bundle-card__badges">
+                {(isGift || off > 0) && <span className="bundle-card__off">{isGift ? <><GiftOutlined /> {t('bundles.gift')}</> : `-${off}%`}</span>}
+                {bundle.audience === 'stylist' && <span className="bundle-card__salon">{t('bundles.salonOffer')}</span>}
+              </div>
+            </div>
+            <div className="bundle-card__body">
+              <h4 className="bundle-card__title">{bundle.name}</h4>
+              <ul className="bundle-card__items">
+                {bundle.products.map((product) => <li key={product.id}>
+                  <span className="bundle-card__qty">{product.quantity}×</span>{product.name}
+                  {(product.bonusQuantity ?? 0) > 0 && <em> · {product.bonusQuantity} {t('bundles.gift').toLowerCase()}</em>}
+                </li>)}
+              </ul>
+              <div className="bundle-card__price">
+                <strong>{formatPrice(price)}</strong>
+                {saved > 0 && <s>{formatPrice(regular)}</s>}
+              </div>
+              {saved > 0 && <span className="bundle-card__save">{t('bundles.youSave', { amount: formatPrice(saved) })}</span>}
+              <Button type="primary" block size="large" shape="round" className="bundle-card__add" icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>{t('bundles.add')}</Button>
+            </div>
           </article>;
         })}
       </div>
