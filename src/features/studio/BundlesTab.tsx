@@ -43,6 +43,8 @@ const writeSettings = (settings: Settings) => {
   }
 };
 
+const wait = (ms: number) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
 const isLive = (bundle: StoreBundle) => bundle.isActive && (!bundle.endsAt || new Date(bundle.endsAt) > new Date());
 
 /** Picture URL with the bundle's update time, so a remade picture is not served from the browser cache. */
@@ -122,17 +124,26 @@ export default function BundlesTab({ bundles, baseDesign, loadProducts, onEdit, 
     }
   });
 
-  /** Makes and saves one bundle's picture; true when it worked. */
+  /** Makes and saves one bundle's picture; true when it worked. Waits and tries again when the server says "too many requests". */
   const make = async (bundle: StoreBundle, quiet = false): Promise<boolean> => {
     setBusyFor(bundle.id, true);
     try {
-      const blob = await toBlob(await draw(bundle));
-      await uploadImage({ id: bundle.id, image: blob }).unwrap();
-      if (!quiet) message.success(`Picture saved for "${bundle.name}"`);
-      return true;
-    } catch (error) {
-      message.error(`"${bundle.name}": ${error instanceof Error ? error.message : 'the picture was not saved'}`);
-      return false;
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          const blob = await toBlob(await draw(bundle));
+          await uploadImage({ id: bundle.id, image: blob }).unwrap();
+          if (!quiet) message.success(`Picture saved for "${bundle.name}"`);
+          return true;
+        } catch (error) {
+          const limited = (error as { status?: number })?.status === 429;
+          if (limited && attempt < 3 && !stopBatch.current) {
+            await wait(10000 * (attempt + 1));
+            continue;
+          }
+          message.error(`"${bundle.name}": ${error instanceof Error ? error.message : limited ? 'the server is busy, try again in a minute' : 'the picture was not saved'}`);
+          return false;
+        }
+      }
     } finally {
       setBusyFor(bundle.id, false);
     }
@@ -147,6 +158,7 @@ export default function BundlesTab({ bundles, baseDesign, loadProducts, onEdit, 
       if (stopBatch.current) break;
       if (await make(bundle, true)) saved += 1;
       setBatch({ done: index + 1, total: list.length });
+      await wait(700); // stay under the server's request limit
     }
     setBatch(null);
     message.success(`${saved} of ${list.length} bundle pictures saved`);
@@ -306,6 +318,7 @@ export default function BundlesTab({ bundles, baseDesign, loadProducts, onEdit, 
                 <Space size={[4, 4]} wrap style={{ marginTop: 6 }}>
                   {isLive(bundle) ? <Tag color="green">Live</Tag> : <Tag>{bundle.isActive ? 'Ended' : 'Draft'}</Tag>}
                   {bundle.audience === 'stylist' && <Tag color="purple">Salons</Tag>}
+                  {bundle.audience === 'customer' && <Tag color="blue">Shoppers</Tag>}
                   <Tag>{bundle.products.length} products</Tag>
                   {bundle.endsAt && <Text type="secondary" style={{ fontSize: 12 }}>until {formatDate(new Date(bundle.endsAt))}</Text>}
                 </Space>

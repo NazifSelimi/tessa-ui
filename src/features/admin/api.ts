@@ -20,7 +20,7 @@ import type {
   DashboardStats,
   PaginatedResponse
 } from '@/types';
-import type { StoreBundle } from '@/types';
+import type { BundleAudience, StoreBundle } from '@/types';
 import type { ProductsQueryParams } from '@/features/products/api';
 
 // Query params for admin endpoints
@@ -134,16 +134,19 @@ export type OfferSimulation = {
 type BundlePayload = {
   name?: string;
   description?: string;
-  audience?: 'all' | 'stylist';
+  audience?: BundleAudience;
   promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items';
   discount_percentage?: number;
   bundle_price?: number;
   is_active?: boolean;
   is_featured?: boolean;
-  starts_at?: string;
-  ends_at?: string;
-  products: Array<{ product_id: string | number; quantity: number; bonus_quantity?: number }>;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  /** Leave out to keep the offer's products (quick on/off changes). */
+  products?: Array<{ product_id: string | number; quantity: number; bonus_quantity?: number }>;
 };
+
+export type BundleBulkAction = 'activate' | 'deactivate' | 'feature' | 'unfeature' | 'audience' | 'discount' | 'ends_at' | 'delete';
 
 export type ContentBlockKind = 'hero' | 'grid' | 'rich_text' | 'cta' | 'bundle_rail';
 
@@ -605,6 +608,13 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [API_TAGS.Bundles],
     }),
 
+    /** One change for many offers at once. */
+    bulkBundles: builder.mutation<{ updated: number }, { ids: string[]; action: BundleBulkAction; value?: string | number | null }>({
+      query: (body) => ({ url: '/v1/admin/bundles/bulk', method: 'POST', body }),
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: [API_TAGS.Bundles],
+    }),
+
     /** Picture made in Post Studio → Bundles; replaces the bundle's previous picture. */
     uploadBundleImage: builder.mutation<StoreBundle, { id: string; image: Blob }>({
       query: ({ id, image }) => {
@@ -712,6 +722,7 @@ export const {
   useUpdateBundleMutation,
   useDeleteBundleMutation,
   useUploadBundleImageMutation,
+  useBulkBundlesMutation,
   useDeleteBundleImageMutation,
   useSimulateBundleMutation,
   useGetPricingSettingsQuery,

@@ -6,7 +6,7 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 const { Text } = Typography;
 
 type OfferDraft = {
-  audience?: 'all' | 'stylist';
+  audience?: import('@/types').BundleAudience;
   promotion_type?: 'percentage' | 'fixed_price' | 'bonus_items';
   discount_percentage?: number;
   bundle_price?: number;

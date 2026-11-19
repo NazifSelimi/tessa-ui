@@ -528,6 +528,9 @@ export interface BundleProduct {
 
 export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items';
 
+/** all = everyone, stylist = salons only, customer = shoppers and guests only. */
+export type BundleAudience = 'all' | 'stylist' | 'customer';
+
 export interface StoreBundle {
   id: string;
   name: string;
@@ -538,7 +541,7 @@ export interface StoreBundle {
   discountPercentage: number | null;
   promotionType: BundlePromotionType;
   bundlePrice: number | null;
-  audience: 'all' | 'stylist';
+  audience: BundleAudience;
   isActive: boolean;
   isFeatured: boolean;
   startsAt: string | null;
