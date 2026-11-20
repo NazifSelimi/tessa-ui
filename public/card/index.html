@@ -38,10 +38,15 @@ h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:clamp(
 .save{background:var(--ink);color:#fff}
 .save:hover{background:var(--wine)}
 .share{background:#fff;color:var(--ink);border:1px solid #e2d6cc !important}
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;color:var(--wine)}
+.bg svg{position:absolute;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.16}
+@media (prefers-reduced-motion:no-preference){.bg svg{animation:drift 14s ease-in-out infinite alternate}.bg svg:nth-child(2n){animation-duration:18s}}
+@keyframes drift{to{translate:0 -14px;rotate:6deg}}
 @media (prefers-reduced-motion:reduce){.flip{transition:none}}
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"><svg viewBox="0 0 64 64" style="left:6%;top:8%;width:70px;rotate:-20deg"><circle cx="16" cy="48" r="9"/><circle cx="48" cy="48" r="9"/><path d="M22 41 52 6M42 41 12 6"/></svg><svg viewBox="0 0 64 64" style="left:78%;top:5%;width:80px;rotate:0deg"><path d="M8 4c18 10-6 22 12 34s-4 20 10 24M20 4c18 10-6 22 12 34s-4 20 10 24M32 4c18 10-6 22 12 34s-4 20 10 24"/></svg><svg viewBox="0 0 64 64" style="left:82%;top:30%;width:64px;rotate:25deg"><path d="M4 18h56v8H4z"/><path d="M8 26v24M14 26v24M20 26v24M26 26v24M32 26v24M38 26v24M44 26v24M50 26v24M56 26v24"/></svg><svg viewBox="0 0 64 64" style="left:4%;top:34%;width:60px;rotate:-10deg"><path d="M26 4h12v8H26zM24 12h16l4 8v38a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4V20z"/><path d="M20 30h24M20 46h24"/></svg><svg viewBox="0 0 64 64" style="left:8%;top:70%;width:78px;rotate:10deg"><path d="M6 22a16 16 0 0 1 32 0 16 16 0 0 1-32 0z"/><path d="M38 14h18v16H38M22 38l-4 22h10l4-22"/><circle cx="22" cy="22" r="6"/><path d="M58 18h4M58 26h4"/></svg><svg viewBox="0 0 64 64" style="left:84%;top:62%;width:56px;rotate:15deg"><path d="M22 60V34h20v26zM24 34V22l16-10v22"/><path d="M20 60h24"/></svg><svg viewBox="0 0 64 64" style="left:60%;top:84%;width:60px;rotate:-15deg"><path d="M30 60V30M24 30h12l4-8H20z"/><path d="M22 22c-2-8 2-16 8-18 6 2 10 10 8 18"/></svg><svg viewBox="0 0 64 64" style="left:30%;top:4%;width:48px;rotate:30deg"><path d="M8 56C8 24 28 8 56 8c0 28-16 48-48 48zM8 56 40 24"/></svg><svg viewBox="0 0 64 64" style="left:40%;top:90%;width:54px;rotate:40deg"><circle cx="16" cy="48" r="9"/><circle cx="48" cy="48" r="9"/><path d="M22 41 52 6M42 41 12 6"/></svg><svg viewBox="0 0 64 64" style="left:2%;top:88%;width:60px;rotate:0deg"><path d="M8 4c18 10-6 22 12 34s-4 20 10 24M20 4c18 10-6 22 12 34s-4 20 10 24M32 4c18 10-6 22 12 34s-4 20 10 24"/></svg><svg viewBox="0 0 64 64" style="left:88%;top:86%;width:44px;rotate:-30deg"><path d="M8 56C8 24 28 8 56 8c0 28-16 48-48 48zM8 56 40 24"/></svg></div>
 <div class="scene" id="card" role="button" tabindex="0" aria-label="Business card, tap to flip">
   <div class="flip">
     <div class="face front">
