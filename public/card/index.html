@@ -10,32 +10,42 @@
 <link rel="icon" href="/favicon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap">
 <style>
-:root{--wine:#733a49;--ink:#242124;--cream:#fffdf9;--sand:#f6eddc;--muted:#6f6468}
+:root{--wine:#733a49;--wine-d:#5a2c39;--ink:#242124;--cream:#fffdf9;--sand:#efe6da;--gold:#c9a96e;--muted:#6f6468}
 *{box-sizing:border-box;margin:0}
-body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:var(--sand);font-family:"DM Sans",system-ui,sans-serif;color:var(--ink)}
-.card{width:100%;max-width:400px;background:var(--cream);border-radius:22px;overflow:hidden;box-shadow:0 20px 50px rgba(115,58,73,.18)}
-.top{background:var(--wine);color:#fff;padding:34px 28px 28px;text-align:center}
-.top svg.logo{height:46px;width:auto;color:#fff}
-.tag{margin-top:8px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;opacity:.8}
-.body{padding:30px 28px 28px;text-align:center}
-h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:34px;line-height:1.1}
-.role{margin-top:8px;font-weight:600;color:var(--wine);letter-spacing:.04em}
-.role-mk{margin-top:2px;font-size:14px;color:var(--muted)}
-.links{margin:24px 0 0;display:grid;gap:10px}
-.links a{display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid #eadfd8;border-radius:12px;color:var(--ink);text-decoration:none;font-weight:500;text-align:left}
-.links a:hover{border-color:var(--wine)}
-.links svg{width:20px;height:20px;flex:none;color:var(--wine)}
-.qr{margin:26px auto 6px;width:150px;padding:12px;background:#fff;border-radius:14px;border:1px solid #eadfd8}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:28px 16px;background:radial-gradient(circle at 30% 20%,#f8f1e8,var(--sand));font-family:"DM Sans",system-ui,sans-serif;color:var(--ink)}
+.scene{width:100%;max-width:520px;aspect-ratio:85/55;perspective:1400px;cursor:pointer}
+.flip{position:relative;width:100%;height:100%;transition:transform .8s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
+.scene.back .flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:16px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 2px 4px rgba(0,0,0,.08),0 24px 50px rgba(90,44,57,.28)}
+.front{background:linear-gradient(135deg,var(--wine),var(--wine-d));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.front::after{content:"";position:absolute;inset:12px;border:1px solid rgba(201,169,110,.55);border-radius:10px}
+.front svg.logo{width:52%;height:auto;color:#fff}
+.front .tag{margin-top:10px;font-size:clamp(10px,2.4vw,13px);letter-spacing:.45em;text-transform:uppercase;color:var(--gold)}
+.backf{transform:rotateY(180deg);background:var(--cream);display:grid;grid-template-columns:1fr auto;align-items:center;gap:4%;padding:7% 7%}
+.backf::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--wine)}
+h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:clamp(20px,5.6vw,32px);line-height:1.05}
+.role{margin-top:4px;font-size:clamp(11px,2.6vw,14px);font-weight:600;color:var(--wine);letter-spacing:.06em;text-transform:uppercase}
+.role-mk{font-size:clamp(9px,2.2vw,12px);color:var(--muted)}
+.rule{width:36px;height:2px;background:var(--gold);margin:clamp(8px,2.4vw,14px) 0}
+.c{display:flex;align-items:center;gap:7px;font-size:clamp(10px,2.6vw,14px);color:var(--ink);text-decoration:none;margin-top:4px}
+.c svg{width:1.1em;height:1.1em;color:var(--wine);flex:none}
+.qr{width:clamp(70px,22vw,120px);padding:6px;background:#fff;border-radius:8px;border:1px solid #eadfd8}
 .qr svg{display:block;width:100%;height:auto}
-.qr-note{font-size:13px;color:var(--muted)}
-.save{display:block;margin-top:22px;padding:14px;border-radius:12px;background:var(--ink);color:#fff;text-decoration:none;font-weight:600}
+.mini{position:absolute;right:7%;bottom:6%;width:14%;color:var(--wine);opacity:.9}
+.hint{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:10px;width:100%;max-width:520px}
+.actions a,.actions button{flex:1;padding:14px;border-radius:12px;border:0;font:600 15px "DM Sans",sans-serif;text-align:center;text-decoration:none;cursor:pointer}
+.save{background:var(--ink);color:#fff}
 .save:hover{background:var(--wine)}
+.share{background:#fff;color:var(--ink);border:1px solid #e2d6cc !important}
+@media (prefers-reduced-motion:reduce){.flip{transition:none}}
 </style>
 </head>
 <body>
-<main class="card">
-  <div class="top">
-    <svg class="logo" viewBox="0 0 268 102" aria-label="TESSA">      <g transform="translate(0,102) scale(0.1,-0.1)" fill="currentColor" stroke="none">
+<div class="scene" id="card" role="button" tabindex="0" aria-label="Business card, tap to flip">
+  <div class="flip">
+    <div class="face front">
+      <svg class="logo" viewBox="0 0 268 102" aria-label="TESSA">      <g transform="translate(0,102) scale(0.1,-0.1)" fill="currentColor" stroke="none">
         <path d="M1139 963 c-88 -45 -119 -116 -86 -196 8 -18 53 -81 102 -142 157 -197 211 -298 201 -373 -8 -58 -49 -128 -89 -152 -42 -26 -105 -34 -163 -22 -27 6 -51 9 -53 6 -2 -2 18 -14 45 -26 72 -33 172 -31 240 4 96 50 144 128 144 233 0 51 -6 75 -35 131 -34 69 -53 94 -197 263 -88 104 -111 156 -87 200 8 14 27 32 43 39 40 20 111 -8 138 -54 11 -19 26 -34 34 -34 8 0 14 -8 14 -17 0 -10 3 -28 6 -40 5 -18 1 -25 -20 -33 -17 -6 -26 -17 -26 -32 0 -13 -3 -33 -6 -45 -10 -36 13 -27 45 18 55 76 60 182 9 236 -61 67 -168 81 -259 36z"/>
         <path d="M1605 967 c-71 -34 -97 -66 -103 -125 -6 -63 7 -88 118 -227 99 -124 172 -240 190 -301 10 -34 10 -50 -4 -97 -34 -117 -136 -170 -259 -136 -56 15 -55 5 0 -22 67 -32 181 -33 239 -2 65 34 100 69 128 125 60 121 12 263 -147 435 l-54 57 -47 -14 c-52 -14 -54 -13 -85 43 -19 34 -20 40 -7 59 11 15 12 27 5 45 -5 13 -6 35 -3 49 7 27 58 74 80 74 8 0 19 11 24 25 12 31 51 33 97 5 41 -25 57 -54 40 -72 -15 -16 -18 -240 -2 -235 5 2 23 25 39 51 37 59 47 146 22 194 -43 82 -174 116 -271 69z"/>
         <path d="M83 950 c-26 -11 -31 -45 -7 -54 9 -3 41 -6 73 -6 31 0 62 -5 69 -12 9 -9 12 -95 12 -323 0 -230 4 -316 13 -335 31 -61 125 -60 146 2 7 20 11 146 11 344 l0 314 23 5 c12 3 46 6 76 7 59 3 87 26 63 50 -16 16 -444 23 -479 8z"/>
@@ -44,20 +54,38 @@ h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:34px;l
         <path d="M60 95 c0 -13 56 -15 456 -15 360 0 455 3 452 12 -4 10 -106 14 -456 16 -398 2 -452 0 -452 -13z"/>
         <path d="M1917 103 c-4 -3 -7 -10 -7 -15 0 -4 140 -8 311 -8 244 0 310 3 307 13 -4 9 -75 13 -305 15 -164 1 -302 -1 -306 -5z"/>
       </g></svg>
-    <div class="tag">Hair Care</div>
-  </div>
-  <div class="body">
-    <h1>Safija Selimi</h1>
-    <p class="role">Founder &amp; CEO</p>
-    <p class="role-mk">Основач и генерален директор</p>
-    <div class="links">
-      <a href="mailto:tessa@tessa.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>tessa@tessa.com</a>
-      <a href="https://tessa.mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>tessa.mk</a>
+      <div class="tag">Hair Care</div>
     </div>
-    <div class="qr"><svg role="img" aria-label="QR code to tessa.mk" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25" shape-rendering="crispEdges"><path stroke="#1a1a1a" d="M0 0.5h7m5 0h4m2 0h7M0 1.5h1m5 0h1m1 0h1m2 0h2m2 0h1m2 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m3 0h6m2 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m2 0h3m1 0h1m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m1 0h2m1 0h1m1 0h1M0 8.5h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h3M2 9.5h1m2 0h1m1 0h3m4 0h2m3 0h5M0 10.5h4m2 0h1m1 0h1m2 0h1m3 0h4m2 0h1m1 0h2M0 11.5h4m1 0h1m2 0h1m1 0h2m2 0h1m1 0h4m1 0h1m2 0h1M0 12.5h2m3 0h2m3 0h2m1 0h2m1 0h1m1 0h1m5 0h1M0 13.5h1m1 0h2m4 0h2m2 0h6m1 0h1m3 0h1M0 14.5h1m2 0h2m1 0h1m2 0h1m3 0h3m2 0h4m1 0h2M0 15.5h1m1 0h1m1 0h1m3 0h1m3 0h4m1 0h1m1 0h1m1 0h2m1 0h1M0 16.5h1m2 0h5m2 0h1m1 0h1m1 0h1m1 0h5m1 0h1M8 17.5h1m7 0h1m3 0h1M0 18.5h7m2 0h2m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1M0 19.5h1m5 0h1m3 0h2m2 0h1m1 0h1m3 0h1m3 0h1M0 20.5h1m1 0h3m1 0h1m2 0h3m3 0h6m1 0h1m1 0h1M0 21.5h1m1 0h3m1 0h1m2 0h2m1 0h2m1 0h4m4 0h2M0 22.5h1m1 0h3m1 0h1m2 0h1m3 0h3m1 0h1m3 0h2m1 0h1M0 23.5h1m5 0h1m2 0h1m2 0h2m2 0h1m1 0h3m3 0h1M0 24.5h7m1 0h1m1 0h4m2 0h1m4 0h1m2 0h1"/></svg></div>
-    <p class="qr-note">Scan to visit tessa.mk</p>
-    <a class="save" href="/card/safija-selimi.vcf" download>Save contact</a>
+    <div class="face backf">
+      <div>
+        <h1>Safija Selimi</h1>
+        <p class="role">Founder &amp; CEO</p>
+        <p class="role-mk">Основач и генерален директор</p>
+        <div class="rule"></div>
+        <a class="c" href="mailto:tessa@tessa.com" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>tessa@tessa.com</a>
+        <a class="c" href="https://tessa.mk" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>tessa.mk</a>
+      </div>
+      <div class="qr"><svg role="img" aria-label="QR code to this business card" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25" shape-rendering="crispEdges"><path stroke="#242124" d="M0 0.5h7m1 0h1m1 0h1m2 0h2m3 0h7M0 1.5h1m5 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h3m1 0h3m3 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m2 0h1m2 0h2m1 0h2m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m3 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h4m5 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 7.5h1m2 0h2m1 0h1M0 8.5h1m2 0h7m1 0h2m1 0h1m1 0h2m2 0h1m1 0h3M1 9.5h1m2 0h1m2 0h1m2 0h1m4 0h1m3 0h5M1 10.5h1m1 0h2m1 0h1m1 0h1m1 0h1m1 0h5m1 0h1m1 0h2m2 0h1M1 11.5h2m2 0h1m2 0h2m1 0h1m6 0h2m1 0h4M1 12.5h1m1 0h2m1 0h1m3 0h1m1 0h1m3 0h1m1 0h1m5 0h1M0 13.5h1m2 0h1m9 0h5m2 0h1m2 0h1M0 14.5h2m2 0h4m1 0h8m1 0h1m1 0h5M0 15.5h1m2 0h1m4 0h4m2 0h2m1 0h1m1 0h1m1 0h2m1 0h1M0 16.5h1m1 0h1m3 0h1m2 0h1m4 0h1m1 0h5m1 0h2M8 17.5h1m1 0h4m2 0h1m3 0h1m1 0h2M0 18.5h7m1 0h4m4 0h1m1 0h1m1 0h1m3 0h1M0 19.5h1m5 0h1m1 0h1m3 0h1m1 0h1m1 0h1m3 0h1m2 0h2M0 20.5h1m1 0h3m1 0h1m1 0h1m3 0h9m2 0h2M0 21.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h5m4 0h2M0 22.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h2m4 0h5M0 23.5h1m5 0h1m3 0h1m3 0h1m2 0h4m1 0h3M0 24.5h7m1 0h1m1 0h1m2 0h2m1 0h1m4 0h1m2 0h1"/></svg></div>
+    </div>
   </div>
-</main>
+</div>
+<p class="hint">Tap the card to flip it</p>
+<div class="actions">
+  <a class="save" href="/card/safija-selimi.vcf" download>Save contact</a>
+  <button class="share" id="share" type="button">Share card</button>
+</div>
+<script>
+var card=document.getElementById('card');
+function flip(){card.classList.toggle('back')}
+card.addEventListener('click',flip);
+card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}});
+setTimeout(function(){if(!card.dataset.t){card.classList.add('back')}},1200);
+card.addEventListener('click',function(){card.dataset.t=1},{once:true});
+document.getElementById('share').addEventListener('click',function(){
+  var url='https://tessa.mk/card',b=this;
+  if(navigator.share){navigator.share({title:'Safija Selimi · TESSA',url:url}).catch(function(){});return}
+  try{navigator.clipboard.writeText(url).then(function(){b.textContent='Link copied';setTimeout(function(){b.textContent='Share card'},1800)})}catch(e){}
+});
+</script>
 </body>
 </html>
