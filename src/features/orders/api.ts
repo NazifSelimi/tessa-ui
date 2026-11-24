@@ -49,6 +49,8 @@ export interface CartQuoteRequest {
 
 /** The server's price for a cart: the same numbers checkout will charge. */
 export interface CartQuote {
+  /** One per cart line, priced by the server (salon price, sale, …). */
+  lines?: Array<{ productId: string | number; qty: number; unitPrice: number; lineTotal: number }>;
   subtotal: number;
   bundleDiscount: number;
   couponDiscount: number;
