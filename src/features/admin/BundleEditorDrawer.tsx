@@ -14,7 +14,7 @@ import type { BundleAudience, BundlePromotionType, StoreBundle } from '@/types';
 import { extractErrorMessage } from '@/shared/utils/error';
 import OfferProfitPanel from '@/components/OfferProfitPanel';
 import BundlePicture from '@/features/admin/BundlePicture';
-import { AUDIENCES } from '@/features/admin/bundleOptions';
+import { AUDIENCES, toApiDate } from '@/features/admin/bundleOptions';
 
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -45,7 +45,6 @@ type BundleForm = {
   products: Array<{ product_id: string; quantity: number; bonus_quantity?: number }>;
 };
 
-const toApiDate = (value: Dayjs | null | undefined) => (value ? value.format('YYYY-MM-DD HH:mm:ss') : null);
 
 interface BundleEditorDrawerProps {
   open: boolean;

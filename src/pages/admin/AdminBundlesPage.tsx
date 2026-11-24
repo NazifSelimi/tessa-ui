@@ -20,7 +20,7 @@ import { formatDate } from '@/shared/utils/formatDate';
 import PricingSettingsCard from '@/components/PricingSettingsCard';
 import { BundlePictureThumb } from '@/features/admin/BundlePicture';
 import BundleEditorDrawer from '@/features/admin/BundleEditorDrawer';
-import { AUDIENCES } from '@/features/admin/bundleOptions';
+import { AUDIENCES, toApiDate } from '@/features/admin/bundleOptions';
 
 const { Title, Text } = Typography;
 
