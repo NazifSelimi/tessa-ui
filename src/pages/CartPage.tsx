@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { cartLimit } from '@/shared/utils/stockLimit';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Typography,
@@ -187,7 +188,7 @@ const CartPage: React.FC = () => {
                       
                       <div className="cart-item__actions">
                         <QuantityStepper
-                          max={item.product.quantity}
+                          max={cartLimit(item.product.quantity)}
                           value={item.quantity}
                           onChange={(val) => handleQuantityChange(item.productId, val)}
                           name={item.product.name}

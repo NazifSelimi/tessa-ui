@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { cartLimit } from '@/shared/utils/stockLimit';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Row, Col, Typography, Button, Space, 
@@ -283,7 +284,7 @@ export default function ProductPage() {
               </Text>
               <QuantityStepper
                 size="large"
-                max={product.quantity}
+                max={cartLimit(product.quantity)}
                 value={quantity}
                 onChange={setQuantity}
                 name={product.name}

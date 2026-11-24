@@ -10,6 +10,7 @@
  */
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { cartLimit } from '@/shared/utils/stockLimit';
 import type { CartItem, Product } from '@/types';
 
 interface CartState {
@@ -105,10 +106,8 @@ const cartSlice = createSlice({
       );
 
       if (item) {
-        const maxStock = typeof item.product.quantity === 'number'
-          ? item.product.quantity
-          : quantity;
-        item.quantity = Math.min(quantity, maxStock);
+        // No 50-piece limit: "50" means "50 or more"; checkout checks the real stock (#11).
+        item.quantity = Math.min(quantity, cartLimit(item.product.quantity));
       }
     },
 

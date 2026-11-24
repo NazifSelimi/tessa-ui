@@ -9,6 +9,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
+import { cartLimit } from '@/shared/utils/stockLimit';
 import { Drawer, Button, Typography, Space, Empty, Divider, Badge } from 'antd';
 import { DeleteOutlined, ShoppingOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -177,7 +178,7 @@ export default function CartDrawer() {
                     }}>
                       <QuantityStepper
                         size="small"
-                        max={item.product.quantity}
+                        max={cartLimit(item.product.quantity)}
                         value={item.quantity}
                         onChange={(val) => updateQuantity(item.productId, val)}
                         name={item.product.name}
