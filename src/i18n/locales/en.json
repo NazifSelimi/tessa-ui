@@ -1195,5 +1195,12 @@
     "freeShippingCount": "Count the amount",
     "beforeDiscounts": "before discounts",
     "afterDiscounts": "after discounts"
+  },
+  "adminCategories": {
+    "title": "Categories",
+    "intro": "Tick the categories that are hair colour. \"Restock colours\" in Quick order shows their products. While none is ticked, the shop guesses from the category names.",
+    "name": "Category",
+    "isHairColour": "Is hair colour",
+    "saved": "Category saved"
   }
 }

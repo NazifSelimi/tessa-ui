@@ -1195,5 +1195,12 @@
     "freeShippingCount": "Shuma llogaritet",
     "beforeDiscounts": "para zbritjeve",
     "afterDiscounts": "pas zbritjeve"
+  },
+  "adminCategories": {
+    "title": "Kategoritë",
+    "intro": "Shënoni kategoritë që janë ngjyra flokësh. „Plotëso ngjyrat“ te Porosia e shpejtë tregon produktet e tyre. Derisa të mos shënohet asnjë, dyqani merr me mend sipas emrave të kategorive.",
+    "name": "Kategoria",
+    "isHairColour": "Ngjyrë flokësh",
+    "saved": "Kategoria u ruajt"
   }
 }

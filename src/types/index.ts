@@ -164,6 +164,8 @@ export interface HairProfileOption {
 export interface Category {
   id: string;
   name: string;
+  /** Admin ticked "Is hair colour" (owner rule Q11): used by Restock colours. */
+  isHairColour?: boolean;
   description?: string;
   image?: string;
   productCount?: number;
