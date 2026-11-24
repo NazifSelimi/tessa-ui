@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { message } from 'antd';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 const run = vi.fn();
 const schema = {
@@ -29,7 +30,11 @@ vi.mock('@/features/admin/queryToolApi', () => ({
 import AdminQueryPage from '@/pages/admin/AdminQueryPage';
 
 describe('Admin query tool', () => {
-  afterEach(() => { cleanup(); run.mockClear(); });
+  // antd draws messages a moment later in its own React root; if that happens after this
+  // file has finished, the run fails with "window is not defined". A spy keeps it in the test.
+  let warning: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => { warning = vi.spyOn(message, 'warning').mockImplementation(() => undefined as never); });
+  afterEach(() => { cleanup(); run.mockClear(); vi.restoreAllMocks(); });
 
   it('runs the "price below stylist price" preset as a field-vs-field filter and shows the rows', async () => {
     render(<MemoryRouter><AdminQueryPage /></MemoryRouter>);
@@ -50,5 +55,6 @@ describe('Admin query tool', () => {
     fireEvent.click(screen.getByRole('button', { name: /Condition/ }));
     fireEvent.click(screen.getByRole('button', { name: /Run/ }));
     expect(run).not.toHaveBeenCalled();
+    expect(warning).toHaveBeenCalledWith('Fill in every value first.');
   });
 });

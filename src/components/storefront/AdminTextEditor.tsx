@@ -8,7 +8,7 @@ import {
   useUpdateContentBlockMutation,
 } from '@/features/admin/api';
 import { extractErrorMessage } from '@/shared/utils/error';
-import { SITE_TEXT_PAGE, SITE_TEXT_SKIP, normalizeText, originalTextOf, siteTextKey, siteTextOriginal, siteTextReplacement } from './SiteText';
+import { SITE_TEXT_PAGE, SITE_TEXT_SKIP, normalizeText, originalTextOf, siteTextKey, siteTextOriginal } from './SiteText';
 
 const { Text } = Typography;
 const EDIT_CLASS = 'nl-text-edit-mode';
