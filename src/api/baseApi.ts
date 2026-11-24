@@ -136,6 +136,7 @@ export const API_TAGS = {
   Emails: 'Emails',
   EmailSettings: 'EmailSettings',
   AiTokens: 'AiTokens',
+  AdminQueries: 'AdminQueries',
 } as const;
 
 export type ApiTag = typeof API_TAGS[keyof typeof API_TAGS];

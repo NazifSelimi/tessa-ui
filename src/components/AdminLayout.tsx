@@ -12,7 +12,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import PageOutlet from './PageOutlet';
 import { Layout, Menu, Typography, Button, Space, Avatar, Dropdown, Badge, Drawer } from 'antd';
-import { ToolOutlined,
+import { ToolOutlined, FilterOutlined,
   DashboardOutlined,
   ShoppingOutlined,
   FileTextOutlined,
@@ -69,6 +69,7 @@ const pageTitles: Record<string, string> = {
   '/admin/bundles': 'Offers & Bundles',
   '/admin/content-blocks': 'Editable Sections',
   '/admin/product-fixes': 'Fix products',
+  '/admin/query': 'Query tool',
   '/admin/catalog-images': 'Image Review',
   '/admin/catalogue-review': 'Supplier list (old)',
   '/admin/hair-quiz': 'Hair Quiz',
@@ -144,6 +145,7 @@ export default function AdminLayout() {
     { key: '/admin/messages', icon: <WhatsAppOutlined />, label: <Link to="/admin/messages">Viber & WhatsApp</Link> },
     { key: '/admin/content-blocks', icon: <LayoutOutlined />, label: <Link to="/admin/content-blocks">Editable Sections</Link> },
     { key: '/admin/product-fixes', icon: <ToolOutlined />, label: <Link to="/admin/product-fixes">Fix products</Link> },
+    { key: '/admin/query', icon: <FilterOutlined />, label: <Link to="/admin/query">Query tool</Link> },
     { key: '/admin/catalog-images', icon: <PictureOutlined />, label: <Link to="/admin/catalog-images">Image Review</Link> },
     { key: '/admin/catalogue-review', icon: <AuditOutlined />, label: <Link to="/admin/catalogue-review">Supplier list (old)</Link> },
     { key: '/admin/hair-quiz', icon: <ExperimentOutlined />, label: <Link to="/admin/hair-quiz">Hair Quiz</Link> },
@@ -156,7 +158,7 @@ export default function AdminLayout() {
   // The same links under short headings, so a long list is easy to scan.
   const groupedMenuItems = useMemo(() => {
     const sections: { label: string; keys: string[] }[] = [
-      { label: 'Daily work', keys: ['/admin', '/admin/orders', '/admin/products', '/admin/product-fixes', '/admin/customers'] },
+      { label: 'Daily work', keys: ['/admin', '/admin/orders', '/admin/products', '/admin/product-fixes', '/admin/query', '/admin/customers'] },
       { label: 'Sales & documents', keys: ['/admin/reports', '/admin/documents', '/admin/import'] },
       { label: 'Offers & codes', keys: ['/admin/bundles', '/admin/coupons', '/admin/referrals'] },
       { label: 'Marketing', keys: ['/admin/studio', '/admin/emails', '/admin/messages'] },
