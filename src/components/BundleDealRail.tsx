@@ -14,11 +14,11 @@ import { formatPrice } from '@/shared/utils/formatPrice';
 
 const { Text, Title } = Typography;
 
-function effectiveProductPrice(bundleProduct: StoreBundle['products'][number], isProfessional: boolean) {
+export function effectiveProductPrice(bundleProduct: StoreBundle['products'][number], isProfessional: boolean) {
   return isProfessional ? bundleProduct.stylistPrice ?? bundleProduct.price : bundleProduct.price;
 }
 
-function bundlePrice(bundle: StoreBundle, isProfessional: boolean) {
+export function bundlePrice(bundle: StoreBundle, isProfessional: boolean) {
   const total = bundle.products.reduce((sum, product) => sum + effectiveProductPrice(product, isProfessional) * product.quantity, 0);
   if (bundle.promotionType === 'fixed_price' && bundle.bundlePrice != null) return bundle.bundlePrice;
   if (bundle.promotionType === 'percentage' && bundle.discountPercentage != null) return total * (1 - bundle.discountPercentage / 100);
@@ -30,10 +30,24 @@ function bundlePrice(bundle: StoreBundle, isProfessional: boolean) {
   return total;
 }
 
+/** Puts every product of a fixed offer in the cart and marks the offer as applied. */
+export function useAddBundle() {
+  const { t } = useTranslation();
+  const { addItem, applyBundle } = useCart();
+  return (bundle: StoreBundle) => {
+    bundle.products.forEach((product) => addItem({
+      id: product.id, name: product.name, price: product.price, stylistPrice: product.stylistPrice ?? product.price,
+      brand: null, category: null, description: '', image: product.image, quantity: product.quantity, inStock: true,
+    }, product.quantity));
+    applyBundle(bundle.id);
+    message.success(t('bundles.added', { name: bundle.name }));
+  };
+}
+
 export default function BundleDealRail({ showEmpty = false, bundleIds }: { showEmpty?: boolean; bundleIds?: string[] }) {
   const { t } = useTranslation();
   const { data: bundles = [], isLoading, error, refetch } = useGetBundlesQuery();
-  const { addItem, applyBundle } = useCart();
+  const addBundle = useAddBundle();
   const { isProfessional } = useAuth();
   // Offers and salon colour deals are separate switches; the API only sends what is switched on.
   const offersOn = useFeature('bundles');
@@ -49,15 +63,6 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
   if (!bundlesOn) return null;
   if (showEmpty && (isLoading || error)) return <CatalogState loading={isLoading} error={error} retry={() => void refetch()} />;
   if (!visibleBundles.length) return showEmpty ? <p className="nl-no-offers">{t('newLook.noOffers')}</p> : null;
-
-  const addBundle = (bundle: StoreBundle) => {
-    bundle.products.forEach((product) => addItem({
-      id: product.id, name: product.name, price: product.price, stylistPrice: product.stylistPrice ?? product.price,
-      brand: null, category: null, description: '', image: product.image, quantity: product.quantity, inStock: true,
-    }, product.quantity));
-    applyBundle(bundle.id);
-    message.success(t('bundles.added', { name: bundle.name }));
-  };
 
   return (
     <section className="bundle-deal-rail" aria-label="Current offers">

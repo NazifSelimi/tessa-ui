@@ -1,0 +1,62 @@
+/* Salon offers as stories (/shop, stylists only). */
+.offer-stories { margin: 0 0 18px; }
+.offer-stories__row { display: flex; gap: 16px; margin: 0; padding: 6px 2px 8px; list-style: none; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.offer-stories__row::-webkit-scrollbar { display: none; }
+.offer-stories__row > li { flex: 0 0 auto; scroll-snap-align: start; }
+.offer-stories__circle { display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px; padding: 0; border: 0; background: none; cursor: pointer; color: inherit; }
+.offer-stories__ring { display: grid; place-items: center; width: 80px; height: 80px; padding: 3px; border-radius: 50%; background: conic-gradient(from 210deg, #f9ce34, #ee2a7b, #9c3b24, #c65435, #f9ce34); transition: transform .2s ease; }
+.offer-stories__circle:hover .offer-stories__ring { transform: scale(1.05); }
+.offer-stories__circle:focus-visible .offer-stories__ring { outline: 3px solid var(--color-accent-dark, #9c3b24); outline-offset: 3px; }
+.offer-stories__circle.is-seen .offer-stories__ring { background: #d9d2cd; }
+.offer-stories__avatar { display: grid; place-items: center; width: 100%; height: 100%; border: 3px solid var(--nl-bg, #fff); border-radius: 50%; overflow: hidden; background: #f6efea; color: var(--color-accent-dark, #9c3b24); }
+.offer-stories__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.offer-stories__name { display: -webkit-box; width: 100%; overflow: hidden; font-size: 12px; line-height: 1.25; text-align: center; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.offer-stories__circle.is-seen .offer-stories__name { opacity: .65; }
+@media (max-width: 575px) { .offer-stories__row { gap: 12px; } .offer-stories__circle { width: 72px; } .offer-stories__ring { width: 68px; height: 68px; } .offer-stories__name { font-size: 11px; } }
+
+/* Full-screen viewer */
+.story-viewer { position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center; gap: 18px; background: #111; animation: story-in .18s ease-out; }
+.story-viewer.is-hidden { display: none; }
+@keyframes story-in { from { opacity: 0; transform: scale(.97); } }
+.story-viewer__backdrop { position: absolute; inset: 0; border: 0; background: transparent; cursor: default; }
+.story-viewer__frame { position: relative; display: flex; width: min(440px, calc((100dvh - 32px) * 9 / 16)); aspect-ratio: 9 / 16; overflow: hidden; border-radius: 14px; background: #000; color: #fff; }
+.story-viewer__blur { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(28px) brightness(.55); }
+.story-viewer__media { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 28%; }
+.story-viewer__media > img { width: 100%; max-height: 100%; object-fit: contain; }
+.story-viewer__collage { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 86%; padding: 12px; border-radius: 16px; background: #fbf6f1; color: #9c3b24; place-items: center; }
+.story-viewer__collage img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.story-viewer__collage--1 { grid-template-columns: 1fr; }
+.story-viewer__collage--0 { grid-template-columns: 1fr; padding: 60px; }
+.story-viewer__top { position: absolute; inset: 0 0 auto; z-index: 3; padding: 10px 10px 30px; background: linear-gradient(#0008, transparent); }
+.story-viewer__bars { display: flex; gap: 3px; }
+.story-viewer__bar { flex: 1; height: 3px; overflow: hidden; border-radius: 2px; background: #ffffff55; }
+.story-viewer__bar > span { display: block; width: 0; height: 100%; background: #fff; }
+.story-viewer__bar > .is-done { width: 100%; }
+.story-viewer__bar > .is-active { animation-name: story-progress; animation-timing-function: linear; animation-fill-mode: forwards; }
+@keyframes story-progress { from { width: 0; } to { width: 100%; } }
+.story-viewer__head { display: flex; align-items: center; gap: 4px; margin-top: 10px; }
+.story-viewer__brand { flex: 1; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.story-viewer__count { font-size: 12px; opacity: .8; margin-right: 4px; }
+.story-viewer__head button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; }
+.story-viewer__head button:hover { background: #ffffff22; }
+.story-viewer__taps { position: absolute; inset: 70px 0 0; z-index: 2; display: grid; grid-template-columns: 1fr 2fr; }
+.story-viewer__taps button { border: 0; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.story-viewer__info { position: absolute; inset: auto 0 0; z-index: 3; display: flex; flex-direction: column; gap: 10px; padding: 70px 18px 18px; background: linear-gradient(transparent, #000d 40%); }
+.story-viewer__info h2 { margin: 0; color: #fff; font-size: 22px; line-height: 1.2; }
+.story-viewer__badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 999px; background: #c65435; font-weight: 800; font-size: 14px; }
+.story-viewer__price { display: flex; align-items: baseline; gap: 10px; }
+.story-viewer__price strong { font-size: 24px; }
+.story-viewer__price s { opacity: .65; }
+.story-viewer__steps { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.story-viewer__steps li { display: flex; gap: 8px; }
+.story-viewer__steps strong { min-width: 74px; }
+.story-viewer__cta { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border: 0; border-radius: 999px; background: #fff; color: #1d1714; font-size: 16px; font-weight: 800; cursor: pointer; }
+.story-viewer__cta:hover { background: #f6efea; }
+.story-viewer__arrow { position: relative; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #ffffff26; color: #fff; cursor: pointer; }
+.story-viewer__arrow:disabled { opacity: .3; cursor: default; }
+@media (max-width: 575px) {
+  .story-viewer { gap: 0; }
+  .story-viewer__frame { width: 100vw; height: 100dvh; aspect-ratio: auto; border-radius: 0; }
+  .story-viewer__arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .story-viewer { animation: none; } }

@@ -12,6 +12,7 @@ import { useGetBrandsQuery, useGetCategoriesQuery, useGetProductCollectionsQuery
 import ProductCard from '@/components/ProductCard';
 import { categoryLabel, visibleBrands, visibleCategories } from '@/shared/utils/storefrontCatalog';
 import BundleDealRail from '@/components/BundleDealRail';
+import BundleStories from '@/components/BundleStories';
 import { CatalogState, PageHeading } from '@/components/storefront/DesignPrimitives';
 import Seo from '@/shared/components/Seo';
 import { useFeature } from '@/shared/hooks/useFeature';
@@ -75,6 +76,8 @@ export default function ShopPage() {
 
   return <>
     <Seo title={t('seo.shopTitle')} description={t('seo.shopDescription')} path="/shop" noIndex={Boolean(urlSearch)} />
+    {/* Stylists: offers as story circles above PRODUCTS instead of the offer rail. */}
+    <BundleStories />
     <PageHeading eyebrow={t('newLook.products')} title={isStylist ? t('newLook.products') : t('newLook.hairRituals')} />
     <div className="nl-shop-toolbar"><form className="nl-search" role="search" onSubmit={e => { e.preventDefault(); update('search', search.trim()); }}><Search size={20} /><input ref={input} value={search} onChange={e => { searchEdited.current = true; setSearch(e.target.value); }} placeholder={t('home.searchProducts')} aria-label={t('home.searchProducts')} />{search && <button type="button" aria-label={t('home.clearFilters')} onClick={() => { setSearch(''); update('search', ''); }}><X size={18} /></button>}</form><button className="nl-filter-toggle nl-button nl-button-secondary" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={18} />{t('home.filters')}{active > 0 && ` (${active})`}</button><AdminAddProductShortcut /></div>
     <div className="nl-filter-pills" aria-label={t('newLook.categories')}><button aria-pressed={!category} onClick={() => update('category', '')}>{t('newLook.all')}</button>{categories.map(item => <button key={item.id} aria-pressed={category === String(item.id)} onClick={() => update('category', String(item.id))}>{categoryLabel(item.name)}</button>)}</div>
@@ -84,7 +87,7 @@ export default function ShopPage() {
       {error ? <CatalogState error={error} retry={() => void refetch()} /> : isLoading || pending ? <CatalogState loading /> : products.length ? <div className="nl-product-grid" aria-busy={isFetching}>{products.map((product) => <ProductCard key={product.id} product={product} />)}</div> : <CatalogState />}
       {total > 12 && <div className="nl-pagination"><Pagination current={page} total={total} pageSize={12} showSizeChanger={false} onChange={value => { update('page', String(value)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} /></div>}
     </div></div>
-    {!urlSearch && !active && <section className="nl-section"><BundleDealRail /></section>}
+    {!isStylist && !urlSearch && !active && <section className="nl-section"><BundleDealRail /></section>}
     {!urlSearch && !active && <ContentBlocks blocks={contentBlocks} />}
     {isAdmin && <HomePageEditor page="shop" pageLabel="Shop page" />}
     <Drawer title={t('home.filters')} open={filtersOpen} onClose={() => setFiltersOpen(false)} placement="right" width="min(360px, 100vw)"><div className="tessa-design nl-filter-drawer">{filters}<button className="nl-button nl-button-dark" onClick={() => setFiltersOpen(false)}>{t('newLook.showResults')}<ArrowUpRight size={16} /></button></div></Drawer>
