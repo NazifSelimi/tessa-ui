@@ -4,6 +4,7 @@ import { Button, Typography, message } from 'antd';
 import { GiftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useGetBundlesQuery } from '@/features/products/api';
+import { AdminBundleShortcuts } from './storefront/AdminShortcuts';
 import ColourDealPicker, { dealContext, useDealCount, useTierReward } from './ColourDealPicker';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,6 +91,7 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
                 </ol>
                 <Button type="primary" block size="large" shape="round" className="bundle-card__add" icon={<GiftOutlined />} onClick={() => setPicking(bundle)}>{deal.isColour ? t('bundles.pickColours') : t('bundles.pickProducts')}</Button>
               </div>
+                <AdminBundleShortcuts bundle={bundle} />
             </article>;
           }
           const saved = Math.max(0, regular - price);
@@ -125,7 +127,8 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
               {saved > 0 && <span className="bundle-card__save">{t('bundles.youSave', { amount: formatPrice(saved) })}</span>}
               <Button type="primary" block size="large" shape="round" className="bundle-card__add" icon={<ShoppingCartOutlined />} onClick={() => addBundle(bundle)}>{t('bundles.add')}</Button>
             </div>
-          </article>;
+            <AdminBundleShortcuts bundle={bundle} />
+            </article>;
         })}
       </div>
       {picking && <ColourDealPicker bundle={picking} open onClose={() => setPicking(null)} />}

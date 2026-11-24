@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 // Admin product tools are a separate chunk, fetched only once an admin is signed in.
 const Controls = lazyWithReload(() => import('./AdminProductControls').then((m) => ({ default: m.AdminProductControls })));
+const BundleControls = lazyWithReload(() => import('./AdminBundleControls').then((m) => ({ default: m.AdminBundleControls })));
 const AddButton = lazyWithReload(() => import('./AdminProductControls').then((m) => ({ default: m.AdminAddProductButton })));
 
 export function AdminProductShortcuts(props: ComponentProps<typeof Controls>) {
@@ -14,4 +15,10 @@ export function AdminProductShortcuts(props: ComponentProps<typeof Controls>) {
 export function AdminAddProductShortcut() {
   const { isAdmin } = useAuth();
   return isAdmin ? <Suspense fallback={null}><AddButton /></Suspense> : null;
+}
+
+/** Edit / feature / hide on an offer card, for admins. */
+export function AdminBundleShortcuts(props: ComponentProps<typeof BundleControls>) {
+  const { isAdmin } = useAuth();
+  return isAdmin ? <Suspense fallback={null}><BundleControls {...props} /></Suspense> : null;
 }
