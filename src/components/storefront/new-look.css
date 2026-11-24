@@ -99,6 +99,11 @@
 .nl-concern-3 .nl-concern-art::after { transform: rotate(-40deg); border-radius: 40%; }
 .nl-concern-4 .nl-concern-art { background: radial-gradient(ellipse at 50% 10%, #eae0ef, transparent 60%), #cbb8ce; }
 .nl-concern::after { content: ''; position: absolute; inset: 40% 0 0; background: linear-gradient(transparent, #fcf5ebc9); }
+.nl-concern-has-photo .nl-concern-art { background: #e6c9ba; }
+.nl-concern-has-photo .nl-concern-art::after { display: none; }
+.nl-concern-has-photo .nl-concern-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; transition: transform .5s ease; }
+.nl-concern-has-photo:hover .nl-concern-art img { transform: scale(1.04); }
+.nl-concern-has-photo::after { inset: 45% 0 0; background: linear-gradient(transparent, #fcf5ebeb 75%); }
 .nl-concern strong { position: absolute; bottom: 44px; left: 20px; right: 14px; font-size: 15px; z-index: 1; line-height: 1.3; }
 .nl-concern small { position: absolute; bottom: 18px; left: 20px; font-size: 11px; z-index: 1; display: flex; align-items: center; gap: 6px; }
 .nl-collection-links { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 22px; margin-top: 14px; font-size: 11px; color: #80636e; }

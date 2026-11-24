@@ -25,7 +25,13 @@ export default function HomePage() {
     .filter(product => !product.stylistOnly && !product.catalogGuidance?.professionalOnly && storefrontImageUrl(product))
     .filter((product, index, list) => list.findIndex(other => other.name.trim().toLowerCase() === product.name.trim().toLowerCase()) === index);
   const hero = products[0];
-  const concerns = ['repair', 'blonde-and-tone', 'curls', 'smooth-and-anti-frizz'];
+  // Free-licence Unsplash photos, self-hosted in public/home.
+  const concerns = [
+    { slug: 'repair', photo: '/home/concern-dry.webp' },
+    { slug: 'blonde-and-tone', photo: '/home/concern-blonde.webp' },
+    { slug: 'curls', photo: '/home/concern-curls.webp' },
+    { slug: 'smooth-and-anti-frizz', photo: '/home/concern-smooth.webp' },
+  ];
 
   if (isStylist) return <Navigate to="/stylist/workspace" replace />;
 
@@ -40,7 +46,7 @@ export default function HomePage() {
     <ContentBlocks blocks={contentBlocks} />
     <section className="nl-section">
       <SectionHeading eyebrow={t('newLook.yourHair')} title={t('newLook.whereToStart')} to={quizTo} action={t('newLook.takeQuiz')} />
-      <div className="nl-concern-grid">{concerns.map((slug, i) => <Link key={slug} to={`/collections/${slug}`} className={`nl-concern nl-concern-${i + 1}`}><span className="nl-concern-art" aria-hidden="true" /><strong>{t(`newLook.concerns.${slug}`)}</strong><small>{t('newLook.exploreCare')}<ArrowUpRight size={15} /></small></Link>)}</div>
+      <div className="nl-concern-grid">{concerns.map(({ slug, photo }, i) => <Link key={slug} to={`/collections/${slug}`} className={`nl-concern nl-concern-${i + 1} nl-concern-has-photo`}><span className="nl-concern-art" aria-hidden="true"><img src={photo} alt="" loading="lazy" decoding="async" /></span><strong>{t(`newLook.concerns.${slug}`)}</strong><small>{t('newLook.exploreCare')}<ArrowUpRight size={15} /></small></Link>)}</div>
       <div className="nl-collection-links">{['colour', 'extensions-and-tools'].map(slug => <Link key={slug} to={`/collections/${slug}`}>{t(`newLook.concerns.${slug}`)}<ChevronRight size={15} /></Link>)}</div>
     </section>
     <section className="nl-section"><SectionHeading eyebrow={t('newLook.professionalCare')} title={t('newLook.everydayRituals')} to="/shop" action={t('newLook.viewAll')} />
