@@ -3,6 +3,9 @@ import { useEffect } from 'react';
 import { Button, Card, Form, InputNumber, Space, Typography, message } from 'antd';
 import { useGetPricingSettingsQuery, useUpdatePricingSettingsMutation, type PricingSettings } from '@/features/admin/api';
 import { extractErrorMessage } from '@/shared/utils/error';
+import { useFeature } from '@/shared/hooks/useFeature';
+import { Link } from 'react-router-dom';
+import { Alert, Tag } from 'antd';
 
 const { Text } = Typography;
 
@@ -11,6 +14,7 @@ export default function PricingSettingsCard() {
   const { data } = useGetPricingSettingsQuery();
   const [save, { isLoading }] = useUpdatePricingSettingsMutation();
   const [form] = Form.useForm<PricingSettings>();
+  const protecting = useFeature('profit_protection');
 
   useEffect(() => {
     if (data) fillUntouched(form, data);
@@ -26,7 +30,15 @@ export default function PricingSettingsCard() {
   };
 
   return (
-    <Card size="small" title="Profit protection" style={{ marginBottom: 24 }}>
+    <Card size="small" title={<Space>Profit protection {protecting ? <Tag color="success">On</Tag> : <Tag>Off</Tag>}</Space>} style={{ marginBottom: 24 }}>
+      {!protecting && (
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message={<>Off: offers and coupons give their full discount. Switch it on in <Link to="/admin/features">Features</Link> once products have real cost prices.</>}
+        />
+      )}
       <Form form={form} layout="inline" onFinish={submit}>
         <Form.Item name="costPercentage" label="Estimated cost" rules={[{ required: true }]}>
           <InputNumber min={1} max={100} addonAfter="% of retail" />
