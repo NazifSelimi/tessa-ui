@@ -335,7 +335,7 @@
     "profileUpdated": "Profile updated successfully!",
     "profileCompleted": "Profile completed successfully!",
     "profileUpdateFailed": "Failed to update profile",
-    "passwordUpdated": "Password updated successfully!",
+    "passwordUpdated": "Password updated. Other sign-ins and AI assistant keys were signed out.",
     "passwordUpdateFailed": "Failed to update password",
     "becomeStylist": "Become a Stylist",
     "quickOrder": "Quick Order",
