@@ -1179,5 +1179,11 @@
     "reachedNow": "You get: {{reward}}",
     "addGift": "Add your free oxidant to the cart",
     "from": "From {{count}} colours"
+  },
+  "adminStock": {
+    "title": "Not enough stock",
+    "note": "If you proceed, stock goes below 0. Your name and the time are recorded.",
+    "proceed": "Proceed anyway",
+    "cancel": "Cancel"
   }
 }

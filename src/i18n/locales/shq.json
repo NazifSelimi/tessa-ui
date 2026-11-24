@@ -1179,5 +1179,11 @@
     "reachedNow": "Merrni: {{reward}}",
     "addGift": "Shtoni oksidantin falas në shportë",
     "from": "Nga {{count}} ngjyra"
+  },
+  "adminStock": {
+    "title": "Nuk ka stok të mjaftueshëm",
+    "note": "Nëse vazhdoni, stoku shkon nën 0. Emri juaj dhe koha regjistrohen.",
+    "proceed": "Vazhdo gjithsesi",
+    "cancel": "Anulo"
   }
 }
