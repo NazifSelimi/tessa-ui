@@ -34,7 +34,10 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
   const { data: bundles = [], isLoading, error, refetch } = useGetBundlesQuery();
   const { addItem, applyBundle } = useCart();
   const { isProfessional } = useAuth();
-  const bundlesOn = useFeature('bundles');
+  // Offers and salon colour deals are separate switches; the API only sends what is switched on.
+  const offersOn = useFeature('bundles');
+  const colourDealsOn = useFeature('colour_deals');
+  const bundlesOn = offersOn || colourDealsOn;
   const reward = useTierReward();
   /** "Pick any colours" offer whose shade picker is open. */
   const [picking, setPicking] = useState<StoreBundle | null>(null);
