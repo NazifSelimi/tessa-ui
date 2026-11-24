@@ -106,6 +106,12 @@ interface Coupon {
 export type PricingSettings = {
   costPercentage: number;
   minMarginPercentage: number;
+  /** Owner rule Q1: all discounts together never above this % of the goods. */
+  maxDiscountPercentage: number;
+  /** Owner rule Q6: free delivery from this amount, counted before or after discounts. */
+  freeShippingFrom: number;
+  freeShippingAfterDiscounts: boolean;
+  shippingCost?: number;
 };
 
 export type OfferAudienceResult = {

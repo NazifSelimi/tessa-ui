@@ -10,6 +10,8 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { amountToFreeShipping, shippingForSubtotal } from '@/shared/constants/shipping';
+import { useShippingSettings } from '@/features/shop/shopSettingsApi';
 import { clearCheckoutDraft, loadCheckoutDraft, saveCheckoutDraft } from '@/features/checkout/checkoutDraft';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -98,8 +100,9 @@ export default function CheckoutPage() {
     }
   }, [navigate, token, user]);
 
-  // Shipping cost calculation
-  const shippingCost = subtotal >= 3000 ? 0 : 150;
+  // Shipping until the server's price check is in: the amounts set in Admin (Q6).
+  const shippingSettings = useShippingSettings();
+  const shippingCost = shippingForSubtotal(subtotal, shippingSettings.freeShippingFrom, shippingSettings.shippingCost);
   const bundleDiscount = useMemo(() => {
     const quantities = new Map(items.map((item) => [String(item.productId), item.quantity]));
 
@@ -679,6 +682,9 @@ export default function CheckoutPage() {
               {quote?.discountLimited && (
                 <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('checkout.discountLimited')}</Text>
               )}
+              {quote?.discountCapped && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('cart.maxDiscountReached')}</Text>
+              )}
               
               <div className="price-row">
                 <Text type="secondary">{t('checkout.shippingCost')}</Text>
@@ -709,7 +715,7 @@ export default function CheckoutPage() {
             {/* Free Shipping Progress */}
             {shippingTotal > 0 && (
               <Alert
-                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(quote ? quote.amountToFreeShipping : 3000 - subtotal) })}`}
+                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(quote ? quote.amountToFreeShipping : amountToFreeShipping(subtotal, shippingSettings.freeShippingFrom)) })}`}
                 type="info"
                 showIcon
                 style={{ marginTop: 'var(--spacing-lg)' }}

@@ -36,6 +36,7 @@ import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/shared/utils/formatPrice';
 import ShippingProgress from '@/components/ShippingProgress';
 import { shippingForSubtotal } from '@/shared/constants/shipping';
+import { useShippingSettings } from '@/features/shop/shopSettingsApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetQuickOrderProductsQuery } from '@/features/quickorder/api';
@@ -97,7 +98,10 @@ const CartPage: React.FC = () => {
   const priced = Boolean(quote && (bundleIds.length || isStylist));
   const savings = priced ? Number(quote?.bundleDiscount ?? 0) : 0;
   const totals = { subtotal, itemCount, savings };
-  const shipping = priced ? Number(quote?.shipping ?? 0) : shippingForSubtotal(subtotal);
+  const shippingSettings = useShippingSettings();
+  const shipping = priced
+    ? Number(quote?.shipping ?? 0)
+    : shippingForSubtotal(subtotal, shippingSettings.freeShippingFrom, shippingSettings.shippingCost);
 
   if (items.length === 0) {
     return (
@@ -244,7 +248,7 @@ const CartPage: React.FC = () => {
 
             {/* Free-shipping progress */}
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-              <ShippingProgress subtotal={totals.subtotal} />
+              <ShippingProgress subtotal={totals.subtotal} remaining={priced ? quote?.amountToFreeShipping : undefined} />
             </div>
 
             {(quote?.colourDeals ?? []).map((deal) => {
@@ -270,6 +274,10 @@ const CartPage: React.FC = () => {
                   <Text type="secondary">{t('cart.savings')}</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(totals.savings)}</Text>
                 </div>
+              )}
+
+              {priced && quote?.discountCapped && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('cart.maxDiscountReached')}</Text>
               )}
 
               <div className="price-row">

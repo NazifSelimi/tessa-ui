@@ -178,6 +178,7 @@
     "closeImage": "Close image"
   },
   "cart": {
+    "maxDiscountReached": "Maximum discount reached",
     "shoppingCart": "Shopping Cart",
     "yourCartIsEmpty": "Your cart is empty",
     "startShopping": "Start Shopping",
@@ -1185,5 +1186,13 @@
     "note": "If you proceed, stock goes below 0. Your name and the time are recorded.",
     "proceed": "Proceed anyway",
     "cancel": "Cancel"
+  },
+  "adminPricing": {
+    "maxDiscount": "Maximum discount",
+    "maxDiscountHelp": "Offers, pick-any deals and the coupon together never take more than this % off the goods.",
+    "freeShippingFrom": "Free delivery from",
+    "freeShippingCount": "Count the amount",
+    "beforeDiscounts": "before discounts",
+    "afterDiscounts": "after discounts"
   }
 }

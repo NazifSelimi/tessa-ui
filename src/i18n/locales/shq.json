@@ -178,6 +178,7 @@
     "closeImage": "Mbyll foton"
   },
   "cart": {
+    "maxDiscountReached": "U arrit zbritja maksimale",
     "shoppingCart": "Shporta e blerjeve",
     "yourCartIsEmpty": "Shporta juaj është e zbrazët",
     "startShopping": "Fillo blerjen",
@@ -1185,5 +1186,13 @@
     "note": "Nëse vazhdoni, stoku shkon nën 0. Emri juaj dhe koha regjistrohen.",
     "proceed": "Vazhdo gjithsesi",
     "cancel": "Anulo"
+  },
+  "adminPricing": {
+    "maxDiscount": "Zbritja maksimale",
+    "maxDiscountHelp": "Ofertat, ofertat „zgjidh çfarëdo“ dhe kuponi së bashku nuk heqin kurrë më shumë se ky % nga produktet.",
+    "freeShippingFrom": "Dërgesë falas nga",
+    "freeShippingCount": "Shuma llogaritet",
+    "beforeDiscounts": "para zbritjeve",
+    "afterDiscounts": "pas zbritjeve"
   }
 }

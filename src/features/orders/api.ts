@@ -56,6 +56,11 @@ export interface CartQuote {
   couponDiscount: number;
   discount: number;
   discountLimited: boolean;
+  /** The discount cap set in Admin cut the discount ("Maximum discount reached", Q1). */
+  discountCapped?: boolean;
+  maxDiscountPercentage?: number;
+  freeShippingFrom?: number;
+  freeShippingAfterDiscounts?: boolean;
   appliedBundleIds: string[];
   skippedBundles: Array<{ bundleId: string; reason: string }>;
   /** "Pick any colours" offers the cart counts towards. */
