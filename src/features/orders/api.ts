@@ -8,7 +8,7 @@
  */
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
-import type { Order, PaymentMethod, PaginatedResponse } from '@/types';
+import type { BundleTier, Order, PaymentMethod, PaginatedResponse } from '@/types';
 
 // Request types
 interface CreateOrderRequest {
@@ -59,9 +59,10 @@ export interface CartQuote {
   /** "Pick any colours" offers the cart counts towards. */
   colourDeals?: Array<{
     bundleId: string; name: string; familyName: string | null; count: number;
-    reached: { min: number; free: number; gift: boolean } | null;
-    next: { min: number; free: number; gift: boolean; need: number } | null;
+    reached: BundleTier | null;
+    next: (BundleTier & { need: number }) | null;
     saving: number; giftProductId: string | null; giftOptions: string[]; giftMissing: boolean;
+    isColour?: boolean; giftNames?: Record<string, string>;
   }>;
   couponCode: string | null;
   couponError: string | null;

@@ -528,8 +528,11 @@ export interface BundleProduct {
 
 export type BundlePromotionType = 'percentage' | 'fixed_price' | 'bonus_items' | 'mix_match';
 
-/** A reward step of a "pick any colours" offer: from `min` colours, `free` colours free and/or a free gift (oxidant). */
-export interface BundleTier { min: number; free: number; gift: boolean }
+/**
+ * A reward step of a "pick any" offer: from `min` items, `free` cheapest items free,
+ * `gift` = gift_qty units of a gift the stylist picks (oxidant), gift_ids = this step's own gifts.
+ */
+export interface BundleTier { min: number; free: number; gift: boolean; gift_qty?: number; gift_ids?: string[] }
 
 /** all = everyone, stylist = salons only, customer = shoppers and guests only. */
 export type BundleAudience = 'all' | 'stylist' | 'customer';
@@ -544,6 +547,8 @@ export interface StoreBundle {
   familyId?: string | null;
   familyName?: string | null;
   familyProductId?: string | null;
+  /** Every colour line the offer counts (several for the salon colour offer). Products not marked isBonus are counted too. */
+  familyLines?: Array<{ id: string; name: string; productId: string }>;
   tiers?: BundleTier[] | null;
   isDynamic: false;
   discountPercentage: number | null;

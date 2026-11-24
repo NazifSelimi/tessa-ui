@@ -4,7 +4,7 @@ import { Button, Typography, message } from 'antd';
 import { GiftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useGetBundlesQuery } from '@/features/products/api';
-import ColourDealPicker, { useTierReward } from './ColourDealPicker';
+import ColourDealPicker, { dealContext, useDealCount, useTierReward } from './ColourDealPicker';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import type { StoreBundle } from '@/types';
@@ -39,6 +39,7 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
   const colourDealsOn = useFeature('colour_deals');
   const bundlesOn = offersOn || colourDealsOn;
   const reward = useTierReward();
+  const countLabel = useDealCount();
   /** "Pick any colours" offer whose shade picker is open. */
   const [picking, setPicking] = useState<StoreBundle | null>(null);
 
@@ -70,6 +71,7 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
           if (bundle.promotionType === 'mix_match') {
             const dealPicture = bundle.image ? `${bundle.image}?v=${encodeURIComponent(bundle.updatedAt ?? '')}` : null;
             const top = bundle.tiers?.[bundle.tiers.length - 1];
+            const deal = dealContext(bundle);
             return <article className="bundle-card bundle-card--colours" key={bundle.id}>
               <div className={`bundle-card__media${dealPicture ? ' bundle-card__media--picture' : ''}`}>
                 {dealPicture
@@ -82,11 +84,11 @@ export default function BundleDealRail({ showEmpty = false, bundleIds }: { showE
               </div>
               <div className="bundle-card__body">
                 <h4 className="bundle-card__title">{bundle.name}</h4>
-                <p className="bundle-card__lead">{t('bundles.pickAny')}{bundle.familyName ? ` · ${bundle.familyName}` : ''}</p>
+                <p className="bundle-card__lead">{deal.isColour ? t('bundles.pickAny') : bundle.description}{deal.isColour && bundle.familyName && !(bundle.familyLines?.length && bundle.familyLines.length > 1) ? ` · ${bundle.familyName}` : ''}</p>
                 <ol className="bundle-card__steps">
-                  {(bundle.tiers ?? []).map((tier) => <li key={tier.min}><strong>{t('bundles.colourCount', { count: tier.min })}</strong><span>{reward(tier)}</span></li>)}
+                  {(bundle.tiers ?? []).map((tier) => <li key={tier.min}><strong>{countLabel(tier.min, deal.isColour)}</strong><span>{reward(tier, deal)}</span></li>)}
                 </ol>
-                <Button type="primary" block size="large" shape="round" className="bundle-card__add" icon={<GiftOutlined />} onClick={() => setPicking(bundle)}>{t('bundles.pickColours')}</Button>
+                <Button type="primary" block size="large" shape="round" className="bundle-card__add" icon={<GiftOutlined />} onClick={() => setPicking(bundle)}>{deal.isColour ? t('bundles.pickColours') : t('bundles.pickProducts')}</Button>
               </div>
             </article>;
           }

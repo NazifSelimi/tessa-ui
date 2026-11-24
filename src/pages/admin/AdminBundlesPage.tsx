@@ -184,7 +184,7 @@ export default function AdminBundlesPage() {
     const prices = rest.promotion_type === 'percentage' ? { bundle_price: undefined }
       : rest.promotion_type === 'fixed_price' ? { discount_percentage: undefined } : {};
     const colours = rest.promotion_type === 'mix_match'
-      ? { tiers: rest.tiers ?? [], products: (rest.products ?? []).filter((line) => line?.product_id).map((line) => ({ product_id: line.product_id, quantity: 1, bonus_quantity: 1 })) }
+      ? { tiers: rest.tiers ?? [], products: (rest.products ?? []).filter((line) => line?.product_id).map((line) => ({ product_id: line.product_id, quantity: 1, bonus_quantity: line.bonus_quantity ?? 1 })) }
       : { product_family_id: null, tiers: null };
     return { ...rest, ...prices, ...colours, starts_at: toApiDate(dates?.[0]), ends_at: toApiDate(dates?.[1]?.endOf('day')) };
   };
@@ -372,8 +372,8 @@ export default function AdminBundlesPage() {
           )}
           {promotionType === 'mix_match' && (
             <Card size="small" title="Pick any colours" style={{ marginBottom: 16 }}>
-              <Form.Item name="product_family_id" label="Colour line (any shade counts)" rules={[{ required: true }]}>
-                <Select showSearch optionFilterProp="label" placeholder="Choose a colour line" options={families.map((family) => ({ value: String(family.id), label: `${family.name} (${family.shadeCount} shades)` }))} />
+              <Form.Item name="product_family_id" label="Colour line (any shade counts)" extra="Leave empty when the deal counts listed products instead (set them to “Counts to the deal” below).">
+                <Select allowClear showSearch optionFilterProp="label" placeholder="Choose a colour line" options={families.map((family) => ({ value: String(family.id), label: `${family.name} (${family.shadeCount} shades)` }))} />
               </Form.Item>
               <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>Reward steps: from N colours in the cart, the cheapest X colours are free and/or one gift below is free. The highest step reached counts.</Text>
               <Form.List name="tiers">
@@ -392,18 +392,21 @@ export default function AdminBundlesPage() {
           <Form.Item name="dates" label="Runs from – to" extra="Empty start = from now; empty end = until you switch it off.">
             <RangePicker allowEmpty={[true, true]} style={{ width: '100%' }} />
           </Form.Item>
-          <Card size="small" title={promotionType === 'mix_match' ? 'Gift choices (the stylist picks one: oxidant, activator…)' : 'Included products'} style={{ marginBottom: 16 }}>
+          <Card size="small" title={promotionType === 'mix_match' ? 'Gifts (the stylist picks one: oxidant, activator…) and products the deal counts (e.g. Silver Star shampoo or mask)' : 'Included products'} style={{ marginBottom: 16 }}>
             <Form.List name="products">
               {(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }} size={10}>
                 {fields.map((field) => <Space key={field.key} align="start" style={{ display: 'flex' }} wrap>
                   <Form.Item {...field} name={[field.name, 'product_id']} rules={[{ required: true }]} style={{ width: 340, marginBottom: 0 }}><Select showSearch optionFilterProp="label" options={productOptions} placeholder="Choose product" /></Form.Item>
+                  {promotionType === 'mix_match' && <Form.Item {...field} name={[field.name, 'bonus_quantity']} initialValue={1} style={{ width: 170, marginBottom: 0 }}>
+                    <Select options={[{ value: 1, label: 'Gift choice' }, { value: 0, label: 'Counts to the deal' }]} />
+                  </Form.Item>}
                   {promotionType !== 'mix_match' && <>
                     <Form.Item {...field} name={[field.name, 'quantity']} rules={[{ required: true }]} style={{ marginBottom: 0 }}><InputNumber min={1} addonBefore="Qty" /></Form.Item>
                     <Form.Item {...field} name={[field.name, 'bonus_quantity']} style={{ marginBottom: 0 }}><InputNumber min={0} addonBefore="Free" disabled={promotionType !== 'bonus_items'} /></Form.Item>
                   </>}
                   <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} aria-label="Remove product" />
                 </Space>)}
-                <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, bonus_quantity: 0 })}>Add product</Button>
+                <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ quantity: 1, bonus_quantity: promotionType === 'mix_match' ? 1 : 0 })}>Add product</Button>
               </Space>}
             </Form.List>
           </Card>

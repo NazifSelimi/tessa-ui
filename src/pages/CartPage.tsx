@@ -42,7 +42,7 @@ import { Check, Plus } from 'lucide-react';
 import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefrontCatalog';
 import QuantityStepper from '@/components/QuantityStepper';
 import { useGetCartQuoteQuery } from '@/features/orders/api';
-import { useTierReward } from '@/components/ColourDealPicker';
+import { useDealCount, useTierReward } from '@/components/ColourDealPicker';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -51,6 +51,7 @@ const CartPage: React.FC = () => {
   const { t } = useTranslation();
   const { isStylist } = useAuth();
   const tierReward = useTierReward();
+  const dealCount = useDealCount();
   const { items, bundleIds, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
   // Same server pricing as checkout, so set discounts show here too (not only at checkout).
   const { currentData: quote } = useGetCartQuoteQuery(
@@ -245,14 +246,17 @@ const CartPage: React.FC = () => {
               <ShippingProgress subtotal={totals.subtotal} />
             </div>
 
-            {(quote?.colourDeals ?? []).map((deal) => (
+            {(quote?.colourDeals ?? []).map((deal) => {
+              const context = { isColour: deal.isColour ?? true, giftNames: deal.giftNames ?? {} };
+              return (
               <div key={deal.bundleId} className="cart-colour-deal">
                 <Text strong><GiftOutlined /> {deal.name}</Text>
-                <Text>{t('bundles.colourCount', { count: deal.count })}{deal.reached ? ` · ${t('bundles.reachedNow', { reward: tierReward(deal.reached) })}` : ''}</Text>
-                {deal.next && <Text type="secondary">{t('bundles.moreFor', { count: deal.next.need, reward: tierReward(deal.next) })}</Text>}
-                {deal.giftMissing && <Text type="warning">{t('bundles.addGift')}</Text>}
+                <Text>{dealCount(deal.count, context.isColour)}{deal.reached ? ` · ${t('bundles.reachedNow', { reward: tierReward(deal.reached, context) })}` : ''}</Text>
+                {deal.next && <Text type="secondary">{t('bundles.moreFor', { count: deal.next.need, reward: tierReward(deal.next, context) })}</Text>}
+                {deal.giftMissing && <Text type="warning">{context.isColour && !deal.reached?.gift_ids?.length ? t('bundles.addGift') : t('bundles.addGiftGeneric')}</Text>}
               </div>
-            ))}
+              );
+            })}
 
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">
