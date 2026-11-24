@@ -21,7 +21,11 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  /** Admin-only: show the shop as a stylist sees it. Real permissions stay admin. */
+  viewAs: AdminViewAs;
 }
+
+export type AdminViewAs = 'customer' | 'stylist';
 
 const initialState: AuthState = {
   user: null,
@@ -29,6 +33,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  viewAs: 'customer',
 };
 
 const authSlice = createSlice({
@@ -73,12 +78,17 @@ const authSlice = createSlice({
       state.error = null;
     },
 
+    setViewAs: (state, action: PayloadAction<AdminViewAs>) => {
+      state.viewAs = action.payload;
+    },
+
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
+      state.viewAs = 'customer';
     },
   },
 
@@ -141,6 +151,7 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.viewAs = 'customer';
       });
   },
 });
@@ -153,6 +164,7 @@ export const {
   setLoading,
   setError,
   clearError,
+  setViewAs,
   logout,
 } = authSlice.actions;
 
@@ -169,10 +181,14 @@ export const selectCurrentRole = (state: { auth: AuthState }) =>
 // Role helper selectors
 export const selectIsAdmin = (state: { auth: AuthState }) => selectCurrentRole(state) === 'admin';
 export const selectIsDistributor = (state: { auth: AuthState }) => selectCurrentRole(state) === 'distributor';
-export const selectIsStylist = (state: { auth: AuthState }) => selectCurrentRole(state) === 'stylist';
+/** True when an admin has switched to the stylist view (UI only; the API still sees an admin). */
+export const selectIsStylistPreview = (state: { auth: AuthState }) =>
+  selectCurrentRole(state) === 'admin' && state.auth.viewAs === 'stylist';
+export const selectIsStylist = (state: { auth: AuthState }) =>
+  selectCurrentRole(state) === 'stylist' || selectIsStylistPreview(state);
 export const selectIsProfessional = (state: { auth: AuthState }) => {
   const role = selectCurrentRole(state);
-  return role === 'stylist' || role === 'distributor';
+  return role === 'stylist' || role === 'distributor' || selectIsStylistPreview(state);
 };
 
 export default authSlice.reducer;

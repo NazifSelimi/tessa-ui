@@ -55,7 +55,7 @@ const cartPersistConfig = createCartPersistConfig(storage);
 const authPersistConfig = {
   key: 'tessa_auth',
   storage,
-  whitelist: ['token', 'user'],
+  whitelist: ['token', 'user', 'viewAs'],
 };
 
 // Combine all reducers

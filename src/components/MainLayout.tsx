@@ -27,7 +27,7 @@ const PAGES_WITH_OWN_SEARCH = new Set(['/shop', '/stylist/quick-order']);
 export default function MainLayout() {
   useSalonPriceRefresh();
   const { t } = useTranslation();
-  const { user, isStylist, isAdmin, isDistributor, logout } = useAuth();
+  const { user, isStylist, isStylistPreview, isAdmin, isDistributor, logout } = useAuth();
   const { itemCount, subtotal } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ export default function MainLayout() {
     { to: '/stylist/referral', label: t('referral.navLabel'), icon: Gift },
     { to: '/account/orders', label: t('newLook.orders'), icon: ClipboardList },
     { to: '/cart', label: t('newLook.cart'), icon: ShoppingBag },
-  ].filter(({ to }) => (to !== '/stylist/quick-order' || quickOrderOn) && (to !== '/stylist/referral' || referralsOn)) : [
+  ].filter(({ to }) => (to !== '/stylist/quick-order' || quickOrderOn) && (to !== '/stylist/referral' || (referralsOn && !isStylistPreview))) : [
     { to: '/', label: t('newLook.home'), icon: Home },
     { to: '/shop', label: t('newLook.products'), icon: Package },
     { to: '/quiz', label: t('newLook.myHair'), icon: Sparkles },
@@ -66,7 +66,7 @@ export default function MainLayout() {
   ));
   const sidebar = <>
     <Link className="nl-sidebar-logo" to={home} aria-label="Tessa"><Logo height={32} /></Link>
-    <div className="nl-professional-pill"><i />{t('newLook.professionalAccount')}</div>
+    <div className="nl-professional-pill"><i />{isStylistPreview ? 'Stylist view (admin)' : t('newLook.professionalAccount')}</div>
     <nav className="nl-side-nav" aria-label={t('newLook.navigation')}>{navLinks()}</nav>
     <div className="nl-side-bottom">
       <Link to="/account"><UserRound size={20} /><span>{user?.name || t('newLook.profile')}</span><ChevronRight size={16} /></Link>

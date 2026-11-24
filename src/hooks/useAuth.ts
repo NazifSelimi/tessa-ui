@@ -21,6 +21,9 @@ import {
   selectIsDistributor,
   selectIsStylist,
   selectIsProfessional,
+  selectIsStylistPreview,
+  setViewAs,
+  type AdminViewAs,
 } from '@/features/auth/slice';
 import { 
   useLoginMutation, 
@@ -49,6 +52,7 @@ export function useAuth() {
   const isDistributor = useAppSelector(selectIsDistributor);
   const isStylist = useAppSelector(selectIsStylist);
   const isProfessional = useAppSelector(selectIsProfessional);
+  const isStylistPreview = useAppSelector(selectIsStylistPreview);
   
   // RTK Query mutations
   const [loginMutation, { isLoading: isLoginLoading }] = useLoginMutation();
@@ -144,6 +148,8 @@ export function useAuth() {
     return roles.includes(currentRole);
   }, [currentRole]);
 
+  const switchView = useCallback((view: AdminViewAs) => { dispatch(setViewAs(view)); }, [dispatch]);
+
   // Clear error
   const handleClearError = useCallback(() => {
     dispatch(clearError());
@@ -172,6 +178,8 @@ export function useAuth() {
     isDistributor,
     isStylist,
     isProfessional,
+    isStylistPreview,
+    switchView,
     
     // Error handling
     clearError: handleClearError,

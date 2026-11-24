@@ -27,7 +27,7 @@ export default function PriceDisplay({
   large = false,
   showSavings = false,
 }: PriceDisplayProps) {
-  const { isProfessional, isAdmin, isDistributor } = useAuth();
+  const { isProfessional, isAdmin, isStylistPreview, isDistributor } = useAuth();
   
   const primaryFontSize = large ? 'var(--font-size-2xl)' : 'var(--font-size-lg)';
   const secondaryFontSize = large ? 'var(--font-size-lg)' : 'var(--font-size-xs)';
@@ -39,8 +39,8 @@ export default function PriceDisplay({
     ? Math.round(((retailPrice - stylistPrice) / retailPrice) * 100)
     : 0;
 
-  // Distributor and admin always see both prices
-  if (showBothPrices || isDistributor || isAdmin) {
+  // Distributor and admin see both prices (an admin in stylist view sees what a stylist sees)
+  if (showBothPrices || isDistributor || (isAdmin && !isStylistPreview)) {
     return (
       <div className="price-display">
         <Text style={{ fontSize: secondaryFontSize }} type="secondary">
