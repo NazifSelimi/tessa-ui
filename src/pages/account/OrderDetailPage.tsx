@@ -193,6 +193,11 @@ export default function OrderDetailPage() {
                 <Text type="success">-{formatPrice(order.discount ?? 0)}</Text>
               </div>
             )}
+            {order.couponCanBeUsedAgain && (
+              <Text type="secondary" style={{ display: 'block', marginBottom: 8 }} data-testid="coupon-again">
+                {t('orders.couponCanBeUsedAgain')}
+              </Text>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <Text>{t('orders.shipping')}</Text>
               <Text>{(order.shipping ?? 0) === 0 ? t('orders.free') : formatPrice(order.shipping ?? 0)}</Text>

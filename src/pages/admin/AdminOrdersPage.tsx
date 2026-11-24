@@ -311,6 +311,7 @@ export default function AdminOrdersPage() {
                 <>
                   <br />
                   <Text strong>Code used:</Text> <Tag color={selectedOrder.referral ? 'magenta' : 'green'}>{selectedOrder.couponCode}</Tag>
+                  {selectedOrder.couponCanBeUsedAgain && <Text type="secondary">{t('orders.couponCanBeUsedAgain')}</Text>}
                   {selectedOrder.referral && (
                     <Text type="secondary">
                       stylist referral · {selectedOrder.referral.stylistName || 'stylist'} earns {formatPrice(selectedOrder.referral.commission)} credit

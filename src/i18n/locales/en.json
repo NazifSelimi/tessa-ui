@@ -363,6 +363,7 @@
     "stylistRequestFailed": "Your profile was saved, but the stylist request could not be submitted."
   },
   "orders": {
+    "couponCanBeUsedAgain": "Your coupon can be used again.",
     "myOrders": "My Orders",
     "viewTrackHistory": "View and track your order history",
     "errorLoading": "Error loading orders",

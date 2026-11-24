@@ -252,6 +252,8 @@ export interface Order {
   customMessage?: string;
   internalNotes?: string;
   couponCode?: string;
+  /** Cancelled or trashed order: its normal coupon can be used again (owner rule Q7). */
+  couponCanBeUsedAgain?: boolean;
   /** Admin order views only: the stylist whose referral code was used. */
   referral?: { stylistId: string; stylistName: string; commission: number } | null;
   trackingNumber?: string;

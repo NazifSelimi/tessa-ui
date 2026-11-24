@@ -363,6 +363,7 @@
     "stylistRequestFailed": "Profili u ruajt, por kërkesa për stilist nuk u dërgua."
   },
   "orders": {
+    "couponCanBeUsedAgain": "Kuponi juaj mund të përdoret përsëri.",
     "myOrders": "Porositë e mia",
     "viewTrackHistory": "Shikoni dhe ndiqni historinë e porosive",
     "errorLoading": "Gabim gjatë ngarkimit të porosive",
