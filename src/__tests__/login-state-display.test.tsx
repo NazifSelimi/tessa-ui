@@ -2,7 +2,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { notification } from 'antd';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer, { selectIsAuthenticated } from '@/features/auth/slice';
 import { baseApi, baseQueryWithReauth } from '@/api/baseApi';
 import ProtectedRoute from '@/shared/components/ProtectedRoute';
@@ -36,7 +37,12 @@ const renderAccount = (store: ReturnType<typeof makeStore>) => render(
   </Provider>,
 );
 
-afterEach(() => vi.unstubAllGlobals());
+// The expired-token path shows an antd notification. antd draws it in its own React root
+// a moment later; if that happens after this file has finished, there is no window any more
+// and the whole test run fails with "window is not defined". A spy keeps it inside the test.
+let notify: ReturnType<typeof vi.spyOn>;
+beforeEach(() => { notify = vi.spyOn(notification, 'info').mockImplementation(() => undefined); });
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('login state display', () => {
   it('treats a restored token as signed in even though isAuthenticated was not persisted', () => {
@@ -66,6 +72,7 @@ describe('login state display', () => {
     expect(store.getState().auth.token).toBeNull();
     expect(store.getState().auth.user).toBeNull();
     expect(replace).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ key: 'session-expired' }));
   });
 
   it('repeats a public call as a guest after an expired token, also for calls that fail together', async () => {
