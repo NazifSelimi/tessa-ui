@@ -13,6 +13,7 @@ import { site } from '@/shared/config/site';
 import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import SearchSuggest from './storefront/SearchSuggest';
+import SiteTextOverrides from './storefront/SiteText';
 import './storefront/new-look.css';
 import { viberUrl, whatsappUrl } from '@/shared/utils/messaging';
 import { useFeature } from '@/shared/hooks/useFeature';
@@ -118,6 +119,7 @@ export default function MainLayout() {
       <nav className="nl-mobile-nav" aria-label={t('newLook.mobileNavigation')}>{navLinks(mobileNavigation)}</nav>
       {professionalShell && <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} placement="left" width={280} title={t('newLook.navigation')}><div className="tessa-design nl-drawer-sidebar">{sidebar}</div></Drawer>}
       <Suspense fallback={null}><CartDrawer /></Suspense>
+      <SiteTextOverrides />
       {isAdmin && <Suspense fallback={null}><AdminDock /></Suspense>}
     </div>
   </ConfigProvider>;

@@ -507,6 +507,9 @@
 .nl-admin-dock__view button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--nl-ink); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .nl-admin-dock__view button[aria-pressed="true"] { background: #9b5364; color: #fff; }
 .nl-admin-dock__view button:focus-visible { outline: 2px solid #e99aa9; outline-offset: 2px; }
+/* Admin "Edit text" mode: click any text to change it. */
+.nl-admin-dock__text[aria-pressed="true"] { background: #9b5364; }
+body.nl-text-edit-mode .nl-text-edit-hover { outline: 2px dashed #e99aa9; outline-offset: 2px; cursor: text; }
 @media (max-width: 760px) { .nl-admin-dock { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
 /* Admin "Edit this page" button: keep it above the phone bottom menu. */
 .nl-page-edit-btn { position: fixed; right: 20px; bottom: 20px; z-index: 1000; box-shadow: 0 6px 20px rgba(0,0,0,.2); }

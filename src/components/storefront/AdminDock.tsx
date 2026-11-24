@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import AdminTextEditor from './AdminTextEditor';
 import { ADMIN_PATH_FEATURE, useFeatureStates } from '@/features/admin/platformApi';
 import { BarChart3, FileSpreadsheet, FileText, TrendingUp, MessageCircle, Contact, ClipboardList, FlaskConical, Gift, Images, Mail, Megaphone, SlidersHorizontal, Building2, LayoutTemplate, Package, QrCode, Share2, Shield, Tag, Truck, UserCheck, Users, X } from 'lucide-react';
 
@@ -54,6 +55,7 @@ export default function AdminDock() {
         <button type="button" aria-pressed={!isStylistPreview} onClick={() => showView('customer')}>Customer</button>
         <button type="button" aria-pressed={isStylistPreview} onClick={() => showView('stylist')}>Stylist</button>
       </div>
+      <AdminTextEditor />
       <button type="button" className="nl-admin-dock__toggle" aria-label="Admin" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         {open ? <X size={17} /> : <Shield size={17} />}<span className="nl-admin-dock__label">Admin</span>
       </button>
