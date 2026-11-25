@@ -26,7 +26,7 @@ import PriceDisplay from '@/components/PriceDisplay';
 import ProductCard from '@/components/ProductCard';
 import ShadePicker from '@/components/ShadePicker';
 import CatalogueBook from '@/components/CatalogueBook';
-import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
+import { AdminPhotoDeleteShortcut, AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import VisibilityBadge from '@/components/storefront/VisibilityBadge';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
@@ -116,7 +116,7 @@ export default function ProductPage() {
   const photos = storefrontPhotos(product.media);
   const legacyMedia = (product.images?.length ? product.images : (product.image ? [product.image] : []))
     .filter((url) => Boolean(url) && !isPendingPlaceholderUrl(url))
-    .map((url) => ({ url, alt: product.name, variant: 'legacy' } as Pick<ProductMediaAsset, 'url' | 'alt' | 'variant'>));
+    .map((url) => ({ url, alt: product.name, variant: 'legacy' } as Pick<ProductMediaAsset, 'id' | 'url' | 'alt' | 'variant'>));
   const productImages = photos.length ? photos : legacyMedia;
   const selectedAsset = productImages[selectedImage] ?? productImages[0];
   const mainImage = selectedAsset?.url ?? NO_IMAGE;
@@ -204,15 +204,20 @@ export default function ProductPage() {
         {/* Product Images */}
         <div className="product-detail__gallery">
           {/* Main Image */}
-          <button className="product-detail__main-image" type="button" onClick={() => setIsZoomed(Boolean(selectedAsset))} aria-label={`Zoom ${product.name} image`}>
-            <img
-              // A new element per photo: when switching shade the browser would otherwise keep showing the previous product's photo until the new one loads.
-              key={mainImage}
-              src={mainImage}
-              alt={selectedAsset?.alt || product.name}
-              fetchPriority="high"
-            />
-          </button>
+          <div className="product-detail__main-image-wrap">
+            <button className="product-detail__main-image" type="button" onClick={() => setIsZoomed(Boolean(selectedAsset))} aria-label={`Zoom ${product.name} image`}>
+              <img
+                // A new element per photo: when switching shade the browser would otherwise keep showing the previous product's photo until the new one loads.
+                key={mainImage}
+                src={mainImage}
+                alt={selectedAsset?.alt || product.name}
+                fetchPriority="high"
+              />
+            </button>
+            {typeof selectedAsset?.id === 'number' && (
+              <AdminPhotoDeleteShortcut productId={String(product.id)} imageId={selectedAsset.id} productName={product.name} onDeleted={() => setSelectedImage(0)} />
+            )}
+          </div>
           
           {/* Thumbnail Gallery */}
           {productImages.length > 1 && (
@@ -232,6 +237,9 @@ export default function ProductPage() {
                     alt={asset.alt || `${product.name} ${idx + 1}`}
                     loading="lazy"
                   />
+                  {typeof asset.id === 'number' && (
+                    <AdminPhotoDeleteShortcut productId={String(product.id)} imageId={asset.id} productName={product.name} className="is-small" onDeleted={() => setSelectedImage(0)} />
+                  )}
                 </div>
               ))}
             </div>

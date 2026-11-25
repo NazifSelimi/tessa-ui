@@ -5,11 +5,18 @@ import { useAuth } from '@/hooks/useAuth';
 // Admin product tools are a separate chunk, fetched only once an admin is signed in.
 const Controls = lazyWithReload(() => import('./AdminProductControls').then((m) => ({ default: m.AdminProductControls })));
 const BundleControls = lazyWithReload(() => import('./AdminBundleControls').then((m) => ({ default: m.AdminBundleControls })));
+const PhotoDelete = lazyWithReload(() => import('./AdminProductControls').then((m) => ({ default: m.AdminPhotoDeleteButton })));
 const AddButton = lazyWithReload(() => import('./AdminProductControls').then((m) => ({ default: m.AdminAddProductButton })));
 
 export function AdminProductShortcuts(props: ComponentProps<typeof Controls>) {
   const { isAdmin } = useAuth();
   return isAdmin ? <Suspense fallback={null}><Controls {...props} /></Suspense> : null;
+}
+
+/** Delete one photo of a product, for admins (shown in every shop view). */
+export function AdminPhotoDeleteShortcut(props: ComponentProps<typeof PhotoDelete>) {
+  const { isAdmin } = useAuth();
+  return isAdmin ? <Suspense fallback={null}><PhotoDelete {...props} /></Suspense> : null;
 }
 
 export function AdminAddProductShortcut() {

@@ -1,9 +1,9 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useState, type MouseEvent } from 'react';
 import { lazyWithReload } from '@/shared/utils/chunkReload';
 import { Link, useNavigate } from 'react-router-dom';
 import { App, InputNumber } from 'antd';
 import { Check, Images, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useDeleteProductMutation, useUpdateProductMutation } from '@/features/admin/api';
+import { useDeleteProductImageMutation, useDeleteProductMutation, useUpdateProductMutation } from '@/features/admin/api';
 import { useGetProductByIdQuery } from '@/features/products/api';
 import type { Product } from '@/types';
 
@@ -85,6 +85,41 @@ function QuickFields({ product }: { product: Product }) {
     <label>Stock<InputNumber size="small" min={0} value={quantity} onChange={setQuantity} onPressEnter={() => changed && save()} /></label>
     <button type="button" disabled={!changed || isLoading} onClick={save}><Check size={15} />Save</button>
   </div>;
+}
+
+/** Trash button on a shop photo: asks once, then removes that photo from the product. */
+export function AdminPhotoDeleteButton({ productId, imageId, productName, onDeleted, className }: {
+  productId: string;
+  imageId: number;
+  productName: string;
+  onDeleted?: () => void;
+  className?: string;
+}) {
+  const { modal, message } = App.useApp();
+  const [deleteImage] = useDeleteProductImageMutation();
+
+  const confirm = (event: MouseEvent) => {
+    event.stopPropagation();
+    modal.confirm({
+      title: 'Delete this photo?',
+      content: `The photo is removed from "${productName}" for everyone. This cannot be undone.`,
+      okText: 'Delete photo',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await deleteImage({ productId, imageId }).unwrap();
+          message.success('Photo deleted');
+          onDeleted?.();
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Could not delete the photo');
+        }
+      },
+    });
+  };
+
+  return <button type="button" className={`nl-admin-photo-delete ${className ?? ''}`} onClick={confirm} aria-label="Delete this photo" title="Delete this photo (admin)">
+    <Trash2 size={14} />
+  </button>;
 }
 
 /** "Add product" for admins on shop pages; opens the new product once it is saved. */

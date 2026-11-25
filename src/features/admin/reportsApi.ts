@@ -6,6 +6,7 @@
  */
 
 import { baseApi, API_TAGS } from '@/api/baseApi';
+import type { ProductAudience } from '@/types';
 import { toCsvText } from '@/shared/utils/csv';
 
 export type ReportPreset = 'this_week' | 'this_month' | 'last_month' | 'this_year' | 'custom';
@@ -57,6 +58,8 @@ export interface ReportSummary {
 export interface ReportProductRow {
   productId: number | null;
   name: string;
+  /** Who can see the product in the shop ([] = hidden or deleted). */
+  visibleTo?: ProductAudience[];
   brand: string | null;
   category: string | null;
   qty: number;
@@ -110,6 +113,7 @@ export interface ReportOverview {
 export interface SlowMover {
   productId: number;
   name: string;
+  visibleTo?: ProductAudience[];
   brand: string | null;
   category: string | null;
   stock: number;

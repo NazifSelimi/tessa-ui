@@ -116,6 +116,8 @@ export interface ProductShade {
 }
 
 export interface ProductMediaAsset {
+  /** Only sent to admins (used to delete a photo from the shop pages). */
+  id?: number;
   url: string | null;
   alt: string | null;
   variant: 'legacy' | 'original' | 'card' | 'detail' | 'transparent_master';

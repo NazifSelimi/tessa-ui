@@ -19,6 +19,8 @@ export interface FixProduct {
   size_value?: string | null; size_unit?: string | null;
   price?: string | number | null; stylist_price?: string | number | null; cost_price?: string | number | null; quantity: number;
   visible_to_guests?: boolean; visible_to_customers?: boolean; visible_to_stylists?: boolean;
+  /** Same as the visible_to_* flags, as a list (who can see it in the shop). */
+  visibleTo?: ProductAudience[];
   descriptions?: Partial<Record<DescriptionLocale, string>>;
 }
 

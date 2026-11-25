@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AudienceTag from '@/features/admin/AudienceTag';
 import { Alert, Badge, Button, Empty, Image, Input, Popconfirm, Select, Space, Spin, Switch, Tag, Tooltip, Typography, message } from 'antd';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -313,7 +314,7 @@ export default function AdminProductFixesPage() {
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>#{r.id} · {r.brand || 'no brand'} · {r.quantity} in stock{r.live ? ' · shown' : ''}</Typography.Text>
-                <div>{r.groups.map(g => <Tag key={g} color={GROUP_COLORS[g]} style={{ fontSize: 11, marginTop: 2 }}>{report?.summary.find(s => s.group === g)?.label || g}</Tag>)}</div>
+                <div><AudienceTag visibleTo={r.visibleTo} /> {r.groups.map(g => <Tag key={g} color={GROUP_COLORS[g]} style={{ fontSize: 11, marginTop: 2 }}>{report?.summary.find(s => s.group === g)?.label || g}</Tag>)}</div>
               </div>
             </div>
           ))}
@@ -324,7 +325,7 @@ export default function AdminProductFixesPage() {
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
-                  <Typography.Title level={3} style={{ margin: 0 }}>{selected.name}</Typography.Title>
+                  <Typography.Title level={3} style={{ margin: 0 }}>{selected.name} <AudienceTag visibleTo={selected.visibleTo} /></Typography.Title>
                   <Typography.Text type="secondary">
                     #{selected.id} · {selected.brand || 'no brand'} · {selected.category || 'no category'}{selected.size ? ` · ${selected.size}` : ''}{selected.manufacturer_code ? ` · code ${selected.manufacturer_code}` : ''}
                   </Typography.Text>

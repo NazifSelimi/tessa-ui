@@ -114,6 +114,7 @@
     "inReview": "In review · admin only",
     "visibilityHidden": "Hidden · admin only",
     "visibleOnlyTo": "Only {{audiences}}",
+    "visibleEveryone": "Visible to everyone",
     "audienceGuests": "guests",
     "audienceCustomers": "customers",
     "audienceStylists": "stylists",

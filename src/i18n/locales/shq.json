@@ -114,6 +114,7 @@
     "inReview": "Në shqyrtim · vetëm admin",
     "visibilityHidden": "E fshehur · vetëm admin",
     "visibleOnlyTo": "Vetëm {{audiences}}",
+    "visibleEveryone": "E dukshme për të gjithë",
     "audienceGuests": "vizitorë",
     "audienceCustomers": "klientë",
     "audienceStylists": "stilistë",
