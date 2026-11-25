@@ -268,8 +268,8 @@ export default function ProductPage() {
 
           {product.shades && product.shades.length > 1 && (
             <ShadePicker currentId={product.id} shades={product.shades} defaultExpanded={rawCategory === 'Hair Color'}
-              onShowCatalogue={product.shadeFamily?.catalogue
-                ? () => document.getElementById('shade-catalogue')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              catalogue={product.shadeFamily?.catalogue
+                ? <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
                 : undefined}
             />
           )}
@@ -401,10 +401,9 @@ export default function ProductPage() {
           />
         </div>
       </div>
-      {product.shadeFamily?.catalogue && (
-        <div id="shade-catalogue" className="shade-catalogue-anchor">
-          <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
-        </div>
+      {/* Lines with a shade picker show the book inside it (Colours / PDF switch). */}
+      {product.shadeFamily?.catalogue && !(product.shades && product.shades.length > 1) && (
+        <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
       )}
 
       {isZoomed && selectedAsset && (

@@ -3836,29 +3836,13 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
   white-space: nowrap;
 }
 
-.shade-picker__pdf {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--color-primary);
-  border-radius: 999px;
-  background: none;
-  padding: 4px 12px;
-  color: var(--color-primary);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
+.shade-picker__view {
+  flex: 0 0 auto;
 }
 
-.shade-picker__pdf:hover,
-.shade-picker__pdf:focus-visible {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-/* Leave room for the sticky header when the PDF button scrolls here. */
-.shade-catalogue-anchor {
-  scroll-margin-top: 96px;
+/* The catalogue book shown in place of the swatches. */
+.shade-picker__catalogue .catalogue-book {
+  margin-top: 0;
 }
 
 .shade-picker__body {

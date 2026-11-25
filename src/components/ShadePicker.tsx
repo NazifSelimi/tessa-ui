@@ -5,10 +5,10 @@
  * opens that product's page.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Input, Modal, Typography } from 'antd';
-import { FilePdfOutlined, SearchOutlined } from '@ant-design/icons';
+import { Input, Modal, Segmented, Typography } from 'antd';
+import { BgColorsOutlined, FilePdfOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ProductShade } from '@/types';
 import { groupShades } from '@/shared/utils/shadeGroups';
@@ -20,8 +20,8 @@ interface ShadePickerProps {
   shades: ProductShade[];
   /** Hair colours open with the swatches showing; other lines (masks, toners) start collapsed. */
   defaultExpanded?: boolean;
-  /** When the line has a PDF catalogue further down the page: shows a button that jumps to it. */
-  onShowCatalogue?: () => void;
+  /** The line's PDF catalogue book: adds a Colours / PDF switch that shows it in place of the swatches. */
+  catalogue?: ReactNode;
 }
 
 const shadeLabel = (shade: ProductShade) => shade.shadeCode || shade.shadeName || shade.name;
@@ -93,10 +93,12 @@ function ShadeGroups({ shades, currentId, onPick }: { shades: ProductShade[]; cu
   );
 }
 
-export default function ShadePicker({ currentId, shades, defaultExpanded = false, onShowCatalogue }: ShadePickerProps) {
+export default function ShadePicker({ currentId, shades, defaultExpanded = false, catalogue }: ShadePickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [view, setView] = useState<'swatches' | 'pdf'>('swatches');
+  const showPdf = Boolean(catalogue) && view === 'pdf';
   const [search, setSearch] = useState('');
   const [find, setFind] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
@@ -144,14 +146,22 @@ export default function ShadePicker({ currentId, shades, defaultExpanded = false
         <button type="button" className="shade-picker__all" onClick={() => setOpen(true)}>
           {t('product.allShades', { count: shades.length })}
         </button>
-        {onShowCatalogue && (
-          <button type="button" className="shade-picker__pdf" onClick={onShowCatalogue}>
-            <FilePdfOutlined /> {t('product.catalogue.pdfView')}
-          </button>
+        {catalogue && (
+          <Segmented
+            className="shade-picker__view"
+            value={view}
+            onChange={(value) => setView(value as 'swatches' | 'pdf')}
+            options={[
+              { value: 'swatches', icon: <BgColorsOutlined />, label: t('product.catalogue.swatchesView') },
+              { value: 'pdf', icon: <FilePdfOutlined />, label: t('product.catalogue.pdfView') },
+            ]}
+          />
         )}
       </div>
 
-      {expanded && (
+      {showPdf && <div className="shade-picker__catalogue">{catalogue}</div>}
+
+      {!showPdf && expanded && (
       <div className="shade-picker__body" id="shade-picker-body">
         {current && (
           <figure className="shade-picker__preview">
