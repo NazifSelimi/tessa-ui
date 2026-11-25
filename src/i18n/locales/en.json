@@ -107,6 +107,7 @@
     "streetPlaceholder": "Street and number"
   },
   "product": {
+    "priceNote": "<strong>Note:</strong> Prices follow our customer price-protection policy.",
     "addToCart": "Add to Cart",
     "add": "Add",
     "outOfStock": "Out of Stock",

@@ -107,6 +107,7 @@
     "streetPlaceholder": "Rruga dhe numri"
   },
   "product": {
+    "priceNote": "<strong>Shënim:</strong> Çmimet janë sipas politikës për mbrojtjen e çmimeve te klientët.",
     "addToCart": "Shto në shportë",
     "add": "Shto",
     "outOfStock": "Nuk ka në stok",

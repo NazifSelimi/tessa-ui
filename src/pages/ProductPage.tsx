@@ -30,7 +30,7 @@ import { AdminProductShortcuts } from '@/components/storefront/AdminShortcuts';
 import VisibilityBadge from '@/components/storefront/VisibilityBadge';
 import { useCart } from '@/hooks/useCart';
 import { useLocalizedDescription } from '@/hooks/useLocalizedDescription';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useGetProductByIdQuery, useGetRelatedProductsQuery } from '@/features/products/api';
 import Seo from '@/shared/components/Seo';
 import { site } from '@/shared/config/site';
@@ -268,6 +268,10 @@ export default function ProductPage() {
               {t('product.price')}
             </Text>
             <PriceDisplay product={product} large showSavings />
+            {/* Shown on every product, in every language. */}
+            <Text type="secondary" className="product-price-note" style={{ display: 'block', marginTop: 'var(--spacing-sm)', fontSize: 13 }}>
+              <Trans i18nKey="product.priceNote" components={{ strong: <strong /> }} />
+            </Text>
           </div>
 
           {/* Quantity & Add to Cart */}
