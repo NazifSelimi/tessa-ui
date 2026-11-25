@@ -122,6 +122,7 @@ export default function ProductPage() {
   const mainImage = selectedAsset?.url ?? NO_IMAGE;
   const brandName = storefrontBrandName(product);
   const categoryName = storefrontCategoryName(product);
+  const rawCategory = typeof product.category === 'object' ? product.category?.name : product.category;
   const description = (localizedDescription || `${product.name}${categoryName ? ` ${categoryName}` : ''}${brandName ? ` from ${brandName}` : ''}`)
     .replace(/\s+/g, ' ')
     .trim()
@@ -258,7 +259,7 @@ export default function ProductPage() {
           <Divider style={{ margin: 'var(--spacing-lg) 0' }} />
 
           {product.shades && product.shades.length > 1 && (
-            <ShadePicker currentId={product.id} shades={product.shades} />
+            <ShadePicker currentId={product.id} shades={product.shades} defaultExpanded={rawCategory === 'Hair Color'} />
           )}
 
           {/* Price Display */}

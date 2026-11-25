@@ -18,6 +18,8 @@ const { Text } = Typography;
 interface ShadePickerProps {
   currentId: string | number;
   shades: ProductShade[];
+  /** Hair colours open with the swatches showing; other lines (masks, toners) start collapsed. */
+  defaultExpanded?: boolean;
 }
 
 const shadeLabel = (shade: ProductShade) => shade.shadeCode || shade.shadeName || shade.name;
@@ -89,11 +91,10 @@ function ShadeGroups({ shades, currentId, onPick }: { shades: ProductShade[]; cu
   );
 }
 
-export default function ShadePicker({ currentId, shades }: ShadePickerProps) {
+export default function ShadePicker({ currentId, shades, defaultExpanded = false }: ShadePickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  // Starts collapsed so the swatches never push into the title and price on first load.
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [search, setSearch] = useState('');
   const [find, setFind] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
