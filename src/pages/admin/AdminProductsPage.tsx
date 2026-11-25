@@ -6,7 +6,8 @@ import { useUrlState } from '@/shared/hooks/useUrlState';
 import { Typography, Table, Button, Tag, Input, Space, Card, InputNumber, Select, Row, Col, App, Checkbox, Tooltip, Image } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useGetCategoriesQuery, useGetBrandsQuery, type VisibilityFilter } from '@/features/products/api';
-import { productVisibleTo, visibilitySummary } from '@/shared/utils/productVisibility';
+import { productVisibleTo } from '@/shared/utils/productVisibility';
+import AudienceTag from '@/features/admin/AudienceTag';
 import {
   useGetAllProductsQuery,
   useDeleteProductMutation,
@@ -235,7 +236,7 @@ export default function AdminProductsPage() {
       },
     },
     {
-      title: 'Access',
+      title: 'Who can see it',
       key: 'access',
       render: (_: unknown, record: Product) =>
         record.inReview
@@ -247,10 +248,7 @@ export default function AdminProductsPage() {
               </div>
             </Tooltip>
           )
-          : (() => {
-            const summary = visibilitySummary(productVisibleTo(record));
-            return <Tag color={summary.color}>{summary.label.toUpperCase()}</Tag>;
-          })(),
+          : <AudienceTag visibleTo={productVisibleTo(record)} />,
     },
     {
       title: 'Actions',

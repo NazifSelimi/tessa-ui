@@ -415,6 +415,15 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, id) => [API_TAGS.Products, { type: API_TAGS.Product, id }, { type: API_TAGS.Product, id: Number(id) }],
     }),
 
+    /** Removes one photo from a product (the API refuses to remove its only photo). */
+    deleteProductImage: builder.mutation<unknown, { productId: string; imageId: number }>({
+      query: ({ productId, imageId }) => ({
+        url: `/v1/admin/products/${productId}/images/${imageId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, { productId }) => [API_TAGS.Products, { type: API_TAGS.Product, id: productId }, { type: API_TAGS.Product, id: Number(productId) }],
+    }),
+
     updateProductStock: builder.mutation<any, { id: string; quantity: number; operation: 'set' | 'add' | 'subtract' }>({
       query: ({ id, quantity, operation }) => ({
         url: `/v1/admin/products/${id}/stock`,
@@ -688,6 +697,7 @@ export const adminApi = baseApi.injectEndpoints({
 
 // Export hooks
 export const {
+  useDeleteProductImageMutation,
   useGetDashboardStatsQuery,
   useGetAllUsersQuery,
   useGetUserQuery,

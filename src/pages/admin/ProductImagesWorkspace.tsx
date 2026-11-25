@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import AudienceTag from '@/features/admin/AudienceTag';
+import type { ProductAudience } from '@/types';
 import { Alert, Button, Card, Drawer, Empty, Image, Input, InputNumber, Modal, Pagination, Popconfirm, Select, Space, Spin, Table, Tabs, Tag, Typography, Upload, message } from 'antd';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,9 +9,9 @@ import { baseApi, API_TAGS } from '@/api/baseApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import ProductPhotoEditor from '@/features/studio/ProductPhotoEditor';
 const API = import.meta.env.VITE_API_URL as string;
-type Product = { id: string; name: string; brand?: string; status: string; imageUrl?: string; imageCount: number };
+type Product = { id: string; name: string; brand?: string; visibleTo?: ProductAudience[]; status: string; imageUrl?: string; imageCount: number };
 type Asset = { id: number; url: string; alt: string; sort_order: number; variant: string; review_status: string; is_primary: boolean };
-type Gallery = { product: { id: number; name: string }; images: Asset[] };
+type Gallery = { product: { id: number; name: string; visibleTo?: ProductAudience[] }; images: Asset[] };
 type Candidate = { product_id: number; candidate_rank: number; current_name: string; brand: string; current_image_url: string; preview_url: string; source_image_url: string; admin_review?: { status: string; note?: string } };
 const labels: Record<string, string> = { all: 'All products', missing: 'Missing images', needs_review: 'Needs review', legacy: 'Legacy images', approved: 'Approved' };
 
@@ -64,7 +66,7 @@ export default function ProductImagesWorkspace() {
       <Space wrap style={{ marginBottom: 16, display: 'flex' }}><Input aria-label="Search product images" placeholder="Find product, brand or ID" value={search} allowClear onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ width: 300, maxWidth: '100%' }} /><Select aria-label="Sort product images" value={sort} style={{ width: 210, maxWidth: '100%' }} onChange={v => { setSort(v); setPage(1); }} options={[{ value: 'name_asc', label: 'Name A–Z' }, { value: 'name_desc', label: 'Name Z–A' }, { value: 'images_asc', label: 'Fewest images first' }, { value: 'images_desc', label: 'Most images first' }, { value: 'newest', label: 'Newest product first' }]} /><Button onClick={() => setRefresh(x => x + 1)}>Refresh</Button></Space>
       <Table<Product> loading={loading} dataSource={health?.products || []} rowKey="id" scroll={{ x: 650 }} pagination={false} columns={[
         { title: 'Preview', key: 'preview', width: 100, render: (_, p) => <Image width={64} height={75} style={{ objectFit: 'contain' }} src={p.imageUrl || '/placeholder.svg'} alt={p.name} /> },
-        { title: 'Product', key: 'product', render: (_, p) => <><Button type="link" style={{ padding: 0, whiteSpace: 'normal', textAlign: 'left', height: 'auto' }} onClick={() => setParams({ product: p.id })}>{p.name}</Button><br /><Typography.Text type="secondary">#{p.id} · {p.brand || 'No brand'}</Typography.Text></> },
+        { title: 'Product', key: 'product', render: (_, p) => <><Button type="link" style={{ padding: 0, whiteSpace: 'normal', textAlign: 'left', height: 'auto' }} onClick={() => setParams({ product: p.id })}>{p.name}</Button><br /><Typography.Text type="secondary">#{p.id} · {p.brand || 'No brand'}</Typography.Text> <AudienceTag visibleTo={p.visibleTo} /></> },
         { title: 'Review', key: 'status', render: (_, p) => <Tag>{labels[p.status]}</Tag> }, { title: 'Images', dataIndex: 'imageCount' },
         { title: 'Actions', key: 'actions', render: (_, p) => <Button onClick={() => setParams({ product: p.id })}>Manage images</Button> },
       ]} /><Pagination style={{ marginTop: 20 }} current={page} total={health?.meta.total || 0} pageSize={24} showSizeChanger={false} onChange={setPage} showTotal={total => `${total} products`} simple={typeof window !== 'undefined' && window.innerWidth < 576} />
@@ -76,7 +78,7 @@ export default function ProductImagesWorkspace() {
         { title: 'Decision', key: 'decision', render: (_, c) => <><Tag color={c.admin_review?.status === 'approved' ? 'green' : c.admin_review?.status === 'rejected' ? 'red' : 'gold'}>{c.admin_review?.status || 'pending'}</Tag><p>{c.admin_review?.note}</p><Space wrap>{['approved', 'rejected', 'pending'].map(value => <Button key={value} disabled={busy} onClick={() => { setDecision({ candidate: c, status: value }); setNote(c.admin_review?.note || ''); }}>{value === 'approved' ? 'Approve' : value === 'rejected' ? 'Reject' : 'Undo decision'}</Button>)}</Space></> },
       ]} />
     </> }]} />
-    <Drawer title={gallery?.product.name || 'Product image manager'} open={!!productId} width={800} onClose={() => { setParams({}); setGallery(undefined); }}>
+    <Drawer title={gallery ? <>{gallery.product.name} <AudienceTag visibleTo={gallery.product.visibleTo} /></> : 'Product image manager'} open={!!productId} width={800} onClose={() => { setParams({}); setGallery(undefined); }}>
       {galleryLoading ? <Spin /> : gallery && <><Space wrap style={{ marginBottom: 20 }}><Upload accept="image/jpeg,image/png,image/webp" showUploadList={false} beforeUpload={file => { void upload(file); return false; }} disabled={busy}><Button type="primary" loading={busy}>Add another image</Button></Upload><Typography.Text type="secondary">Up to 10 MB · uploads are added, not replaced</Typography.Text></Space>{!gallery.images.length && <Empty description="No images yet. Add the first product photo." />}
       <Image.PreviewGroup>{gallery.images.map(asset => <Card key={asset.id} style={{ marginBottom: 16 }}><Space align="start" wrap><Image src={asset.url} alt={asset.alt || gallery.product.name} width={170} height={180} style={{ objectFit: 'contain' }} /><div style={{ maxWidth: 470 }}><Space wrap><Tag color={asset.is_primary ? 'blue' : undefined}>{asset.is_primary ? 'Primary image' : asset.variant}</Tag><Tag>{asset.review_status || 'legacy'}</Tag><Typography.Text type="secondary">#{asset.id} · position {asset.sort_order}</Typography.Text></Space><p>{asset.alt || 'No description yet'}</p><Space wrap>
         <Button onClick={() => setEditAsset({ ...asset })}>Edit details / order</Button><Button onClick={() => setEditSource(asset.url)}>Edit photo</Button><Button href={asset.url} target="_blank" rel="noreferrer">Open original</Button>

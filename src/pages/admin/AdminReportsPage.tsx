@@ -6,6 +6,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import AudienceTag from '@/features/admin/AudienceTag';
 import { Alert, Button, Card, Col, DatePicker, Empty, Row, Segmented, Select, Space, Statistic, Table, Tabs, Tag, Tooltip, Typography } from 'antd';
 import type { TableProps } from 'antd';
 import { ArrowDownOutlined, ArrowUpOutlined, DownloadOutlined, ReloadOutlined } from '@ant-design/icons';
@@ -119,7 +120,7 @@ const productColumns: TableProps<ReportProductRow>['columns'] = [
     render: (_, row) => (
       <div>
         {row.productId ? <Link to={`/product/${row.productId}`}>{row.name}</Link> : row.name}
-        <div><Text type="secondary" style={{ fontSize: 12 }}>{[row.brand, row.category].filter(Boolean).join(' · ')}</Text></div>
+        <div><Text type="secondary" style={{ fontSize: 12 }}>{[row.brand, row.category].filter(Boolean).join(' · ')}</Text> <AudienceTag visibleTo={row.visibleTo} /></div>
       </div>
     ),
   },
@@ -167,7 +168,7 @@ const slowColumns: TableProps<SlowMover>['columns'] = [
     render: (_, row) => (
       <div>
         <Link to={`/product/${row.productId}`}>{row.name}</Link>
-        <div><Text type="secondary" style={{ fontSize: 12 }}>{[row.brand, row.category].filter(Boolean).join(' · ')}</Text></div>
+        <div><Text type="secondary" style={{ fontSize: 12 }}>{[row.brand, row.category].filter(Boolean).join(' · ')}</Text> <AudienceTag visibleTo={row.visibleTo} /></div>
       </div>
     ),
   },
