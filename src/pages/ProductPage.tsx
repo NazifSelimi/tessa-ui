@@ -267,7 +267,11 @@ export default function ProductPage() {
           <Divider style={{ margin: 'var(--spacing-lg) 0' }} />
 
           {product.shades && product.shades.length > 1 && (
-            <ShadePicker currentId={product.id} shades={product.shades} defaultExpanded={rawCategory === 'Hair Color'} />
+            <ShadePicker currentId={product.id} shades={product.shades} defaultExpanded={rawCategory === 'Hair Color'}
+              onShowCatalogue={product.shadeFamily?.catalogue
+                ? () => document.getElementById('shade-catalogue')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                : undefined}
+            />
           )}
 
           {/* Price Display */}
@@ -398,7 +402,9 @@ export default function ProductPage() {
         </div>
       </div>
       {product.shadeFamily?.catalogue && (
-        <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
+        <div id="shade-catalogue" className="shade-catalogue-anchor">
+          <CatalogueBook catalogue={product.shadeFamily.catalogue} currentId={product.id} />
+        </div>
       )}
 
       {isZoomed && selectedAsset && (

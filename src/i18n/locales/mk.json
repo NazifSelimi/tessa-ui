@@ -125,6 +125,7 @@
     "shadeCount_other": "{{count}} нијанси",
     "chooseShade": "Избери нијанса",
     "catalogue": {
+      "pdfView": "PDF каталог",
       "hint": "Кликнете на нијанса за да ја додадете во кошничка",
       "viewProduct": "Види производ",
       "previous": "Претходна страна",

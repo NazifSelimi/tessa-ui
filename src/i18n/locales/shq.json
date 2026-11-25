@@ -125,6 +125,7 @@
     "shadeCount_other": "{{count}} nuanca",
     "chooseShade": "Zgjidh nuancën",
     "catalogue": {
+      "pdfView": "Katalogu PDF",
       "hint": "Klikoni një nuancë për ta shtuar në shportë",
       "viewProduct": "Shiko produktin",
       "previous": "Faqja e mëparshme",

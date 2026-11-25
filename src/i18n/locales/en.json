@@ -125,6 +125,7 @@
     "shadeCount_other": "{{count}} shades",
     "chooseShade": "Choose shade",
     "catalogue": {
+      "pdfView": "PDF catalogue",
       "hint": "Tap a shade to add it to your cart",
       "viewProduct": "View product",
       "previous": "Previous page",

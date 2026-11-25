@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Input, Modal, Typography } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { FilePdfOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ProductShade } from '@/types';
 import { groupShades } from '@/shared/utils/shadeGroups';
@@ -20,6 +20,8 @@ interface ShadePickerProps {
   shades: ProductShade[];
   /** Hair colours open with the swatches showing; other lines (masks, toners) start collapsed. */
   defaultExpanded?: boolean;
+  /** When the line has a PDF catalogue further down the page: shows a button that jumps to it. */
+  onShowCatalogue?: () => void;
 }
 
 const shadeLabel = (shade: ProductShade) => shade.shadeCode || shade.shadeName || shade.name;
@@ -91,7 +93,7 @@ function ShadeGroups({ shades, currentId, onPick }: { shades: ProductShade[]; cu
   );
 }
 
-export default function ShadePicker({ currentId, shades, defaultExpanded = false }: ShadePickerProps) {
+export default function ShadePicker({ currentId, shades, defaultExpanded = false, onShowCatalogue }: ShadePickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(defaultExpanded);
@@ -142,6 +144,11 @@ export default function ShadePicker({ currentId, shades, defaultExpanded = false
         <button type="button" className="shade-picker__all" onClick={() => setOpen(true)}>
           {t('product.allShades', { count: shades.length })}
         </button>
+        {onShowCatalogue && (
+          <button type="button" className="shade-picker__pdf" onClick={onShowCatalogue}>
+            <FilePdfOutlined /> {t('product.catalogue.pdfView')}
+          </button>
+        )}
       </div>
 
       {expanded && (
