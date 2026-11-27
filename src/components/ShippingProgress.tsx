@@ -10,22 +10,25 @@ import { Progress, Typography } from 'antd';
 import { TruckOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { formatPrice } from '@/shared/utils/formatPrice';
-import {
-  FREE_SHIPPING_THRESHOLD,
-  amountToFreeShipping,
-} from '@/shared/constants/shipping';
+import { amountToFreeShipping } from '@/shared/constants/shipping';
+import { useShippingSettings } from '@/features/shop/shopSettingsApi';
 
 const { Text } = Typography;
 
 interface ShippingProgressProps {
   subtotal: number;
+  /** From the server's price check when there is one (it knows the discounts). */
+  remaining?: number;
 }
 
-export default function ShippingProgress({ subtotal }: ShippingProgressProps) {
+export default function ShippingProgress({ subtotal, remaining: priced }: ShippingProgressProps) {
   const { t } = useTranslation();
-  const remaining = amountToFreeShipping(subtotal);
+  const { freeShippingFrom } = useShippingSettings();
+  const remaining = priced ?? amountToFreeShipping(subtotal, freeShippingFrom);
   const unlocked = remaining <= 0;
-  const percent = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
+  const percent = freeShippingFrom > 0
+    ? Math.min(100, Math.round(((freeShippingFrom - remaining) / freeShippingFrom) * 100))
+    : 100;
 
   return (
     <div className="shipping-progress">

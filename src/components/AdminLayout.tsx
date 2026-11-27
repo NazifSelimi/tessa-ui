@@ -64,6 +64,7 @@ const pageTitles: Record<string, string> = {
   '/admin/documents': 'PDF documents',
   '/admin/reports': 'Sales reports',
   '/admin/coupons': 'Coupons',
+  '/admin/categories': 'Categories',
   '/admin/referrals': 'Referral codes',
   '/admin/distributors': 'Distributors',
   '/admin/bundles': 'Offers & Bundles',
@@ -127,6 +128,7 @@ export default function AdminLayout() {
     },
     { key: '/admin/stylist-invitations', icon: <QrcodeOutlined />, label: <Link to="/admin/stylist-invitations">Business invitations</Link> },
     { key: '/admin/coupons', icon: <TagOutlined />, label: <Link to="/admin/coupons">Coupons</Link> },
+    { key: '/admin/categories', icon: <FilterOutlined />, label: <Link to="/admin/categories">Categories</Link> },
     { key: '/admin/referrals', icon: <ShareAltOutlined />, label: <Link to="/admin/referrals">Referral codes</Link> },
     { key: '/admin/bundles', icon: <GiftOutlined />, label: <Link to="/admin/bundles">Offers & Bundles</Link> },
     {
@@ -163,7 +165,7 @@ export default function AdminLayout() {
       { label: 'Offers & codes', keys: ['/admin/bundles', '/admin/coupons', '/admin/referrals'] },
       { label: 'Marketing', keys: ['/admin/studio', '/admin/emails', '/admin/messages'] },
       { label: 'Accounts', keys: ['/admin/users', '/admin/stylist-requests', '/admin/stylist-invitations', '/admin/distributors'] },
-      { label: 'Shop content', keys: ['/admin/content-blocks', '/admin/catalog-images', '/admin/hair-quiz', '/admin/catalogue-review'] },
+      { label: 'Shop content', keys: ['/admin/categories', '/admin/content-blocks', '/admin/catalog-images', '/admin/hair-quiz', '/admin/catalogue-review'] },
       { label: 'Settings', keys: ['/admin/business', '/admin/features'] },
     ];
     const byKey = new Map(menuItems.map((item) => [item.key, item]));

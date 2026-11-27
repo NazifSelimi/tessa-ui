@@ -50,6 +50,11 @@ vi.mock('@/features/orders/api', () => ({
   useGetCartQuoteQuery: () => ({ currentData: cartQuote }),
 }));
 
+let shippingSettings = { freeShippingFrom: 3000, freeShippingAfterDiscounts: false, shippingCost: 150 };
+vi.mock('@/features/shop/shopSettingsApi', () => ({
+  useShippingSettings: () => shippingSettings,
+}));
+
 vi.mock('@/features/products/api', () => ({
   useGetBundlesQuery: () => ({ data: [] }),
 }));
@@ -85,6 +90,7 @@ describe('Checkout flow', () => {
     applyCodeMock.mockReset();
     applyCodeMock.mockResolvedValue(true);
     referralCode = null;
+    shippingSettings = { freeShippingFrom: 3000, freeShippingAfterDiscounts: false, shippingCost: 150 };
   });
 
   it('blocks checkout when the cart is empty', () => {
@@ -214,5 +220,47 @@ describe('Checkout flow', () => {
       shipping_address: expect.objectContaining({ firstName: 'Ana', lastName: 'Stylist' }),
     })));
     expect(window.sessionStorage.getItem('tessa:checkout-draft')).toBeNull();
+  });
+
+  it('shows the server prices for the lines and the subtotal, so they add up to the total (#12)', async () => {
+    // The browser still has an old price (200 each); the server charges 250 each.
+    cartItems = [{
+      productId: '1', quantity: 2,
+      product: { id: '1', name: 'Shampoo', image: null, price: 200 },
+    }];
+    cartQuote = {
+      lines: [{ productId: 1, qty: 2, unitPrice: 250, lineTotal: 500 }],
+      subtotal: 500, bundleDiscount: 0, couponDiscount: 0, discount: 0, discountLimited: false,
+      appliedBundleIds: [], skippedBundles: [], couponCode: null, couponError: null,
+      shipping: 150, amountToFreeShipping: 2500, total: 650,
+    };
+    renderCheckout();
+
+    // 500 (lines and subtotal) + 150 shipping = 650; the old local 400 is never shown.
+    expect((await screen.findAllByText(/^500/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^400/)).toBeNull();
+    expect(screen.getAllByText(/650/).length).toBeGreaterThan(0);
+  });
+
+  it('says "Maximum discount reached" when the discount cap cut the discount (Q1)', async () => {
+    cartItems = [{ productId: '1', quantity: 2, product: { id: '1', name: 'Shampoo', image: null, price: 1000 } }];
+    cartQuote = {
+      lines: [{ productId: 1, qty: 2, unitPrice: 1000, lineTotal: 2000 }],
+      subtotal: 2000, bundleDiscount: 0, couponDiscount: 800, discount: 800, discountLimited: false, discountCapped: true,
+      appliedBundleIds: [], skippedBundles: [], couponCode: 'HALF', couponError: null,
+      shipping: 0, amountToFreeShipping: 1000, total: 1200,
+    };
+    renderCheckout();
+
+    expect(await screen.findByText('cart.maxDiscountReached')).toBeInTheDocument();
+  });
+
+  it('uses the free-shipping amount set in Admin until the server price is in (Q6)', async () => {
+    shippingSettings = { freeShippingFrom: 1000, freeShippingAfterDiscounts: false, shippingCost: 150 };
+    cartItems = [{ productId: '1', quantity: 2, product: { id: '1', name: 'Shampoo', image: null, price: 200 } }];
+    renderCheckout();
+
+    // Local subtotal 1200 is above the 1000 set in Admin: free delivery (with the old 3000 it was 150).
+    expect(await screen.findByText('checkout.free')).toBeInTheDocument();
   });
 });

@@ -106,6 +106,12 @@ interface Coupon {
 export type PricingSettings = {
   costPercentage: number;
   minMarginPercentage: number;
+  /** Owner rule Q1: all discounts together never above this % of the goods. */
+  maxDiscountPercentage: number;
+  /** Owner rule Q6: free delivery from this amount, counted before or after discounts. */
+  freeShippingFrom: number;
+  freeShippingAfterDiscounts: boolean;
+  shippingCost?: number;
 };
 
 export type OfferAudienceResult = {
@@ -307,11 +313,12 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: [API_TAGS.StylistRequests],
     }),
 
-    updateOrderStatus: builder.mutation<Order, { id: string; status: OrderStatus }>({
-      query: ({ id, status }) => ({
+    updateOrderStatus: builder.mutation<Order, { id: string; status: OrderStatus; force?: boolean }>({
+      query: ({ id, status, force }) => ({
         url: `/v1/admin/orders/${id}/status`,
         method: 'PUT',
-        body: { status },
+        // force: "Proceed anyway" after a not-enough-stock refusal.
+        body: force ? { status, force: true } : { status },
       }),
       transformResponse: (response: any) => response.data,
       invalidatesTags: [API_TAGS.Orders, API_TAGS.Dashboard],

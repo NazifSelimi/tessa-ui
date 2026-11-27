@@ -182,6 +182,7 @@
     "closeImage": "Close image"
   },
   "cart": {
+    "maxDiscountReached": "Maximum discount reached",
     "shoppingCart": "Shopping Cart",
     "yourCartIsEmpty": "Your cart is empty",
     "startShopping": "Start Shopping",
@@ -339,7 +340,7 @@
     "profileUpdated": "Profile updated successfully!",
     "profileCompleted": "Profile completed successfully!",
     "profileUpdateFailed": "Failed to update profile",
-    "passwordUpdated": "Password updated successfully!",
+    "passwordUpdated": "Password updated. Other sign-ins and AI assistant keys were signed out.",
     "passwordUpdateFailed": "Failed to update password",
     "becomeStylist": "Become a Stylist",
     "quickOrder": "Quick Order",
@@ -366,6 +367,7 @@
     "stylistRequestFailed": "Your profile was saved, but the stylist request could not be submitted."
   },
   "orders": {
+    "couponCanBeUsedAgain": "Your coupon can be used again.",
     "myOrders": "My Orders",
     "viewTrackHistory": "View and track your order history",
     "errorLoading": "Error loading orders",
@@ -1190,5 +1192,26 @@
     "reachedNow": "You get: {{reward}}",
     "addGift": "Add your free oxidant to the cart",
     "from": "From {{count}} colours"
+  },
+  "adminStock": {
+    "title": "Not enough stock",
+    "note": "If you proceed, stock goes below 0. Your name and the time are recorded.",
+    "proceed": "Proceed anyway",
+    "cancel": "Cancel"
+  },
+  "adminPricing": {
+    "maxDiscount": "Maximum discount",
+    "maxDiscountHelp": "Offers, pick-any deals and the coupon together never take more than this % off the goods.",
+    "freeShippingFrom": "Free delivery from",
+    "freeShippingCount": "Count the amount",
+    "beforeDiscounts": "before discounts",
+    "afterDiscounts": "after discounts"
+  },
+  "adminCategories": {
+    "title": "Categories",
+    "intro": "Tick the categories that are hair colour. \"Restock colours\" in Quick order shows their products. While none is ticked, the shop guesses from the category names.",
+    "name": "Category",
+    "isHairColour": "Is hair colour",
+    "saved": "Category saved"
   }
 }

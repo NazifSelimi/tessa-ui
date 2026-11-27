@@ -10,6 +10,8 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { amountToFreeShipping, shippingForSubtotal } from '@/shared/constants/shipping';
+import { useShippingSettings } from '@/features/shop/shopSettingsApi';
 import { clearCheckoutDraft, loadCheckoutDraft, saveCheckoutDraft } from '@/features/checkout/checkoutDraft';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -98,8 +100,9 @@ export default function CheckoutPage() {
     }
   }, [navigate, token, user]);
 
-  // Shipping cost calculation
-  const shippingCost = subtotal >= 3000 ? 0 : 150;
+  // Shipping until the server's price check is in: the amounts set in Admin (Q6).
+  const shippingSettings = useShippingSettings();
+  const shippingCost = shippingForSubtotal(subtotal, shippingSettings.freeShippingFrom, shippingSettings.shippingCost);
   const bundleDiscount = useMemo(() => {
     const quantities = new Map(items.map((item) => [String(item.productId), item.quantity]));
 
@@ -134,6 +137,13 @@ export default function CheckoutPage() {
     },
     { skip: items.length === 0 || orderComplete },
   );
+  // Once the server's prices are in, every figure shown comes from them, so the
+  // lines and the subtotal add up to the total the customer pays (#12).
+  const shownSubtotal = quote ? quote.subtotal : subtotal;
+  const lineTotal = (item: (typeof items)[number]) => {
+    const line = quote?.lines?.find((quoted) => String(quoted.productId) === String(item.productId));
+    return line ? line.lineTotal : getItemTotal(item);
+  };
   const discountAmount = quote ? quote.couponDiscount : localCouponDiscount;
   const offerDiscount = quote ? quote.bundleDiscount : bundleDiscount;
   const shippingTotal = quote ? quote.shipping : shippingCost;
@@ -484,7 +494,7 @@ export default function CheckoutPage() {
                           {item.quantity} × {item.product.name}
                         </Text>
                       </div>
-                      <Text strong>{formatPrice(getItemTotal(item))}</Text>
+                      <Text strong>{formatPrice(lineTotal(item))}</Text>
                     </div>
                   ))}
                 </Space>
@@ -540,7 +550,7 @@ export default function CheckoutPage() {
                       {item.quantity} × {item.product.name}
                     </Text>
                   </div>
-                  <Text style={{ fontSize: 'var(--font-size-sm)' }}>{formatPrice(getItemTotal(item))}</Text>
+                  <Text style={{ fontSize: 'var(--font-size-sm)' }}>{formatPrice(lineTotal(item))}</Text>
                 </div>
               ))}
               {items.length > 3 && (
@@ -652,7 +662,7 @@ export default function CheckoutPage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               <div className="price-row">
                 <Text type="secondary">{t('cart.subtotal')}</Text>
-                <Text>{formatPrice(subtotal)}</Text>
+                <Text>{formatPrice(shownSubtotal)}</Text>
               </div>
               
               {discountAmount > 0 && (
@@ -671,6 +681,9 @@ export default function CheckoutPage() {
 
               {quote?.discountLimited && (
                 <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('checkout.discountLimited')}</Text>
+              )}
+              {quote?.discountCapped && (
+                <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>{t('cart.maxDiscountReached')}</Text>
               )}
               
               <div className="price-row">
@@ -702,7 +715,7 @@ export default function CheckoutPage() {
             {/* Free Shipping Progress */}
             {shippingTotal > 0 && (
               <Alert
-                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(quote ? quote.amountToFreeShipping : 3000 - subtotal) })}`}
+                message={`${t('checkout.addMoreForFreeShipping', { amount: formatPrice(quote ? quote.amountToFreeShipping : amountToFreeShipping(subtotal, shippingSettings.freeShippingFrom)) })}`}
                 type="info"
                 showIcon
                 style={{ marginTop: 'var(--spacing-lg)' }}

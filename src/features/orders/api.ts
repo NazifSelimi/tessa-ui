@@ -49,11 +49,18 @@ export interface CartQuoteRequest {
 
 /** The server's price for a cart: the same numbers checkout will charge. */
 export interface CartQuote {
+  /** One per cart line, priced by the server (salon price, sale, …). */
+  lines?: Array<{ productId: string | number; qty: number; unitPrice: number; lineTotal: number }>;
   subtotal: number;
   bundleDiscount: number;
   couponDiscount: number;
   discount: number;
   discountLimited: boolean;
+  /** The discount cap set in Admin cut the discount ("Maximum discount reached", Q1). */
+  discountCapped?: boolean;
+  maxDiscountPercentage?: number;
+  freeShippingFrom?: number;
+  freeShippingAfterDiscounts?: boolean;
   appliedBundleIds: string[];
   skippedBundles: Array<{ bundleId: string; reason: string }>;
   /** "Pick any colours" offers the cart counts towards. */

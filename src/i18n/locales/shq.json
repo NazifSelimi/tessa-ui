@@ -182,6 +182,7 @@
     "closeImage": "Mbyll foton"
   },
   "cart": {
+    "maxDiscountReached": "U arrit zbritja maksimale",
     "shoppingCart": "Shporta e blerjeve",
     "yourCartIsEmpty": "Shporta juaj është e zbrazët",
     "startShopping": "Fillo blerjen",
@@ -339,7 +340,7 @@
     "profileUpdated": "Profili u përditësua me sukses!",
     "profileCompleted": "Profili u plotësua me sukses!",
     "profileUpdateFailed": "Përditësimi i profilit dështoi",
-    "passwordUpdated": "Fjalëkalimi u përditësua me sukses!",
+    "passwordUpdated": "Fjalëkalimi u përditësua. Hyrjet e tjera dhe çelësat e asistentit AI u çkyçën.",
     "passwordUpdateFailed": "Përditësimi i fjalëkalimit dështoi",
     "becomeStylist": "Bëhu stilist",
     "quickOrder": "Porosi e shpejtë",
@@ -366,6 +367,7 @@
     "stylistRequestFailed": "Profili u ruajt, por kërkesa për stilist nuk u dërgua."
   },
   "orders": {
+    "couponCanBeUsedAgain": "Kuponi juaj mund të përdoret përsëri.",
     "myOrders": "Porositë e mia",
     "viewTrackHistory": "Shikoni dhe ndiqni historinë e porosive",
     "errorLoading": "Gabim gjatë ngarkimit të porosive",
@@ -1190,5 +1192,26 @@
     "reachedNow": "Merrni: {{reward}}",
     "addGift": "Shtoni oksidantin falas në shportë",
     "from": "Nga {{count}} ngjyra"
+  },
+  "adminStock": {
+    "title": "Nuk ka stok të mjaftueshëm",
+    "note": "Nëse vazhdoni, stoku shkon nën 0. Emri juaj dhe koha regjistrohen.",
+    "proceed": "Vazhdo gjithsesi",
+    "cancel": "Anulo"
+  },
+  "adminPricing": {
+    "maxDiscount": "Zbritja maksimale",
+    "maxDiscountHelp": "Ofertat, ofertat „zgjidh çfarëdo“ dhe kuponi së bashku nuk heqin kurrë më shumë se ky % nga produktet.",
+    "freeShippingFrom": "Dërgesë falas nga",
+    "freeShippingCount": "Shuma llogaritet",
+    "beforeDiscounts": "para zbritjeve",
+    "afterDiscounts": "pas zbritjeve"
+  },
+  "adminCategories": {
+    "title": "Kategoritë",
+    "intro": "Shënoni kategoritë që janë ngjyra flokësh. „Plotëso ngjyrat“ te Porosia e shpejtë tregon produktet e tyre. Derisa të mos shënohet asnjë, dyqani merr me mend sipas emrave të kategorive.",
+    "name": "Kategoria",
+    "isHairColour": "Ngjyrë flokësh",
+    "saved": "Kategoria u ruajt"
   }
 }

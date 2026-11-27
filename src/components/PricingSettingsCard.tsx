@@ -1,6 +1,7 @@
 import { fillUntouched } from '@/shared/utils/fillUntouched';
 import { useEffect } from 'react';
-import { Button, Card, Form, InputNumber, Space, Typography, message } from 'antd';
+import { Button, Card, Divider, Form, InputNumber, Radio, Space, Typography, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useGetPricingSettingsQuery, useUpdatePricingSettingsMutation, type PricingSettings } from '@/features/admin/api';
 import { extractErrorMessage } from '@/shared/utils/error';
 import { useFeature } from '@/shared/hooks/useFeature';
@@ -15,6 +16,7 @@ export default function PricingSettingsCard() {
   const [save, { isLoading }] = useUpdatePricingSettingsMutation();
   const [form] = Form.useForm<PricingSettings>();
   const protecting = useFeature('profit_protection');
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (data) fillUntouched(form, data);
@@ -45,6 +47,20 @@ export default function PricingSettingsCard() {
         </Form.Item>
         <Form.Item name="minMarginPercentage" label="Minimum profit" rules={[{ required: true }]}>
           <InputNumber min={0} max={90} addonAfter="%" />
+        </Form.Item>
+        {/* Owner rules Q1 and Q6: work even with profit protection off. */}
+        <Divider style={{ margin: '12px 0' }} />
+        <Form.Item name="maxDiscountPercentage" label={t('adminPricing.maxDiscount')} tooltip={t('adminPricing.maxDiscountHelp')} rules={[{ required: true }]}>
+          <InputNumber min={0} max={100} addonAfter="%" />
+        </Form.Item>
+        <Form.Item name="freeShippingFrom" label={t('adminPricing.freeShippingFrom')} rules={[{ required: true }]}>
+          <InputNumber min={0} max={1000000} step={100} addonAfter="MKD" />
+        </Form.Item>
+        <Form.Item name="freeShippingAfterDiscounts" label={t('adminPricing.freeShippingCount')}>
+          <Radio.Group>
+            <Radio value={false}>{t('adminPricing.beforeDiscounts')}</Radio>
+            <Radio value={true}>{t('adminPricing.afterDiscounts')}</Radio>
+          </Radio.Group>
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={isLoading}>Save</Button>
       </Form>

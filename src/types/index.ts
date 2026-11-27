@@ -166,6 +166,8 @@ export interface HairProfileOption {
 export interface Category {
   id: string;
   name: string;
+  /** Admin ticked "Is hair colour" (owner rule Q11): used by Restock colours. */
+  isHairColour?: boolean;
   description?: string;
   image?: string;
   productCount?: number;
@@ -254,6 +256,8 @@ export interface Order {
   customMessage?: string;
   internalNotes?: string;
   couponCode?: string;
+  /** Cancelled or trashed order: its normal coupon can be used again (owner rule Q7). */
+  couponCanBeUsedAgain?: boolean;
   /** Admin order views only: the stylist whose referral code was used. */
   referral?: { stylistId: string; stylistName: string; commission: number } | null;
   trackingNumber?: string;

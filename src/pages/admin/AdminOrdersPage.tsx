@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUrlState } from '@/shared/hooks/useUrlState';
 import { useNavigate } from 'react-router-dom';
 import { useFeature, useForceDeleteOrderMutation, useRestoreOrderMutation, useTrashOrderMutation } from '@/features/admin/platformApi';
@@ -14,6 +15,7 @@ import OrderDocumentButtons from '@/features/admin/OrderDocumentButtons';
 import MessageButtons from '@/features/messaging/MessageButtons';
 import { firstName, ORDER_STATUS_TEMPLATE } from '@/features/messaging/templates';
 import { formatDate } from '@/shared/utils/formatDate';
+import { stockShortLines } from '@/features/admin/stockShort';
 
 const { Title, Text } = Typography;
 
@@ -35,6 +37,7 @@ const statusOptions: { value: string; label: string }[] = [
 
 export default function AdminOrdersPage() {
   const { message, modal } = App.useApp();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const canDelete = useFeature('order_delete');
   const emailsOn = useFeature('admin_emails');
@@ -66,12 +69,32 @@ export default function AdminOrdersPage() {
   const selectedOrder = pickedOrder ? (orders.find((o) => String(o.id) === String(pickedOrder.id)) ?? pickedOrder) : null;
   const pagination = data?.meta;
 
-  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+  /** Not enough stock: show what is missing and offer "Proceed anyway" (owner rule Q12). */
+  const askProceedAnyway = (lines: string[], proceed: () => Promise<void>) => modal.confirm({
+    title: t('adminStock.title'),
+    content: (
+      <Space direction="vertical">
+        {lines.map((line) => <Text key={line}>{line}</Text>)}
+        <Text type="secondary">{t('adminStock.note')}</Text>
+      </Space>
+    ),
+    okText: t('adminStock.proceed'),
+    cancelText: t('adminStock.cancel'),
+    okButtonProps: { danger: true },
+    onOk: proceed,
+  });
+
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus, force = false) => {
     try {
-      await updateOrderStatus({ id: orderId, status: newStatus }).unwrap();
+      await updateOrderStatus({ id: orderId, status: newStatus, force }).unwrap();
       setSelectedOrder((current) => (current && String(current.id) === String(orderId) ? { ...current, status: newStatus } : current));
       message.success('Order status updated');
     } catch (error: any) {
+      const short = force ? null : stockShortLines(error);
+      if (short) {
+        askProceedAnyway(short, () => handleStatusChange(orderId, newStatus, true));
+        return;
+      }
       message.error(error?.data?.message || 'Failed to update status');
     }
   };
@@ -101,9 +124,18 @@ export default function AdminOrdersPage() {
     },
   });
 
-  const restore = async (order: Order) => {
-    await restoreOrder(String(order.id)).unwrap();
-    message.success(`Order #${order.id} restored`);
+  const restore = async (order: Order, force = false): Promise<void> => {
+    try {
+      await restoreOrder({ id: String(order.id), force }).unwrap();
+      message.success(`Order #${order.id} restored`);
+    } catch (error: unknown) {
+      const short = force ? null : stockShortLines(error);
+      if (short) {
+        askProceedAnyway(short, () => restore(order, true));
+        return;
+      }
+      message.error((error as { data?: { message?: string } })?.data?.message || 'Failed to restore the order');
+    }
   };
 
   const columns = [
@@ -279,6 +311,7 @@ export default function AdminOrdersPage() {
                 <>
                   <br />
                   <Text strong>Code used:</Text> <Tag color={selectedOrder.referral ? 'magenta' : 'green'}>{selectedOrder.couponCode}</Tag>
+                  {selectedOrder.couponCanBeUsedAgain && <Text type="secondary">{t('orders.couponCanBeUsedAgain')}</Text>}
                   {selectedOrder.referral && (
                     <Text type="secondary">
                       stylist referral · {selectedOrder.referral.stylistName || 'stylist'} earns {formatPrice(selectedOrder.referral.commission)} credit

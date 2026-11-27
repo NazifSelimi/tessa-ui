@@ -271,8 +271,12 @@ export const platformApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/v1/admin/orders/${id}`, method: 'DELETE' }),
       invalidatesTags: [API_TAGS.Orders, API_TAGS.Dashboard, API_TAGS.Referrals],
     }),
-    restoreOrder: builder.mutation<void, string>({
-      query: (id) => ({ url: `/v1/admin/orders/${id}/restore`, method: 'POST' }),
+    restoreOrder: builder.mutation<void, string | { id: string; force?: boolean }>({
+      query: (arg) => {
+        const { id, force } = typeof arg === 'string' ? { id: arg, force: false } : arg;
+        // force: "Proceed anyway" after a not-enough-stock refusal.
+        return { url: `/v1/admin/orders/${id}/restore`, method: 'POST', body: force ? { force: true } : {} };
+      },
       invalidatesTags: [API_TAGS.Orders, API_TAGS.Dashboard, API_TAGS.Referrals],
     }),
     forceDeleteOrder: builder.mutation<void, string>({
