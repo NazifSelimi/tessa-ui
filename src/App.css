@@ -4235,9 +4235,29 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
 }
 
 .catalogue-book__stage--zoomed .catalogue-book__page {
-  width: 100% !important;
-  min-width: 1100px;
+  /* Width comes from the zoom step (inline style); let it grow past the stage and scroll. */
+  max-width: none;
   margin: 0 auto;
+}
+
+.catalogue-book__zoom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.catalogue-book__zoom .ant-btn {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.catalogue-book__zoom-level {
+  min-width: 48px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
 .catalogue-book__page img {
@@ -4372,7 +4392,7 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
     width: 100%;
   }
 
-  /* Zoomed on a phone: page ~2.5x the screen, drag to look around; arrows turn pages. */
+  /* Zoomed on a phone: drag to look around; arrows turn pages. */
   .catalogue-book__stage--zoomed {
     max-height: 68vh;
     padding: 0;
@@ -4380,16 +4400,13 @@ h1, h2, h3, h4, .ant-typography h1, .ant-typography h2, .ant-typography h3, .ant
     overscroll-behavior: contain;
   }
 
-  .catalogue-book__stage--zoomed .catalogue-book__page {
-    min-width: 250%;
-  }
-
   .catalogue-spot--current {
     border-width: 3px;
     box-shadow: 0 0 0 4px rgb(155 83 100 / 30%);
   }
 
-  .catalogue-book__controls .ant-btn-circle {
+  .catalogue-book__controls .ant-btn-circle,
+  .catalogue-book__zoom .ant-btn {
     width: 44px;
     height: 44px;
   }

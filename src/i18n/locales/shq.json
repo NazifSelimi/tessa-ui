@@ -133,8 +133,9 @@
       "next": "Faqja tjetër",
       "page": "Faqja {{page}} nga {{count}}",
       "zoomIn": "Zmadho",
-      "zoomOut": "Faqja e plotë",
-      "dragHint": "Tërhiqni për të parë · prekni një nuancë"
+      "zoomOut": "Zvogëlo",
+      "dragHint": "Tërhiqni për të parë · prekni një nuancë",
+      "zoomLevel": "Zmadhimi"
     },
     "shadeGroups": {
       "natural": "Natyrale",
