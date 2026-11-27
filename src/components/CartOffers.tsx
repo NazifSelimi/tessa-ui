@@ -96,3 +96,49 @@ export default function CartOffers({ quote, askToUse = true }: { quote?: Quote |
     </div>
   );
 }
+
+/**
+ * Price rows for the order summary when offers are used:
+ * "Products" (what is not in an offer), then each "Offer: <name> — 1.390 MKD"
+ * with its normal price crossed out. Delivery and Total follow on the page.
+ * Without an offer it shows the usual subtotal row.
+ */
+export function OfferPriceRows({ quote, subtotal, subtotalLabel }: { quote?: Pick<CartQuote, 'offersUsed'> | null; subtotal: number; subtotalLabel: string }) {
+  const { t } = useTranslation();
+  const offers = (quote?.offersUsed ?? []).filter((offer) => offer.regular != null);
+  if (!offers.length) {
+    return (
+      <div className="price-row">
+        <Text type="secondary">{subtotalLabel}</Text>
+        <Text>{formatPrice(subtotal)}</Text>
+      </div>
+    );
+  }
+  const inOffers = offers.reduce((sum, offer) => sum + Number(offer.regular ?? 0), 0);
+  const rest = Math.max(0, subtotal - inOffers);
+
+  return (
+    <>
+      {rest > 0.004 && (
+        <div className="price-row">
+          <Text type="secondary">{t('cart.otherProducts')}</Text>
+          <Text>{formatPrice(rest)}</Text>
+        </div>
+      )}
+      {offers.map((offer) => {
+        const price = offer.price ?? Number(offer.regular) - offer.saving;
+        return (
+          <div key={offer.bundleId} className="price-row price-row--offer">
+            <Text type="secondary" style={{ flex: 1, minWidth: 0 }}>{t('cart.offerLine', { name: offer.name })}</Text>
+            <Text style={{ whiteSpace: 'nowrap' }}>
+              {Number(offer.regular) > price + 0.004 && (
+                <Text delete type="secondary" style={{ marginRight: 6 }}>{formatPrice(Number(offer.regular))}</Text>
+              )}
+              <Text strong style={{ color: 'var(--color-success)' }}>{formatPrice(price)}</Text>
+            </Text>
+          </div>
+        );
+      })}
+    </>
+  );
+}

@@ -9,7 +9,7 @@
  * Includes discount code application with role-based validation.
  */
 
-import CartOffers from '@/components/CartOffers';
+import CartOffers, { OfferPriceRows } from '@/components/CartOffers';
 import { useState, useEffect, useMemo } from 'react';
 import { amountToFreeShipping, shippingForSubtotal } from '@/shared/constants/shipping';
 import { useShippingSettings } from '@/features/shop/shopSettingsApi';
@@ -665,10 +665,7 @@ export default function CheckoutPage() {
 
             {/* Price Breakdown */}
             <Space direction="vertical" style={{ width: '100%' }}>
-              <div className="price-row">
-                <Text type="secondary">{t('cart.subtotal')}</Text>
-                <Text>{formatPrice(shownSubtotal)}</Text>
-              </div>
+              <OfferPriceRows quote={quote} subtotal={shownSubtotal} subtotalLabel={t('cart.subtotal')} />
               
               {discountAmount > 0 && (
                 <div className="price-row">
@@ -677,7 +674,8 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {offerDiscount > 0 && (
+              {/* With offer rows the saving is already in them. */}
+              {offerDiscount > 0 && !quote?.offersUsed?.length && (
                 <div className="price-row">
                   <Text type="secondary">{t('checkout.offerSavings')}</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(offerDiscount)}</Text>

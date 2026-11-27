@@ -210,7 +210,9 @@
     "addMoreProducts": "Add more products",
     "openQuickOrder": "Open full Quick Order",
     "searchingCatalogue": "Searching catalogue…",
-    "noMatches": "No matching products."
+    "noMatches": "No matching products.",
+    "offerLine": "Offer: {{name}}",
+    "otherProducts": "Other products"
   },
   "checkout": {
     "title": "Checkout",

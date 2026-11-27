@@ -45,7 +45,7 @@ import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefro
 import QuantityStepper from '@/components/QuantityStepper';
 import { useGetCartQuoteQuery } from '@/features/orders/api';
 import { useDealCount, useTierReward } from '@/components/ColourDealPicker';
-import CartOffers from '@/components/CartOffers';
+import CartOffers, { OfferPriceRows } from '@/components/CartOffers';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -271,12 +271,10 @@ const CartPage: React.FC = () => {
             <CartOffers quote={quote} />
 
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
-              <div className="price-row">
-                <Text type="secondary">{t('cart.subtotal')} ({t('newLook.productCount', { count: totals.itemCount })})</Text>
-                <Text>{formatPrice(totals.subtotal)}</Text>
-              </div>
+              <OfferPriceRows quote={quote} subtotal={totals.subtotal} subtotalLabel={`${t('cart.subtotal')} (${t('newLook.productCount', { count: totals.itemCount })})`} />
 
-              {totals.savings > 0 && (
+              {/* With offer rows the saving is already in them. */}
+              {totals.savings > 0 && !quote?.offersUsed?.length && (
                 <div className="price-row">
                   <Text type="secondary">{t('cart.savings')}</Text>
                   <Text style={{ color: 'var(--color-success)' }}>-{formatPrice(totals.savings)}</Text>

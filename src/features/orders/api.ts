@@ -69,7 +69,7 @@ export interface CartQuote {
   /** Picked offers a later pick took the products of: the cart removes them. */
   replacedBundles?: Array<{ bundleId: string; name: string; byBundleId: string | null; byName: string | null }>;
   /** "Offer used: <name> −<saving>", one per picked offer that gives a discount. */
-  offersUsed?: Array<{ bundleId: string; name: string; saving: number }>;
+  offersUsed?: Array<{ bundleId: string; name: string; saving: number; regular?: number; price?: number }>;
   /** Offers the cart matches that were not picked: "Use offer X and save Y?". */
   suggestedOffers?: Array<{ bundleId: string; name: string; saving: number; replaces: string[] }>;
   /** "Pick any colours" offers the cart counts towards. */

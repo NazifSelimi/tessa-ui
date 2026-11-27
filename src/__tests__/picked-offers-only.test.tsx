@@ -37,7 +37,7 @@ vi.mock('antd', async (importOriginal) => {
   return { ...antd, App: { ...antd.App, useApp: () => ({ message: { info: infoMock } }) } };
 });
 
-import CartOffers from '@/components/CartOffers';
+import CartOffers, { OfferPriceRows } from '@/components/CartOffers';
 
 const empty = { offersUsed: [], skippedBundles: [], replacedBundles: [], suggestedOffers: [] };
 
@@ -94,6 +94,27 @@ describe('cart offers: only picked offers count', () => {
     render(<CartOffers quote={{ ...empty, suggestedOffers: [{ bundleId: '3', name: 'Duo', saving: 300, replaces: [] }] }} />);
 
     expect(screen.queryByText(/Use offer Duo and save/)).not.toBeInTheDocument();
+  });
+});
+
+describe('order summary: offer line before delivery', () => {
+  it('shows "Offer: <name>" at the offer price with the normal price crossed out, and the other products apart', () => {
+    render(<OfferPriceRows subtotal={2080} subtotalLabel="Subtotal" quote={{ offersUsed: [
+      { bundleId: '151', name: 'Fanola Wonder Curl шампон + маска 1L', saving: 190, regular: 1580, price: 1390 },
+    ] }} />);
+
+    expect(screen.getByText('Offer: Fanola Wonder Curl шампон + маска 1L')).toBeInTheDocument();
+    const crossed = screen.getByText((_, el) => el?.tagName === 'DEL' && /1[.,]?580/.test(el.textContent ?? ''));
+    expect(crossed).toBeInTheDocument();
+    expect(screen.getByText(/1[.,]?390/)).toBeInTheDocument();
+    expect(screen.getByText('Other products')).toBeInTheDocument();
+    expect(screen.getByText(/^500/)).toBeInTheDocument();
+    expect(screen.queryByText('Subtotal')).not.toBeInTheDocument();
+  });
+
+  it('shows the usual subtotal without an offer', () => {
+    render(<OfferPriceRows subtotal={900} subtotalLabel="Subtotal" quote={{ offersUsed: [] }} />);
+    expect(screen.getByText('Subtotal')).toBeInTheDocument();
   });
 });
 

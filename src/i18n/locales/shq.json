@@ -210,7 +210,9 @@
     "addMoreProducts": "Shtoni më shumë produkte",
     "openQuickOrder": "Hap Porosinë e shpejtë",
     "searchingCatalogue": "Duke kërkuar…",
-    "noMatches": "Nuk ka produkte që përputhen."
+    "noMatches": "Nuk ka produkte që përputhen.",
+    "offerLine": "Oferta: {{name}}",
+    "otherProducts": "Produkte të tjera"
   },
   "checkout": {
     "title": "Pagesa",

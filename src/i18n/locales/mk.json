@@ -210,7 +210,9 @@
     "addMoreProducts": "Додајте уште производи",
     "openQuickOrder": "Отвори Брза нарачка",
     "searchingCatalogue": "Пребарување…",
-    "noMatches": "Нема соодветни производи."
+    "noMatches": "Нема соодветни производи.",
+    "offerLine": "Понуда: {{name}}",
+    "otherProducts": "Други производи"
   },
   "checkout": {
     "title": "Наплата",
