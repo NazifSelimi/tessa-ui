@@ -15,6 +15,7 @@ import { extractErrorMessage } from '@/shared/utils/error';
 import OfferProfitPanel from '@/components/OfferProfitPanel';
 import BundlePicture from '@/features/admin/BundlePicture';
 import { AUDIENCES, toApiDate } from '@/features/admin/bundleOptions';
+import { useClashWarnings } from '@/features/admin/useClashWarnings';
 
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -57,6 +58,7 @@ interface BundleEditorDrawerProps {
 
 export default function BundleEditorDrawer({ open, bundle, copy = false, onClose }: BundleEditorDrawerProps) {
   const { message } = App.useApp();
+  const showClashWarnings = useClashWarnings();
   const { data: bundles = [] } = useGetAdminBundlesQuery(undefined, { skip: !open });
   const { data: productPage } = useGetAllProductsQuery({ perPage: 1000 }, { skip: !open });
   const { data: families = [] } = useGetProductFamiliesQuery(undefined, { skip: !open });
@@ -144,9 +146,11 @@ export default function BundleEditorDrawer({ open, bundle, copy = false, onClose
 
   const submit = async (values: BundleForm) => {
     try {
-      if (editing) await updateBundle({ id: editing.id, data: payload(values) }).unwrap();
-      else await createBundle(payload(values)).unwrap();
+      const saved = editing
+        ? await updateBundle({ id: editing.id, data: payload(values) }).unwrap()
+        : await createBundle(payload(values)).unwrap();
       message.success(editing ? 'Offer updated' : 'Offer created');
+      showClashWarnings(saved.clashWarnings);
       onClose();
     } catch (error) {
       message.error(extractErrorMessage(error));

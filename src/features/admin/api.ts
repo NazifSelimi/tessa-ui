@@ -610,15 +610,17 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: [API_TAGS.Bundles],
     }),
 
-    createBundle: builder.mutation<StoreBundle, BundlePayload>({
+    createBundle: builder.mutation<StoreBundle & { clashWarnings?: string[] }, BundlePayload>({
       query: (body) => ({ url: '/v1/admin/bundles', method: 'POST', body }),
-      transformResponse: (response: any) => response.data,
+      // Offers may share products: the server only warns (shown after saving).
+      transformResponse: (response: any) => ({ ...response.data, clashWarnings: response.meta?.warnings ?? [] }),
       invalidatesTags: [API_TAGS.Bundles],
     }),
 
-    updateBundle: builder.mutation<StoreBundle, { id: string; data: BundlePayload }>({
+    updateBundle: builder.mutation<StoreBundle & { clashWarnings?: string[] }, { id: string; data: BundlePayload }>({
       query: ({ id, data }) => ({ url: `/v1/admin/bundles/${id}`, method: 'PUT', body: data }),
-      transformResponse: (response: any) => response.data,
+      // Offers may share products: the server only warns (shown after saving).
+      transformResponse: (response: any) => ({ ...response.data, clashWarnings: response.meta?.warnings ?? [] }),
       invalidatesTags: [API_TAGS.Bundles],
     }),
 
@@ -628,9 +630,9 @@ export const adminApi = baseApi.injectEndpoints({
     }),
 
     /** One change for many offers at once. */
-    bulkBundles: builder.mutation<{ updated: number }, { ids: string[]; action: BundleBulkAction; value?: string | number | null }>({
+    bulkBundles: builder.mutation<{ updated: number; clashWarnings?: string[] }, { ids: string[]; action: BundleBulkAction; value?: string | number | null }>({
       query: (body) => ({ url: '/v1/admin/bundles/bulk', method: 'POST', body }),
-      transformResponse: (response: any) => response.data,
+      transformResponse: (response: any) => ({ ...response.data, clashWarnings: response.meta?.warnings ?? [] }),
       invalidatesTags: [API_TAGS.Bundles],
     }),
 

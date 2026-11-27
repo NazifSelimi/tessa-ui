@@ -3,8 +3,8 @@
  * (or any of its listed products, e.g. Silver Star shampoo or mask) and how
  * many of each, sees how far they are from the next reward step (10 colours →
  * free oxidant, 7 pieces → 1 free, 30 tubes → free brush), picks the gift, and
- * adds everything to the cart. The cart and checkout apply the reward by
- * themselves (server pricing).
+ * adds everything to the cart and picks the deal; the cart and checkout give
+ * the reward of the step reached (server pricing). Only picked deals count.
  */
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -66,7 +66,7 @@ export default function ColourDealPicker({ bundle, open, onClose }: { bundle: St
   const { t } = useTranslation();
   const reward = useTierReward();
   const countLabel = useDealCount();
-  const { addItem } = useCart();
+  const { addItem, applyBundle } = useCart();
   const { isProfessional } = useAuth();
   const deal = dealContext(bundle);
   const lines = bundle.familyLines?.length ? bundle.familyLines
@@ -114,6 +114,8 @@ export default function ColourDealPicker({ bundle, open, onClose }: { bundle: St
       const gift = gifts.find((item) => item.id === id);
       if (gift) addItem(asCartProduct(gift), 1);
     });
+    // Only picked offers count in the cart: adding from the picker picks this deal.
+    applyBundle(bundle.id);
     message.success(t('bundles.coloursAdded', { count }));
     setPicked({});
     onClose();

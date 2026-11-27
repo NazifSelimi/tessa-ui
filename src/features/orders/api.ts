@@ -64,7 +64,14 @@ export interface CartQuote {
   freeShippingFrom?: number;
   freeShippingAfterDiscounts?: boolean;
   appliedBundleIds: string[];
-  skippedBundles: Array<{ bundleId: string; reason: string }>;
+  /** Picked offers that give nothing yet; `missing` = what to add ("Add X to use Y"). */
+  skippedBundles: Array<{ bundleId: string; reason: string; name?: string; missing?: Array<{ productId: string; name: string; qty: number }>; replacedBy?: string | null }>;
+  /** Picked offers a later pick took the products of: the cart removes them. */
+  replacedBundles?: Array<{ bundleId: string; name: string; byBundleId: string | null; byName: string | null }>;
+  /** "Offer used: <name> −<saving>", one per picked offer that gives a discount. */
+  offersUsed?: Array<{ bundleId: string; name: string; saving: number }>;
+  /** Offers the cart matches that were not picked: "Use offer X and save Y?". */
+  suggestedOffers?: Array<{ bundleId: string; name: string; saving: number; replaces: string[] }>;
   /** "Pick any colours" offers the cart counts towards. */
   colourDeals?: Array<{
     bundleId: string; name: string; familyName: string | null; count: number;

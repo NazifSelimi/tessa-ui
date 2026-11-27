@@ -45,6 +45,7 @@ import { storefrontBrandName, storefrontImageUrl } from '@/shared/utils/storefro
 import QuantityStepper from '@/components/QuantityStepper';
 import { useGetCartQuoteQuery } from '@/features/orders/api';
 import { useDealCount, useTierReward } from '@/components/ColourDealPicker';
+import CartOffers from '@/components/CartOffers';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -62,8 +63,8 @@ const CartPage: React.FC = () => {
       bundle_ids: bundleIds,
       view_as: isStylistPreview ? 'stylist' : undefined,
     },
-    // Salons always get a server price: colour deals apply without choosing an offer.
-    { skip: items.length === 0 || (bundleIds.length === 0 && !isStylist) },
+    // Always priced on the server: it also says which offers the cart matches ("Use offer X?").
+    { skip: items.length === 0 },
   );
   const [quickSearch, setQuickSearch] = useState('');
   const [quickAdded, setQuickAdded] = useState<string | null>(null);
@@ -99,7 +100,7 @@ const CartPage: React.FC = () => {
     navigate('/checkout');
   };
 
-  const priced = Boolean(quote && (bundleIds.length || isStylist));
+  const priced = Boolean(quote);
   const savings = priced ? Number(quote?.bundleDiscount ?? 0) : 0;
   const totals = { subtotal, itemCount, savings };
   const shippingSettings = useShippingSettings();
@@ -266,6 +267,8 @@ const CartPage: React.FC = () => {
               </div>
               );
             })}
+
+            <CartOffers quote={quote} />
 
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="price-row">

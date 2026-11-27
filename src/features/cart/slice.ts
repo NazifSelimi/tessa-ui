@@ -15,7 +15,10 @@ import type { CartItem, Product } from '@/types';
 
 interface CartState {
   items: CartItem[];
+  /** Offers the customer picked, in pick order (the last one wins when two share products). */
   bundleIds: string[];
+  /** Offers the customer said "No thanks" to; the shop does not ask again for this cart. */
+  declinedBundleIds?: string[];
   isDrawerOpen: boolean;
   isLoading: boolean;
 }
@@ -23,6 +26,7 @@ interface CartState {
 const initialState: CartState = {
   items: [],
   bundleIds: [],
+  declinedBundleIds: [],
   isDrawerOpen: false,
   isLoading: false,
 };
@@ -114,12 +118,24 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.items = [];
       state.bundleIds = [];
+      state.declinedBundleIds = [];
     },
 
+    /** Picking an offer (again) makes it the latest pick. */
     applyBundle: (state, action: PayloadAction<{ bundleId: string }>) => {
-      if (!state.bundleIds.includes(action.payload.bundleId)) {
-        state.bundleIds.push(action.payload.bundleId);
-      }
+      const id = String(action.payload.bundleId);
+      state.bundleIds = [...state.bundleIds.filter((bundleId) => bundleId !== id), id];
+      state.declinedBundleIds = (state.declinedBundleIds ?? []).filter((bundleId) => bundleId !== id);
+    },
+
+    removeBundle: (state, action: PayloadAction<{ bundleId: string }>) => {
+      state.bundleIds = state.bundleIds.filter((bundleId) => bundleId !== String(action.payload.bundleId));
+    },
+
+    /** "No thanks": no discount, and the shop stops asking about this offer. */
+    declineBundle: (state, action: PayloadAction<{ bundleId: string }>) => {
+      const id = String(action.payload.bundleId);
+      state.declinedBundleIds = [...(state.declinedBundleIds ?? []).filter((bundleId) => bundleId !== id), id];
     },
 
     setItems: (state, action: PayloadAction<CartItem[]>) => {
@@ -176,6 +192,8 @@ export const {
   setRolePrice,
   clearCart,
   applyBundle,
+  removeBundle,
+  declineBundle,
   setItems,
   syncFromOtherTab,
   openDrawer,
@@ -187,6 +205,8 @@ export const {
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
 export const selectCartBundleIds = (state: { cart: CartState }) => state.cart.bundleIds;
+const NO_IDS: string[] = [];
+export const selectDeclinedBundleIds = (state: { cart: CartState }) => state.cart.declinedBundleIds ?? NO_IDS;
 export const selectCartDrawerOpen = (state: { cart: CartState }) => state.cart.isDrawerOpen;
 export const selectCartLoading = (state: { cart: CartState }) => state.cart.isLoading;
 

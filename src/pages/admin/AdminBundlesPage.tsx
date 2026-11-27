@@ -5,6 +5,7 @@
  * changes for many offers at once.
  */
 import { useMemo, useState } from 'react';
+import { useClashWarnings } from '@/features/admin/useClashWarnings';
 import dayjs, { type Dayjs } from 'dayjs';
 import {
   App, Button, Card, DatePicker, Dropdown, Input, InputNumber, Modal, Popconfirm, Segmented, Select, Space, Switch, Table, Tag, Tooltip, Typography,
@@ -44,6 +45,7 @@ const ruleSummary = (bundle: StoreBundle) => (bundle.promotionType === 'mix_matc
 
 export default function AdminBundlesPage() {
   const { message } = App.useApp();
+  const showClashWarnings = useClashWarnings();
   const { data: bundles = [], isLoading } = useGetAdminBundlesQuery();
   const [updateBundle, { isLoading: updating }] = useUpdateBundleMutation();
   const [deleteBundle] = useDeleteBundleMutation();
@@ -92,6 +94,7 @@ export default function AdminBundlesPage() {
     try {
       const result = await bulkBundles({ ids: selected, action, value }).unwrap();
       message.success(`${result.updated} offers ${action === 'delete' ? 'deleted' : 'updated'}`);
+      showClashWarnings(result.clashWarnings);
       if (action === 'delete') setSelected([]);
       setBulkAsk(null);
       setBulkValue(null);

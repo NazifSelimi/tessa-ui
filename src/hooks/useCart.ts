@@ -13,6 +13,9 @@ import {
   updateQuantity,
   clearCart,
   applyBundle,
+  removeBundle,
+  declineBundle,
+  selectDeclinedBundleIds,
   openDrawer,
   closeDrawer,
   toggleDrawer,
@@ -40,6 +43,7 @@ export function useCart() {
   const isDrawerOpen = useAppSelector(selectCartDrawerOpen);
   const itemCount = useAppSelector(selectCartItemCount);
   const bundleIds = useAppSelector(selectCartBundleIds);
+  const declinedBundleIds = useAppSelector(selectDeclinedBundleIds);
   const isProfessional = useAppSelector(selectIsStylist);
 
   // Add item with both retail and role price snapshots so it can be repriced if the role changes
@@ -72,6 +76,14 @@ export function useCart() {
 
   const handleApplyBundle = useCallback((bundleId: string) => {
     dispatch(applyBundle({ bundleId }));
+  }, [dispatch]);
+
+  const handleRemoveBundle = useCallback((bundleId: string) => {
+    dispatch(removeBundle({ bundleId }));
+  }, [dispatch]);
+
+  const handleDeclineBundle = useCallback((bundleId: string) => {
+    dispatch(declineBundle({ bundleId }));
   }, [dispatch]);
 
   // Drawer controls
@@ -120,6 +132,7 @@ export function useCart() {
     // State
     items,
     bundleIds,
+    declinedBundleIds,
     isLoading: false, // Cart operations are synchronous with redux-persist
     isDrawerOpen,
     
@@ -129,6 +142,8 @@ export function useCart() {
     updateQuantity: handleUpdateQuantity,
     clearCart: handleClearCart,
     applyBundle: handleApplyBundle,
+    removeBundle: handleRemoveBundle,
+    declineBundle: handleDeclineBundle,
     
     // Drawer controls
     openDrawer: handleOpenDrawer,

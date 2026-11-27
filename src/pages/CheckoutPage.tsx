@@ -9,6 +9,7 @@
  * Includes discount code application with role-based validation.
  */
 
+import CartOffers from '@/components/CartOffers';
 import { useState, useEffect, useMemo } from 'react';
 import { amountToFreeShipping, shippingForSubtotal } from '@/shared/constants/shipping';
 import { useShippingSettings } from '@/features/shop/shopSettingsApi';
@@ -274,7 +275,8 @@ export default function CheckoutPage() {
         payment_method: 'cod' as const,
         custom_message: undefined,
         coupon_code: appliedCode || undefined,
-        bundle_ids: bundleIds,
+        // Only the offers the priced cart really uses, so the order costs what was shown.
+        bundle_ids: quote ? quote.appliedBundleIds : bundleIds,
         use_store_credit: isAuthenticated && useStoreCredit && (quote?.storeCreditAvailable ?? 0) > 0,
       };
 
@@ -658,6 +660,8 @@ export default function CheckoutPage() {
             </div>
 
             <Divider />
+
+            <CartOffers quote={quote} />
 
             {/* Price Breakdown */}
             <Space direction="vertical" style={{ width: '100%' }}>
