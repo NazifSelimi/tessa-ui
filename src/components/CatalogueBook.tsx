@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { App, Button, Popover, Spin } from 'antd';
-import { LeftOutlined, RightOutlined, ShoppingCartOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
+import { LeftOutlined, RightOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import PriceDisplay from '@/components/PriceDisplay';
 import { useCart } from '@/hooks/useCart';
@@ -16,6 +16,10 @@ import { useGetProductByIdQuery } from '@/features/products/api';
 import type { ShadeCatalogue } from '@/types';
 
 type Spot = ShadeCatalogue['pages'][number]['spots'][number];
+
+/** Zoom steps: 1 = the whole page fits; higher steps make the page that many times wider. */
+const ZOOM_LEVELS = [1, 1.5, 2, 3] as const;
+const PHONE_ZOOM = 1.5;
 
 interface CatalogueBookProps {
   catalogue: ShadeCatalogue;
@@ -64,8 +68,14 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
   );
   const [index, setIndex] = useState(currentPage);
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  // Phones open zoomed in: a whole catalogue page is too small to judge a colour on a phone screen.
-  const [zoomed, setZoomed] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches === true);
+  // Phones open at 1.5x: a whole catalogue page is too small to judge a colour on a phone screen.
+  const [zoomStep, setZoomStep] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches === true
+      ? ZOOM_LEVELS.indexOf(PHONE_ZOOM)
+      : 0,
+  );
+  const zoom = ZOOM_LEVELS[zoomStep];
+  const zoomed = zoom > 1;
   const stageRef = useRef<HTMLDivElement>(null);
   const [openSpot, setOpenSpot] = useState<string | null>(null);
   const touchStart = useRef<number | null>(null);
@@ -76,7 +86,7 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
   // Zoomed in: centre the shade being viewed (or the page's top-left) in the visible area.
   useEffect(() => {
     const stage = stageRef.current;
-    if (!stage || !zoomed) return;
+    if (!stage || zoom <= 1) return;
     const pageEl = stage.querySelector<HTMLElement>('.catalogue-book__page');
     const spot = stage.querySelector<HTMLElement>('.catalogue-spot--current');
     if (!pageEl || !spot) {
@@ -87,7 +97,7 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
       left: pageEl.offsetLeft + spot.offsetLeft + spot.offsetWidth / 2 - stage.clientWidth / 2,
       top: pageEl.offsetTop + spot.offsetTop + spot.offsetHeight / 2 - stage.clientHeight / 2,
     });
-  }, [index, zoomed]);
+  }, [index, zoom]);
 
   const turn = (to: number) => {
     if (to < 0 || to >= pages.length || to === index) return;
@@ -127,8 +137,12 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
         <div
           key={index}
           className={`catalogue-book__page catalogue-book__page--${direction}`}
-          // As wide as fits both the stage width and its height, keeping the page's shape so spots stay on their swatches.
-          style={{ aspectRatio: `${page.width} / ${page.height}`, width: `min(100%, calc(var(--catalogue-page-h) * ${page.width / page.height}))` }}
+          // At 1x as wide as fits both the stage width and its height; each zoom step multiplies that width.
+          // The page keeps its shape, so the spots (placed in %) stay on their swatches at every level.
+          style={{
+            aspectRatio: `${page.width} / ${page.height}`,
+            width: `calc(${zoom} * min(100%, calc(var(--catalogue-page-h) * ${page.width / page.height})))`,
+          }}
         >
           <img src={page.image} alt={`${catalogue.title} – ${index + 1}`} draggable={false} loading="lazy" />
           {page.spots.filter((spot) => spot.productId).map((spot) => {
@@ -173,13 +187,29 @@ export default function CatalogueBook({ catalogue, currentId }: CatalogueBookPro
         </div>
         <span className="catalogue-book__count">{index + 1} / {pages.length}</span>
         <Button shape="circle" icon={<RightOutlined />} disabled={index === pages.length - 1} onClick={() => turn(index + 1)} aria-label={t('product.catalogue.next')} />
-        <Button
-          className="catalogue-book__zoom"
-          icon={zoomed ? <ZoomOutOutlined /> : <ZoomInOutlined />}
-          onClick={() => setZoomed((value) => !value)}
-        >
-          {zoomed ? t('product.catalogue.zoomOut') : t('product.catalogue.zoomIn')}
-        </Button>
+        <div className="catalogue-book__zoom" role="group" aria-label={t('product.catalogue.zoomLevel')}>
+          {zoomStep > 0 && (
+            <Button
+              shape="circle"
+              onClick={() => setZoomStep((step) => Math.max(0, step - 1))}
+              aria-label={t('product.catalogue.zoomOut')}
+              title={t('product.catalogue.zoomOut')}
+            >
+              −
+            </Button>
+          )}
+          <span className="catalogue-book__zoom-level" aria-live="polite">{Math.round(zoom * 100)}%</span>
+          {zoomStep < ZOOM_LEVELS.length - 1 && (
+            <Button
+              shape="circle"
+              onClick={() => setZoomStep((step) => Math.min(ZOOM_LEVELS.length - 1, step + 1))}
+              aria-label={t('product.catalogue.zoomIn')}
+              title={t('product.catalogue.zoomIn')}
+            >
+              +
+            </Button>
+          )}
+        </div>
       </div>
     </section>
   );
