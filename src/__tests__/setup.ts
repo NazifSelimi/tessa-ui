@@ -11,6 +11,28 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
+// Node 25 has its own localStorage/sessionStorage globals. Without
+// --localstorage-file they have no setItem, and they hide jsdom's storage.
+// Swap in a simple in-memory storage so tests behave like a browser.
+function memoryStorage(): Storage {
+  const data = new Map<string, string>();
+  return {
+    get length() { return data.size; },
+    clear: () => data.clear(),
+    getItem: (key) => (data.has(key) ? data.get(key)! : null),
+    key: (index) => Array.from(data.keys())[index] ?? null,
+    removeItem: (key) => { data.delete(key); },
+    setItem: (key, value) => { data.set(key, String(value)); },
+  };
+}
+for (const name of ['localStorage', 'sessionStorage'] as const) {
+  let works = false;
+  try { works = typeof globalThis[name]?.setItem === 'function'; } catch { /* getter threw */ }
+  if (!works) {
+    Object.defineProperty(globalThis, name, { value: memoryStorage(), configurable: true, writable: true });
+  }
+}
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();
