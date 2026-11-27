@@ -51,13 +51,17 @@ const { Title, Text, Paragraph } = Typography;
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isStylist } = useAuth();
+  const { isStylist, isStylistPreview } = useAuth();
   const tierReward = useTierReward();
   const dealCount = useDealCount();
   const { items, bundleIds, addItem, updateQuantity, removeItem, clearCart, getItemPrice, getItemTotal, subtotal, itemCount } = useCart();
   // Same server pricing as checkout, so set discounts show here too (not only at checkout).
   const { currentData: quote } = useGetCartQuoteQuery(
-    { items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })), bundle_ids: bundleIds },
+    {
+      items: items.map((item) => ({ product_id: Number(item.productId), qty: item.quantity })),
+      bundle_ids: bundleIds,
+      view_as: isStylistPreview ? 'stylist' : undefined,
+    },
     // Salons always get a server price: colour deals apply without choosing an offer.
     { skip: items.length === 0 || (bundleIds.length === 0 && !isStylist) },
   );

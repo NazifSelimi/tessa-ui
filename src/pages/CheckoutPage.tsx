@@ -58,7 +58,7 @@ interface ShippingFormData {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, bundleIds, subtotal, clearCart, getItemTotal } = useCart();
-  const { user, token, isAuthenticated, isProfessional } = useAuth();
+  const { user, token, isAuthenticated, isProfessional, isStylistPreview } = useAuth();
   const { appliedCode, applyCode, removeCode, getDiscountForSubtotal, discountPercent, error: discountError, loginRequiredCode, isValidating, clearError } = useDiscounts();
   const [createOrder] = useCreateOrderMutation();
   const { data: activeBundles = [] } = useGetBundlesQuery();
@@ -134,6 +134,7 @@ export default function CheckoutPage() {
       bundle_ids: bundleIds,
       coupon_code: appliedCode ?? undefined,
       use_store_credit: isAuthenticated && useStoreCredit,
+      view_as: isStylistPreview ? 'stylist' : undefined,
     },
     { skip: items.length === 0 || orderComplete },
   );

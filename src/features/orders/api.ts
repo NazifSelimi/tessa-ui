@@ -45,6 +45,8 @@ export interface CartQuoteRequest {
   bundle_ids?: string[];
   coupon_code?: string;
   use_store_credit?: boolean;
+  /** Admin "view as salon": price the cart with salon prices, as the shop shows them. */
+  view_as?: 'stylist';
 }
 
 /** The server's price for a cart: the same numbers checkout will charge. */
